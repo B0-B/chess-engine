@@ -431,7 +431,7 @@ class Board {
                 
                 // track rank and file
                 rank = (int)( i * 0.125 + 1 );
-                file = i % 8 + 1;
+                file = i % 8;
 
                 // construct the coordinate by concatenating rank number and fileumn letter
                 coord = letter_coordinates[file] + to_string(rank);
@@ -456,8 +456,10 @@ int main (void) {
     
     // initialize a new board object
     Board boardObject;
-    boardObject.load_starting_position();
-    boardObject.print_board();
+    int id = 0;
+    cout << "id test " << id << " " << boardObject.get_coord_from_id(id);
+    //boardObject.load_starting_position();
+    //boardObject.print_board();
     return 0;
 }
 
