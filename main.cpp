@@ -169,7 +169,7 @@ class Board {
             char delimiter = '/';
             string coord;
             string moves = "";
-            string castling_options = "/KkQq-";
+            string castling_options = "KkQq-";
 
             
 
@@ -198,20 +198,27 @@ class Board {
                     // determine piece and color from symbol char
                     piece = pieces.from_symbol(_char);
                     if (_char == '&') {
+                        cout << "test 7.1" << endl;
                         cout << "test +" << endl;
                         // decrement rank
                         rank--;
                         // reset pointer to A file
                         file = 1;
+                        cout << "test 7.2" << endl;
                         continue;
                     // if integer is parsed shift file
                     } else if (isdigit(_char)) {
+                        cout << "test 7.3" << endl;
                         cout << "test 0" << endl;
                         // integers account for file shifts
                         file += _char - '0';
+                        cout << "test 7.4" << endl;
                         continue;
+                    } else if (_char == ' ') {
+                        cout << "test 7.5" << endl;
+                        pieces_completely_parsed = 1;
                     }
-                    
+
                     // otherwise
                     if (pieces.is_white(_char)) {
                         color = 16;
@@ -228,12 +235,8 @@ class Board {
 
                     // increment file
                     file++;
+                    cout << "test 7.6" << endl;
                 
-                // check for empty space
-                } else if (_char == ' ' && pieces_completely_parsed) {
-                    cout << "test 1" << endl;
-                    pieces_completely_parsed = 1;
-
                 // check for active color & override
                 } else if (pieces_completely_parsed && !active_color_parsed && (_char == 'b' || _char == 'w')) {
                     cout << "test 2" << endl;
@@ -271,6 +274,7 @@ class Board {
                         half_clock_parsed = 1;
                         file++;
                     }
+                // parse and denote the move count
                 } else if (half_clock_parsed && !move_count_parsed) {
                     cout << "test 6" << endl;
                     moves += _char;
