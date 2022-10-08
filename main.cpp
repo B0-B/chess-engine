@@ -1,7 +1,7 @@
 /* 
 
 C++ chess engine implementation.
-This code is inteded for C++11 compiler versions.
+This code is inteded for C++ compiler version >=11.
 B0-B
 
 */
@@ -173,38 +173,63 @@ class Board {
 
             
 
-            // first exchange all slashes for double slashes
+            // first exchange all slashes for unique symbols to avoid escapes
             int delimiter_index;
             while (delimiter_index != string::npos) {
                 delimiter_index = fen.find(delimiter);
                 fen[delimiter_index] = '&';
                 cout << "test x " << fen << endl;
-                
             }
             
             
             // delete global en passant coord
             en_passant_coord = "";
-            cout << "\n" << "test x " << fen << endl;
+            cout << "fen size " << fen.size() << endl;
             // parse ...
             for (int i = 0; i < fen.size(); i++) {
                 
                 _char = fen[i];
                 cout << "test y " << i << " " <<  _char << endl;
 
-                // if a break is parsed
-                if (_char == '&') {
-                    // decrement rank
-                    rank--;
-                    // reset pointer to A file
-                    file = 1;
-                
-                // if integer is parsed shift file
-                } else if (isdigit(_char)) {
-                    // integers account for file shifts
-                    file += _char - '0';
+                // parse piece locations
+                if (!pieces_completely_parsed) {
+                    cout << "test 7" << endl;
 
-                // skip if empty space
+                    // determine piece and color from symbol char
+                    piece = pieces.from_symbol(_char);
+                    if (_char == '&') {
+                        cout << "test +" << endl;
+                        // decrement rank
+                        rank--;
+                        // reset pointer to A file
+                        file = 1;
+                        continue;
+                    // if integer is parsed shift file
+                    } else if (isdigit(_char)) {
+                        cout << "test 0" << endl;
+                        // integers account for file shifts
+                        file += _char - '0';
+                        continue;
+                    }
+                    
+                    // otherwise
+                    if (pieces.is_white(_char)) {
+                        color = 16;
+                    } else {
+                        color = 8;
+                    }
+
+                    // determine the id from current rank and file pointer
+                    id = file + 8 * rank - 9; // it was accounted that rank 1 maps to index 0
+                    coord = get_coord_from_id(id);
+
+                    // place the piece
+                    place_piece(piece, color, coord);
+
+                    // increment file
+                    file++;
+                
+                // check for empty space
                 } else if (_char == ' ' && pieces_completely_parsed) {
                     cout << "test 1" << endl;
                     pieces_completely_parsed = 1;
@@ -247,6 +272,7 @@ class Board {
                         file++;
                     }
                 } else if (half_clock_parsed && !move_count_parsed) {
+                    cout << "test 6" << endl;
                     moves += _char;
                     if (i == fen.size()-1) {
                         cout << "test 1" << moves << endl;
@@ -254,26 +280,7 @@ class Board {
                         cout << "test 2" << endl;
                         // finished   
                     }
-                } else if (!pieces_completely_parsed) {
-
-                    // determine piece and color from symbol char
-                    piece = pieces.from_symbol(_char);
-                    if (pieces.is_white(_char)) {
-                        color = 16;
-                    } else {
-                        color = 8;
-                    }
-
-                    // determine the id from current rank and file pointer
-                    id = file + 8 * rank - 9;
-                    coord = get_coord_from_id(id);
-
-                    // place the piece
-                    place_piece(piece, color, coord);
-
-                    // increment file
-                    file++;
-                }
+                } 
 
             }
             cout << "load_pos_from_fen succeeded";
