@@ -58,6 +58,35 @@ class Piece {
 
         };
 
+        string name_from_symbol (int symbol, int color = 0) {
+
+            const char sym = tolower(symbol);
+            string name = "";
+
+            if (color == 16) {
+                name += "black ";
+            } else if (color == 8) {
+                name += "white ";
+            }
+
+            // pick name based on symbol
+            if (sym == 'p') {
+                name += "pawn";
+            } else if (sym == 'n') {
+                name += "knight";
+            } else if (sym == 'b') {
+                name += "bishop";
+            } else if (sym == 'r') {
+                name += "rook";
+            } else if (sym == 'q') {
+                name += "queen";
+            } else if (sym == 'k') {
+                name += "king";
+            }
+
+            return name;
+        }
+
         char to_symbol (int piece, int color) {
 
             /* Every nonce id and color id will generate a FEN-compliant symbol, 
@@ -71,7 +100,7 @@ class Piece {
             }
 
         }
-
+    
 };
 
 /*  Chess Board Implementation */
@@ -197,6 +226,7 @@ class Board {
 
                     // determine piece and color from symbol char
                     piece = pieces.from_symbol(_char);
+                    
                     if (_char == '&') {
                         cout << "test 7.1" << endl;
                         cout << "test +" << endl;
@@ -218,6 +248,7 @@ class Board {
                         cout << "test 7.5" << endl;
                         pieces_completely_parsed = 1;
                     }
+                    
 
                     // otherwise
                     if (pieces.is_white(_char)) {
@@ -225,13 +256,14 @@ class Board {
                     } else {
                         color = 8;
                     }
-
+                    
                     // determine the id from current rank and file pointer
-                    id = file + 8 * rank - 9; // it was accounted that rank 1 maps to index 0
+                    id = file + 8 * (rank-1); 
                     coord = get_coord_from_id(id);
-
+                    cout << "id" << id << "  coord" << coord << endl;
                     // place the piece
                     place_piece(piece, color, coord);
+                    cout << "test 7.0" << endl;
 
                     // increment file
                     file++;
@@ -302,9 +334,10 @@ class Board {
         void place_piece (int piece, int color, string coord_str) {
 
             /* Places a piece on the board */
-            
-            // convert the piece value to corr. symbol and set it at req. coord.
             char piece_symbol = pieces.to_symbol(piece, color);
+            cout << "place " << pieces.name_from_symbol(piece_symbol, color) << " to " << coord_str << endl;
+            // convert the piece value to corr. symbol and set it at req. coord.
+            
             set_symbol_at_coord(piece_symbol, coord_str);
 
         };
