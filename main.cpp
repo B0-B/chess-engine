@@ -175,14 +175,11 @@ class Board {
 
             // first exchange all slashes for double slashes
             int delimiter_index;
-            while (1) {
+            while (delimiter_index != string::npos) {
                 delimiter_index = fen.find(delimiter);
+                fen[delimiter_index] = '&';
                 cout << "test x " << fen << endl;
-                if (delimiter_index == string::npos) {
-                    break;
-                } else {
-                    fen[delimiter_index] = '&';
-                }
+                
             }
             
             
