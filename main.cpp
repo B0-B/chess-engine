@@ -390,7 +390,7 @@ class Board {
 
             /* Places a piece on the board */
             char piece_symbol = pieces.to_symbol(piece, color);
-            cout << "place " << pieces.name_from_symbol(piece_symbol) << "(" << piece_symbol << ")" << " to " << coord_str << endl;
+            cout << "place " << pieces.name_from_symbol(piece_symbol) << " (" << piece_symbol << ")" << " at " << coord_str << endl;
             // convert the piece value to corr. symbol and set it at req. coord.
             
             set_symbol_at_coord(piece_symbol, coord_str);
@@ -426,7 +426,7 @@ class Board {
 
             // override square value with underscore
             char piece_symbol = get_symbol_from_coord(coord_str);
-            cout << "remove " << pieces.name_from_symbol(piece_symbol) << " at " << coord_str << endl;
+            cout << "remove " << pieces.name_from_symbol(piece_symbol) << " (" << piece_symbol << ")" << " at " << coord_str << endl;
             set_symbol_at_coord('_', coord_str);
 
         };
