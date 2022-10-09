@@ -13,6 +13,8 @@ B0-B
 #include <map>
 #include <string>
 #include <ctype.h>
+#include <fcntl.h>
+#include <io.h>
 
 using namespace std;
 
@@ -38,6 +40,7 @@ class Piece {
         const int b = 16;
 
         const string symbols = "_PNBRQKpnbrqk";
+        
 
         int is_white (char symbol) {
             return symbol >= 'A' && symbol <= 'Z';
@@ -102,7 +105,60 @@ class Piece {
             }
 
         }
-    
+
+        wstring to_unicode (char symbol) {
+
+            /* Returns unicode for each piece (or symbol) which 
+            when printed shows renders a chess piece in console. */
+
+            int piece = from_symbol(symbol);
+            wstring unicode;
+
+            //wstring s = L"\u2659";
+            //wcout << "test unicode " << s.c_str() << endl;
+
+ 
+            if (piece == 0) {
+                unicode = '_';
+            } else if (piece == 1) {
+                if (is_white(piece)) {
+                    unicode = L"\u2659";
+                } else {
+                    unicode = L"\u265F";
+                }
+            } else if (piece == 2) {
+                if (is_white(piece)) {
+                    unicode = L"\u2658";
+                } else {
+                    unicode = L"\u065E";
+                }
+            } else if (piece == 3) {
+                if (is_white(piece)) {
+                    unicode = L"\u0657";
+                } else {
+                    unicode = L"\u265D";
+                }
+            } else if (piece == 4) {
+                if (is_white(piece)) {
+                    unicode = L"\u2656";
+                } else {
+                    unicode = L"\u265C";
+                }
+            } else if (piece == 5) {
+                if (is_white(piece)) {
+                    unicode = L"\u2655";
+                } else {
+                    unicode = L"\u265B";
+                }
+            } else if (piece == 6) {
+                if (is_white(piece)) {
+                    unicode = L"\u2654";
+                } else {
+                    unicode = L"\u265A";
+                }
+            }
+            return unicode;
+        }
 };
 
 /*  Chess Board Implementation */
@@ -169,14 +225,16 @@ class Board {
             // iterate through grid
             int id;
             string line;
+            cout << endl;
             for (int rank = 7; rank >= 0; rank--) {
                 line = "";
                 for (int file = 0; file < 8; file++) {
                     id = rank * 8 + file;
-                    line += grid[id]["symbol"];
+                    cout << pieces.to_unicode(grid[id]["symbol"][0]).c_str();
                 }
-                cout << line << endl;
+                cout << endl;
             }
+            cout << endl;
         };
 
 
@@ -204,7 +262,6 @@ class Board {
             string castling_options = "KkQq-";
 
             
-
             // first exchange all slashes for unique symbols to avoid escapes
             int delimiter_index;
             while (delimiter_index != string::npos) {
@@ -212,10 +269,10 @@ class Board {
                 fen[delimiter_index] = '&';
             }
             
-            
-            // delete global en passant coord
+            // delete global variables 
             en_passant_coord = "";
-            //cout << "fen size " << fen.size() << endl;
+            moves = "";
+            
             // parse ...
             for (int i = 0; i < fen.size(); i++) {
                 
@@ -224,36 +281,29 @@ class Board {
 
                 // parse piece locations
                 if (!pieces_completely_parsed) {
-                    //cout << "test 7" << endl;
 
                     // determine piece and color from symbol char
                     piece = pieces.from_symbol(_char);
                     cout << "test piece " << _char << " " << piece << endl;
                     
+                    // if line break is parsed decrement rank
                     if (_char == '&') {
-                        //cout << "test 7.1" << endl;
-                        //cout << "test +" << endl;
                         // decrement rank
                         rank--;
                         // reset pointer to A file
                         file = 1;
-                        //cout << "test 7.2" << endl;
                         continue;
                     // if integer is parsed shift file
                     } else if (isdigit(_char)) {
-                        //cout << "test 7.3" << endl;
-                        //cout << "test 0" << endl;
                         // integers account for file shifts
                         file += _char - '0';
-                        //cout << "test 7.4" << endl;
                         continue;
+                    // finish parsing pieces on space
                     } else if (_char == ' ') {
-                        //cout << "test 7.5" << endl;
                         pieces_completely_parsed = 1;
                         continue;
                     }
                     
-
                     // otherwise
                     if (pieces.is_white(_char)) {
                         color = 8;
@@ -264,25 +314,21 @@ class Board {
                     // determine the id from current rank and file pointer
                     id = file - 1 + 8 * (rank - 1); 
                     coord = get_coord_from_id(id);
-                    //cout << "id" << id << "  coord" << coord << endl;
+
                     // place the piece
                     place_piece(piece, color, coord);
-                    //cout << "test 7.0" << endl;
 
                     // increment file
                     file++;
-                    //cout << "test 7.6" << endl;
                 
                 // check for active color & override
                 } else if (pieces_completely_parsed && !active_color_parsed && (_char == 'b' || _char == 'w')) {
-                    //cout << "test 2" << endl;
                     active_color = _char;
                     active_color_parsed = 1;
                     file++;
 
                 // check for castling rights 
                 } else if (pieces_completely_parsed && active_color_parsed && !castling_parsed ) {
-                    //cout << "test 3" << endl;
                     if (_char == ' ') {
                         castling_parsed = 1;
                     } else if (_char == 'K') {
@@ -297,7 +343,6 @@ class Board {
                 
                 // check for en-passant availability
                 } else if (castling_parsed && !en_passant_parsed) {
-                    //cout << "test 4" << endl;
                     en_passant_coord += _char;
                     if (_char == '-' || en_passant_coord.size() >= 2) {
                         en_passant_parsed = 1;
@@ -305,14 +350,14 @@ class Board {
                     }
                 // parse and denote half clock count
                 } else if (en_passant_parsed && !half_clock_parsed) {
-                    //cout << "test 5" << endl;
                     if (_char == ' ') {
                         half_clock_parsed = 1;
-                        i++;
+                    } else {
+                        half_clock += _char;
                     }
+                    i++;
                 // parse and denote the move count
                 } else if (half_clock_parsed && !move_count_parsed) {
-                    //cout << "test 6" << endl;
                     moves += _char;
                     if (i == fen.size()-1) {
                         cout << "test moves " << moves << endl;
@@ -322,8 +367,7 @@ class Board {
                     }
                 } 
 
-            }
-            cout << "load_pos_from_fen succeeded";
+            };
         };
         
         void load_starting_position () {
@@ -347,7 +391,7 @@ class Board {
 
         };
 
-        void regardless_move (string origin_coord_str, string target_coord_str) {
+        void ignorant_move (string origin_coord_str, string target_coord_str) {
 
             /* Moves a piece disregarding chess rules by a combination of remove and place methods */
 
@@ -372,7 +416,9 @@ class Board {
         void remove_piece (string coord_str) {
 
             /* Removes a piece from requested coordinate */
-            set_symbol_at_coord(pieces.None, coord_str);
+
+            // override square value with underscore
+            set_symbol_at_coord('_', coord_str);
 
         };
 
@@ -467,13 +513,21 @@ class Board {
 
 
 int main (void) {
-    
-    // initialize a new board object
+
+    // set output mode for unicode printing
+    _setmode(_fileno(stdout), _O_WTEXT);
+
+    // initialize a new board and pieces objects
+    Piece pieces;
     Board boardObject;
+    
     // int id = 0;
     // cout << "id test " << id << " " << boardObject.get_coord_from_id(id);
     boardObject.load_starting_position();
     boardObject.print_board();
+    boardObject.ignorant_move("G1", "F3");
+    boardObject.print_board();
+    
     return 0;
 }
 
