@@ -45,7 +45,7 @@ class Piece {
 
         int from_symbol (char symbol) {
 
-            /* Returns the corresponding piece id from symbol */
+            /* Returns the corresponding piece id from FEN symbol */
             
             int i;
             for (i = 0; i < symbols.size(); i++) {
@@ -58,15 +58,17 @@ class Piece {
 
         };
 
-        string name_from_symbol (int symbol, int color = 0) {
+        string name_from_symbol (int symbol) {
+
+            /* Returns color and piece name from FEN symbol. */
 
             const char sym = tolower(symbol);
             string name = "";
 
-            if (color == 16) {
-                name += "black ";
-            } else if (color == 8) {
+            if (is_white(symbol)) {
                 name += "white ";
+            } else {
+                name += "black ";
             }
 
             // pick name based on symbol
@@ -160,7 +162,8 @@ class Board {
 
 
         /* output methods */
-        void print_board (char flip_side = 'w') {
+        void print_board () {
+            
             /* Prints the board in the terminal */
             
             // iterate through grid
@@ -169,8 +172,8 @@ class Board {
             for (int rank = 7; rank >= 0; rank--) {
                 line = "";
                 for (int file = 0; file < 8; file++) {
-                    id = rank * 8 + file + 1;
-                    line += grid[id]["value"];
+                    id = rank * 8 + file;
+                    line += grid[id]["symbol"];
                 }
                 cout << line << endl;
             }
@@ -218,34 +221,34 @@ class Board {
             for (int i = 0; i < fen.size(); i++) {
                 
                 _char = fen[i];
-                cout << "test y " << i << " " <<  _char << endl;
+                //cout << "test y " << i << " " <<  _char << endl;
 
                 // parse piece locations
                 if (!pieces_completely_parsed) {
-                    cout << "test 7" << endl;
+                    //cout << "test 7" << endl;
 
                     // determine piece and color from symbol char
                     piece = pieces.from_symbol(_char);
                     
                     if (_char == '&') {
-                        cout << "test 7.1" << endl;
-                        cout << "test +" << endl;
+                        //cout << "test 7.1" << endl;
+                        //cout << "test +" << endl;
                         // decrement rank
                         rank--;
                         // reset pointer to A file
                         file = 1;
-                        cout << "test 7.2" << endl;
+                        //cout << "test 7.2" << endl;
                         continue;
                     // if integer is parsed shift file
                     } else if (isdigit(_char)) {
-                        cout << "test 7.3" << endl;
-                        cout << "test 0" << endl;
+                        //cout << "test 7.3" << endl;
+                        //cout << "test 0" << endl;
                         // integers account for file shifts
                         file += _char - '0';
-                        cout << "test 7.4" << endl;
+                        //cout << "test 7.4" << endl;
                         continue;
                     } else if (_char == ' ') {
-                        cout << "test 7.5" << endl;
+                        //cout << "test 7.5" << endl;
                         pieces_completely_parsed = 1;
                     }
                     
@@ -258,27 +261,27 @@ class Board {
                     }
                     
                     // determine the id from current rank and file pointer
-                    id = file + 8 * (rank-1); 
+                    id = file - 1 + 8 * (rank - 1); 
                     coord = get_coord_from_id(id);
-                    cout << "id" << id << "  coord" << coord << endl;
+                    //cout << "id" << id << "  coord" << coord << endl;
                     // place the piece
                     place_piece(piece, color, coord);
-                    cout << "test 7.0" << endl;
+                    //cout << "test 7.0" << endl;
 
                     // increment file
                     file++;
-                    cout << "test 7.6" << endl;
+                    //cout << "test 7.6" << endl;
                 
                 // check for active color & override
                 } else if (pieces_completely_parsed && !active_color_parsed && (_char == 'b' || _char == 'w')) {
-                    cout << "test 2" << endl;
+                    //cout << "test 2" << endl;
                     active_color = _char;
                     active_color_parsed = 1;
                     file++;
 
                 // check for castling rights 
                 } else if (pieces_completely_parsed && active_color_parsed && !castling_parsed ) {
-                    cout << "test 3" << endl;
+                    //cout << "test 3" << endl;
                     if (_char == ' ') {
                         castling_parsed = 1;
                     } else if (_char == 'K') {
@@ -293,27 +296,27 @@ class Board {
                 
                 // check for en-passant availability
                 } else if (castling_parsed && !en_passant_parsed) {
-                    cout << "test 4" << endl;
+                    //cout << "test 4" << endl;
                     en_passant_coord += _char;
                     if (_char == '-' || en_passant_coord.size() >= 2) {
                         en_passant_parsed = 1;
-                        file++;
+                        i++;
                     }
                 // parse and denote half clock count
                 } else if (en_passant_parsed && !half_clock_parsed) {
-                    cout << "test 5" << endl;
+                    //cout << "test 5" << endl;
                     if (_char == ' ') {
                         half_clock_parsed = 1;
-                        file++;
+                        i++;
                     }
                 // parse and denote the move count
                 } else if (half_clock_parsed && !move_count_parsed) {
-                    cout << "test 6" << endl;
+                    //cout << "test 6" << endl;
                     moves += _char;
                     if (i == fen.size()-1) {
-                        cout << "test 1" << moves << endl;
+                        cout << "test moves " << moves << endl;
                         move_count = stoi(moves);
-                        cout << "test 2" << endl;
+                        cout << "Successfully loaded position from FEN." << endl;
                         // finished   
                     }
                 } 
@@ -323,19 +326,20 @@ class Board {
         };
         
         void load_starting_position () {
-            cout << "load_start_pos started";
+            
             /* Loads all pieces to the board grid by using their 
             symbol values. Start position fen is loaded via fen parser.*/
 
+            cout << "load starting position ..." << endl;
             load_position_from_fen(starting_position_fen);
-            cout << "load_start_pos succeeded";
+            cout << "successfully loaded starting position." << endl;
         };
 
         void place_piece (int piece, int color, string coord_str) {
 
             /* Places a piece on the board */
             char piece_symbol = pieces.to_symbol(piece, color);
-            cout << "place " << pieces.name_from_symbol(piece_symbol, color) << " to " << coord_str << endl;
+            cout << "place " << pieces.name_from_symbol(piece_symbol) << "(" << piece_symbol << ")" << " to " << coord_str << endl;
             // convert the piece value to corr. symbol and set it at req. coord.
             
             set_symbol_at_coord(piece_symbol, coord_str);
@@ -456,10 +460,10 @@ int main (void) {
     
     // initialize a new board object
     Board boardObject;
-    int id = 0;
-    cout << "id test " << id << " " << boardObject.get_coord_from_id(id);
-    //boardObject.load_starting_position();
-    //boardObject.print_board();
+    // int id = 0;
+    // cout << "id test " << id << " " << boardObject.get_coord_from_id(id);
+    boardObject.load_starting_position();
+    boardObject.print_board();
     return 0;
 }
 
