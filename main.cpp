@@ -208,33 +208,39 @@ class Board {
 
         };
 
-        string get_symbol_from_coord (string coord_str) {
+        char get_symbol_from_coord (string coord_str) {
 
             /* Returns the occupation symbol i.e. chess piece at the 
             desired coordinate. The return '_' indicates an empty square. */
 
-            return get_square_from_coord(coord_str)["symbol"];
+            return get_square_from_coord(coord_str)["symbol"][0];
         };
 
 
         /* output methods */
-        void print_board () {
+        void print_board (int unicode = 0) {
             
-            /* Prints the board in the terminal */
+            /* Prints the board in the terminal.
+            If 'unicode' is enabled chess unicode symbols will be displayed
+            otherwise alphabetical symbols. */
             
             // iterate through grid
             int id;
             string line;
-            cout << endl;
+            wcout << endl;
             for (int rank = 7; rank >= 0; rank--) {
                 line = "";
                 for (int file = 0; file < 8; file++) {
                     id = rank * 8 + file;
-                    cout << pieces.to_unicode(grid[id]["symbol"][0]).c_str();
+                    if (unicode) {
+                        wcout << pieces.to_unicode(grid[id]["symbol"][0]).c_str();
+                    } else {
+                        wcout << grid[id]["symbol"][0];
+                    }
                 }
-                cout << endl;
+                wcout << endl;
             }
-            cout << endl;
+            wcout << endl;
         };
 
 
@@ -396,10 +402,11 @@ class Board {
             /* Moves a piece disregarding chess rules by a combination of remove and place methods */
 
             // determine the piece color
-            int color = 8;
+            int color;
             char origin_symbol = get_square_from_coord(origin_coord_str)["symbol"][0];  // not proper
-            int symbol_is_uppercase = origin_symbol >= 'A' && origin_symbol <= 'Z';
-            if ( symbol_is_uppercase ) 
+            if ( pieces.is_white(origin_symbol) ) 
+                color = 8;
+            else 
                 color = 16;
             
             // determine piece
@@ -418,6 +425,8 @@ class Board {
             /* Removes a piece from requested coordinate */
 
             // override square value with underscore
+            char piece_symbol = get_symbol_from_coord(coord_str);
+            cout << "remove " << pieces.name_from_symbol(piece_symbol) << " at " << coord_str << endl;
             set_symbol_at_coord('_', coord_str);
 
         };
@@ -443,6 +452,11 @@ class Board {
 
         };
 
+
+        /* chess rules and logic */
+        void possible_moves (string coord_str) {
+            //
+        }
 
     private:
 
@@ -515,7 +529,7 @@ class Board {
 int main (void) {
 
     // set output mode for unicode printing
-    _setmode(_fileno(stdout), _O_WTEXT);
+    //_setmode(_fileno(stdout), _O_WTEXT);
 
     // initialize a new board and pieces objects
     Piece pieces;
