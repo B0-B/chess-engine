@@ -250,6 +250,7 @@ class Board {
                     } else if (_char == ' ') {
                         //cout << "test 7.5" << endl;
                         pieces_completely_parsed = 1;
+                        continue;
                     }
                     
 
