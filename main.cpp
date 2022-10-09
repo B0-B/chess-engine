@@ -172,13 +172,25 @@ class Board {
             // initialize grid
             build_grid();
             
-            //cout << "test " << get_id_from_coord("H8");
         };
 
 
         /* define get methods */
+        int get_color_from_symbol (char symbol) {
+            if (pieces.is_white(symbol))
+                return 8;
+            else if (symbol == pieces.None)
+                return 0;
+            else
+                return 16; 
+        };
+
         string get_coord_from_id (int id) {
             return grid[id]["coordinate"];
+        };
+
+        string get_coord_from_file_and_rank (int file, int rank) {
+            return get_coord_from_id(file + 1 + 8 * rank);
         };
 
         int get_id_from_coord (string coord_str) {
@@ -216,6 +228,19 @@ class Board {
             return get_square_from_coord(coord_str)["symbol"][0];
         };
 
+        int square_is_occupied (string coord_str) {
+            return get_symbol_from_coord(coord_str) != '_';
+        }
+
+        int square_is_occupied_by_enemy (int friendly_color, string coord_str) {
+
+            char target_symbol = get_symbol_from_coord(coord_str);
+            char target_color = get_color_from_symbol(target_symbol); 
+
+            return target_color != friendly_color && target_color != '_';
+        }
+
+
 
         /* output methods */
         void print_board (int unicode = 0) {
@@ -245,6 +270,29 @@ class Board {
 
 
         /* manipulation/set methods */
+        void ignorant_move (string origin_coord_str, string target_coord_str) {
+
+            /* Moves a piece disregarding chess rules by a combination of remove and place methods */
+
+            // determine the piece color
+            int color;
+            char origin_symbol = get_square_from_coord(origin_coord_str)["symbol"][0];  // not proper
+            if ( pieces.is_white(origin_symbol) ) 
+                color = 8;
+            else 
+                color = 16;
+            
+            // determine piece
+            int piece = pieces.from_symbol(origin_symbol);
+            
+            // remove the piece from origin
+            remove_piece(origin_coord_str);
+
+            // place the piece at new target
+            place_piece(piece, color, target_coord_str);
+
+        };
+
         void load_position_from_fen (string fen) {
 
             /* A fen parsing implementation which generates a position from compact string.
@@ -397,29 +445,6 @@ class Board {
 
         };
 
-        void ignorant_move (string origin_coord_str, string target_coord_str) {
-
-            /* Moves a piece disregarding chess rules by a combination of remove and place methods */
-
-            // determine the piece color
-            int color;
-            char origin_symbol = get_square_from_coord(origin_coord_str)["symbol"][0];  // not proper
-            if ( pieces.is_white(origin_symbol) ) 
-                color = 8;
-            else 
-                color = 16;
-            
-            // determine piece
-            int piece = pieces.from_symbol(origin_symbol);
-            
-            // remove the piece from origin
-            remove_piece(origin_coord_str);
-
-            // place the piece at new target
-            place_piece(piece, color, target_coord_str);
-
-        };
-
         void remove_piece (string coord_str) {
 
             /* Removes a piece from requested coordinate */
@@ -454,8 +479,57 @@ class Board {
 
 
         /* chess rules and logic */
-        void possible_moves (string coord_str) {
-            //
+        const string * allowed_moves (char symbol, string coord_str) {
+
+            /* This method is the main part of move interpretation
+            of every single piece. An array of possible coordinates is returned, if
+            the square is occupied by a friendly piece which has a possible
+            square to move, otherwise an empty array is returned surely. */
+
+            string out [] = {};
+            int color = get_color_from_symbol(symbol);
+            int piece = pieces.from_symbol(symbol);
+
+
+            string target_coord;
+            int rank = stoi(get_square_from_coord(coord_str)["rank"]),
+                file = stoi(get_square_from_coord(coord_str)["file"]);
+
+            // piece-dep. decision tree
+            if (piece == pieces.Pawn) {
+                
+                // check if forward-left captures is possible
+                if (file-1 >= 0 && rank + 1 <= 7) {
+                    target_coord = get_coord_from_file_and_rank(file-1, rank+1);
+                    if (square_is_occupied_by_enemy(color, target_coord)) {
+                        
+                    }
+                
+                }
+
+                // forward-right captures
+                if (file + 1 <= 7 && rank + 1 <= 7) {
+
+                    target_coord = get_coord_from_file_and_rank(file+1, rank+1);
+                    if (square_is_occupied_by_enemy(color, target_coord)) {
+                        
+                    }
+                }
+                
+                // pushing forward
+                if (rank + 1 <= 7) {
+                    target_coord = get_coord_from_file_and_rank(file, rank+1);
+                    if (square_is_occupied_by_enemy(color, target_coord)) {
+                        
+                    }
+                }
+            } 
+        };
+        void possible_directions (string coord_str) {
+
+            /*  */
+
+            // determine symbol
         }
 
     private:
