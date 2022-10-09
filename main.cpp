@@ -210,13 +210,12 @@ class Board {
             while (delimiter_index != string::npos) {
                 delimiter_index = fen.find(delimiter);
                 fen[delimiter_index] = '&';
-                cout << "test x " << fen << endl;
             }
             
             
             // delete global en passant coord
             en_passant_coord = "";
-            cout << "fen size " << fen.size() << endl;
+            //cout << "fen size " << fen.size() << endl;
             // parse ...
             for (int i = 0; i < fen.size(); i++) {
                 
@@ -229,6 +228,7 @@ class Board {
 
                     // determine piece and color from symbol char
                     piece = pieces.from_symbol(_char);
+                    cout << "test piece " << _char << " " << piece << endl;
                     
                     if (_char == '&') {
                         //cout << "test 7.1" << endl;
@@ -255,9 +255,9 @@ class Board {
 
                     // otherwise
                     if (pieces.is_white(_char)) {
-                        color = 16;
-                    } else {
                         color = 8;
+                    } else {
+                        color = 16;
                     }
                     
                     // determine the id from current rank and file pointer
@@ -426,7 +426,16 @@ class Board {
 
             /* We will numerate each square by an array index 0-63 
             always starting from white's side i.e. A1 coordinate.
-            Each array element maps to the corr. square information.  */
+            Each array element maps to the corr. square information.  
+            
+            id      0   1   2   ... 62  63
+            coord   A1  A2  A3  ... H7  H8    
+            object  map map map ... map map
+                     |
+                   symbol
+                square color
+                    etc.
+            */
             
             int rank, file;
             string coord;
