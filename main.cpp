@@ -505,7 +505,7 @@ class Board {
 
             // piece-dep. decision tree
             if (piece == pieces.Pawn) {
-                
+
                 // if white is playing
                 if (color == 8) {
 
@@ -565,7 +565,6 @@ class Board {
 
                 }
                 
-                
 
             } else if (piece == pieces.Knight) {
 
@@ -587,8 +586,11 @@ class Board {
 
                 // front 2 right 1
                 if (file + 1 < 8 && rank + 2 < 8) {
-                    out.push_back(target_coord);
-                }
+                    target_coord = get_coord_from_file_and_rank(file + 1, rank + 2);
+                    if (!square_is_occupied(target_coord) || (square_is_occupied(target_coord) && square_is_occupied_by_enemy(color, coord_str))) {
+                        out.push_back(target_coord);
+                    }
+                } 
 
                 // front 1 right 2
                 if (file + 2 >= 0 && rank + 1 < 8) {
@@ -624,13 +626,356 @@ class Board {
 
                 // back 1 right 2
                 if (file + 2 < 8 && rank - 1 >= 0) {
-                    target_coord = get_coord_from_file_and_rank(file + 1, rank - 2);
+                    target_coord = get_coord_from_file_and_rank(file + 2, rank - 1);
                     if (!square_is_occupied(target_coord) || (square_is_occupied(target_coord) && square_is_occupied_by_enemy(color, coord_str))) {
                         out.push_back(target_coord);
                     }
                 } 
+
+            } else if (piece == pieces.Bishop) {
+
+                // foward right direction
+                for (int i = 1; i < 8; i++) {
+                    if (file + i < 8 && rank + i < 8) {
+                        target_coord = get_coord_from_file_and_rank(file+i, rank+i);
+                        // square is free
+                        if (!square_is_occupied(target_coord)) {
+                            out.push_back(target_coord);
+                        } 
+                        // capture
+                        else if (square_is_occupied_by_enemy(color, coord_str)) {
+                            out.push_back(target_coord);
+                            break;
+                        } 
+                        // square is blocked by friendly piece
+                        else {
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+                // foward left direction
+                for (int i = 1; i < 8; i++) {
+                    if (file - i >= 0 && rank + i < 8) {
+                        target_coord = get_coord_from_file_and_rank(file - i, rank+i);
+                        // square is free
+                        if (!square_is_occupied(target_coord)) {
+                            out.push_back(target_coord);
+                        } 
+                        // capture
+                        else if (square_is_occupied_by_enemy(color, coord_str)) {
+                            out.push_back(target_coord);
+                            break;
+                        } else {
+                            break;
+                        }
+                    } 
+                    // square is blocked by friendly piece
+                    else {
+                        break;
+                    }
+                }
+                // backward right direction
+                for (int i = 1; i < 8; i++) {
+                    if (file + i < 8 && rank - i >= 0) {
+                        target_coord = get_coord_from_file_and_rank(file + i, rank - i);
+                        // square is free
+                        if (!square_is_occupied(target_coord)) {
+                            out.push_back(target_coord);
+                        } 
+                        // capture
+                        else if (square_is_occupied_by_enemy(color, coord_str)) {
+                            out.push_back(target_coord);
+                            break;
+                        } 
+                        // square is blocked by friendly piece
+                        else {
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+                // backward left direction
+                for (int i = 1; i < 8; i++) {
+                    if (file - i >= 0 && rank - i >= 0) {
+                        target_coord = get_coord_from_file_and_rank(file - i, rank - i);
+                        // square is free
+                        if (!square_is_occupied(target_coord)) {
+                            out.push_back(target_coord);
+                        } 
+                        // capture
+                        else if (square_is_occupied_by_enemy(color, coord_str)) {
+                            out.push_back(target_coord);
+                            break;
+                        } 
+                        // square is blocked by friendly piece
+                        else {
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+            } else if (piece == pieces.Rook) {
+
+                // forward
+                for (int i = 1; i < 8; i++) {
+                    if (rank + i < 8) {
+                        target_coord = get_coord_from_file_and_rank(file, rank+i);
+                        if (!square_is_occupied(target_coord)) {
+                            out.push_back(target_coord);
+                        } else if (square_is_occupied(target_coord) && square_is_occupied_by_enemy(color, coord_str)) {
+                            out.push_back(target_coord);
+                            break;
+                        } else {
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+
+                // backward
+                for (int i = 1; i < 8; i++) {
+                    if (rank - i >= 0) {
+                        target_coord = get_coord_from_file_and_rank(file, rank - i);
+                        if (!square_is_occupied(target_coord)) {
+                            out.push_back(target_coord);
+                        } else if (square_is_occupied(target_coord) && square_is_occupied_by_enemy(color, coord_str)) {
+                            out.push_back(target_coord);
+                            break;
+                        } else {
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+
+                // left
+                for (int i = 1; i < 8; i++) {
+                    if (file - i >= 0) {
+                        target_coord = get_coord_from_file_and_rank(file - i, rank);
+                        if (!square_is_occupied(target_coord)) {
+                            out.push_back(target_coord);
+                        } else if (square_is_occupied(target_coord) && square_is_occupied_by_enemy(color, coord_str)) {
+                            out.push_back(target_coord);
+                            break;
+                        } else {
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+
+                // right
+                for (int i = 1; i < 8; i++) {
+                    if (file + i < 8) {
+                        target_coord = get_coord_from_file_and_rank(file + i, rank);
+                        if (!square_is_occupied(target_coord)) {
+                            out.push_back(target_coord);
+                        } else if (square_is_occupied(target_coord) && square_is_occupied_by_enemy(color, coord_str)) {
+                            out.push_back(target_coord);
+                            break;
+                        } else {
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+                
+            } else if (piece == pieces.Queen) {
+
+                // the first four straight directions are analogous to the rook
+                // forward
+                for (int i = 1; i < 8; i++) {
+                    if (rank + i < 8) {
+                        target_coord = get_coord_from_file_and_rank(file, rank+i);
+                        if (!square_is_occupied(target_coord)) {
+                            out.push_back(target_coord);
+                        } else if (square_is_occupied(target_coord) && square_is_occupied_by_enemy(color, coord_str)) {
+                            out.push_back(target_coord);
+                            break;
+                        } else {
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+
+                // backward
+                for (int i = 1; i < 8; i++) {
+                    if (rank - i >= 0) {
+                        target_coord = get_coord_from_file_and_rank(file, rank - i);
+                        if (!square_is_occupied(target_coord)) {
+                            out.push_back(target_coord);
+                        } else if (square_is_occupied(target_coord) && square_is_occupied_by_enemy(color, coord_str)) {
+                            out.push_back(target_coord);
+                            break;
+                        } else {
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+
+                // left
+                for (int i = 1; i < 8; i++) {
+                    if (file - i >= 0) {
+                        target_coord = get_coord_from_file_and_rank(file - i, rank);
+                        if (!square_is_occupied(target_coord)) {
+                            out.push_back(target_coord);
+                        } else if (square_is_occupied(target_coord) && square_is_occupied_by_enemy(color, coord_str)) {
+                            out.push_back(target_coord);
+                            break;
+                        } else {
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+
+                // right
+                for (int i = 1; i < 8; i++) {
+                    if (file + i < 8) {
+                        target_coord = get_coord_from_file_and_rank(file + i, rank);
+                        if (!square_is_occupied(target_coord)) {
+                            out.push_back(target_coord);
+                        } else if (square_is_occupied(target_coord) && square_is_occupied_by_enemy(color, coord_str)) {
+                            out.push_back(target_coord);
+                            break;
+                        } else {
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+
+                // the diagonal directions are analogous to the bishop
+                // foward right direction
+                for (int i = 1; i < 8; i++) {
+                    if (file + i < 8 && rank + i < 8) {
+                        target_coord = get_coord_from_file_and_rank(file+i, rank+i);
+                        // square is free
+                        if (!square_is_occupied(target_coord)) {
+                            out.push_back(target_coord);
+                        } 
+                        // capture
+                        else if (square_is_occupied_by_enemy(color, coord_str)) {
+                            out.push_back(target_coord);
+                            break;
+                        } 
+                        // square is blocked by friendly piece
+                        else {
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+                // foward left direction
+                for (int i = 1; i < 8; i++) {
+                    if (file - i >= 0 && rank + i < 8) {
+                        target_coord = get_coord_from_file_and_rank(file - i, rank+i);
+                        // square is free
+                        if (!square_is_occupied(target_coord)) {
+                            out.push_back(target_coord);
+                        } 
+                        // capture
+                        else if (square_is_occupied_by_enemy(color, coord_str)) {
+                            out.push_back(target_coord);
+                            break;
+                        } else {
+                            break;
+                        }
+                    } 
+                    // square is blocked by friendly piece
+                    else {
+                        break;
+                    }
+                }
+                // backward right direction
+                for (int i = 1; i < 8; i++) {
+                    if (file + i < 8 && rank - i >= 0) {
+                        target_coord = get_coord_from_file_and_rank(file + i, rank - i);
+                        // square is free
+                        if (!square_is_occupied(target_coord)) {
+                            out.push_back(target_coord);
+                        } 
+                        // capture
+                        else if (square_is_occupied_by_enemy(color, coord_str)) {
+                            out.push_back(target_coord);
+                            break;
+                        } 
+                        // square is blocked by friendly piece
+                        else {
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+                // backward left direction
+                for (int i = 1; i < 8; i++) {
+                    if (file - i >= 0 && rank - i >= 0) {
+                        target_coord = get_coord_from_file_and_rank(file - i, rank - i);
+                        // square is free
+                        if (!square_is_occupied(target_coord)) {
+                            out.push_back(target_coord);
+                        } 
+                        // capture
+                        else if (square_is_occupied_by_enemy(color, coord_str)) {
+                            out.push_back(target_coord);
+                            break;
+                        } 
+                        // square is blocked by friendly piece
+                        else {
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+            } else if (piece == pieces.King) {
+
+                // iterate through neighbourhood
+                for (int i = -1; i < 2; i++) {
+                    for (int j = -1; j < 2; j++) {
+                        // skip origin square
+                        if ( !(i == 0 && j == 0) && square_is_valid(rank+i, file+j) ) {
+                            target_coord = get_coord_from_file_and_rank(rank+i, file+j);
+                            if (!square_is_occupied(target_coord) || square_is_occupied_by_enemy(color, target_coord)) {
+                                out.push_back(target_coord);
+                            }
+                        }
+                    }
+                }
+                
             }
+            
+            return out;
         };
+        
+        int square_is_valid (int rank, int file) {
+
+            /* Checks if the rank and file integer provided map to a valid chess square. */
+
+            if (rank >= 0 && rank < 8 && file >= 0 && file < 8) {
+                return 1;
+            } else {
+                return 0;
+            }
+
+        }
+
         void possible_directions (string coord_str) {
 
             /*  */
@@ -724,4 +1069,3 @@ int main (void) {
     
     return 0;
 }
-
