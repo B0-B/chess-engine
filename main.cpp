@@ -13,8 +13,7 @@ B0-B
 #include <map>
 #include <string>
 #include <ctype.h>
-#include <fcntl.h>
-#include <io.h>
+#include <vector>
 
 using namespace std;
 
@@ -479,14 +478,15 @@ class Board {
 
 
         /* chess rules and logic */
-        const string * allowed_moves (char symbol, string coord_str) {
+        vector<string> reachable_target_coords (char symbol, string coord_str) {
 
             /* This method is the main part of move interpretation
-            of every single piece. An array of possible coordinates is returned, if
-            the square is occupied by a friendly piece which has a possible
-            square to move, otherwise an empty array is returned surely. */
+            of a single piece at a coord. An array of reachable coordinates is returned, 
+            if the square is occupied by a friendly piece which has a possible
+            square to move, otherwise an empty array is returned surely. 
+            The reachable targets are not necessary legal moves. */
 
-            string out [] = {};
+            vector<string> out = {};
             int color = get_color_from_symbol(symbol);
             int piece = pieces.from_symbol(symbol);
 
@@ -495,35 +495,141 @@ class Board {
             int rank = stoi(get_square_from_coord(coord_str)["rank"]),
                 file = stoi(get_square_from_coord(coord_str)["file"]);
 
+            // actions like forward pushing of a piece will behave swapped
+            if (color == 8) {
+                int flip = 1;
+            } else if (color == 16) {
+                int flip = -1;
+            }
+            
+
             // piece-dep. decision tree
             if (piece == pieces.Pawn) {
                 
-                // check if forward-left captures is possible
-                if (file-1 >= 0 && rank + 1 <= 7) {
-                    target_coord = get_coord_from_file_and_rank(file-1, rank+1);
-                    if (square_is_occupied_by_enemy(color, target_coord)) {
-                        
+                // if white is playing
+                if (color == 8) {
+
+                    // check if forward-left captures is possible
+                    if (file-1 >= 0 && rank + 1 < 8) {
+                        target_coord = get_coord_from_file_and_rank(file-1, rank+1);
+                        if (square_is_occupied_by_enemy(color, target_coord)) {
+                            out.push_back(target_coord);
+                        }
                     }
+
+                    // forward-right captures
+                    if (file + 1 < 8 && rank + 1 < 8) {
+                        target_coord = get_coord_from_file_and_rank(file+1, rank+1);
+                        if (square_is_occupied_by_enemy(color, target_coord)) {
+                            out.push_back(target_coord);
+                        }
+                    }
+                    
+                    // pushing forward
+                    if (rank + 1 < 8) {
+                        target_coord = get_coord_from_file_and_rank(file, rank+1);
+                        if (!square_is_occupied(target_coord)) {
+                            out.push_back(target_coord);
+                        }
+                    }
+
+                    // en-passant possibility
+
+                } else if (color == 16) {
+
+                    // check if forward-left captures is possible
+                    if (file+1 < 8 && rank - 1 >= 0) {
+                        target_coord = get_coord_from_file_and_rank(file-1, rank - 1);
+                        if (square_is_occupied_by_enemy(color, target_coord)) {
+                            out.push_back(target_coord);
+                        }
+                    }
+
+                    // forward-right captures
+                    if (file - 1 >= 0 && rank - 1 >= 0) {
+                        target_coord = get_coord_from_file_and_rank(file - 1, rank - 1);
+                        if (square_is_occupied_by_enemy(color, target_coord)) {
+                            out.push_back(target_coord);
+                        }
+                    }
+                    
+                    // pushing forward
+                    if (rank - 1 >= 0) {
+                        target_coord = get_coord_from_file_and_rank(file, rank - 1);
+                        if (!square_is_occupied(target_coord)) {
+                            out.push_back(target_coord);
+                        }
+                    }
+
+                    // en-passant possibility
+
+                }
                 
+                
+
+            } else if (piece == pieces.Knight) {
+
+                // front 2 left 1
+                if (file - 1 >= 0 && rank + 2 <= 7) {
+                    target_coord = get_coord_from_file_and_rank(file-1, rank+2);
+                    if (!square_is_occupied(target_coord) || (square_is_occupied(target_coord) && square_is_occupied_by_enemy(color, coord_str))) {
+                        out.push_back(target_coord);
+                    }
+                }
+                
+                // front 1 left 2
+                if (file - 2 >= 0 && rank + 1 <= 7) {
+                    target_coord = get_coord_from_file_and_rank(file-1, rank+2);
+                    if (!square_is_occupied(target_coord) || (square_is_occupied(target_coord) && square_is_occupied_by_enemy(color, coord_str))) {
+                        out.push_back(target_coord);
+                    }
+                } 
+
+                // front 2 right 1
+                if (file + 1 < 8 && rank + 2 < 8) {
+                    out.push_back(target_coord);
                 }
 
-                // forward-right captures
-                if (file + 1 <= 7 && rank + 1 <= 7) {
+                // front 1 right 2
+                if (file + 2 >= 0 && rank + 1 < 8) {
+                    target_coord = get_coord_from_file_and_rank(file + 2, rank + 1);
+                    if (!square_is_occupied(target_coord) || (square_is_occupied(target_coord) && square_is_occupied_by_enemy(color, coord_str))) {
+                        out.push_back(target_coord);
+                    }
+                } 
 
-                    target_coord = get_coord_from_file_and_rank(file+1, rank+1);
-                    if (square_is_occupied_by_enemy(color, target_coord)) {
-                        
+                // back 2 left 1
+                if (file - 1 >= 0 && rank - 2 >= 0) {
+                    target_coord = get_coord_from_file_and_rank(file - 1, rank - 2);
+                    if (!square_is_occupied(target_coord) || (square_is_occupied(target_coord) && square_is_occupied_by_enemy(color, coord_str))) {
+                        out.push_back(target_coord);
                     }
-                }
-                
-                // pushing forward
-                if (rank + 1 <= 7) {
-                    target_coord = get_coord_from_file_and_rank(file, rank+1);
-                    if (square_is_occupied_by_enemy(color, target_coord)) {
-                        
+                } 
+
+                // back 1 left 2
+                if (file - 2 >= 0 && rank - 1 >= 0) {
+                    target_coord = get_coord_from_file_and_rank(file - 2, rank - 1);
+                    if (!square_is_occupied(target_coord) || (square_is_occupied(target_coord) && square_is_occupied_by_enemy(color, coord_str))) {
+                        out.push_back(target_coord);
                     }
-                }
-            } 
+                } 
+
+                // back 2 right 1
+                if (file + 1 < 8 && rank - 2 >= 0) {
+                    target_coord = get_coord_from_file_and_rank(file + 1, rank - 2);
+                    if (!square_is_occupied(target_coord) || (square_is_occupied(target_coord) && square_is_occupied_by_enemy(color, coord_str))) {
+                        out.push_back(target_coord);
+                    }
+                } 
+
+                // back 1 right 2
+                if (file + 2 < 8 && rank - 1 >= 0) {
+                    target_coord = get_coord_from_file_and_rank(file + 1, rank - 2);
+                    if (!square_is_occupied(target_coord) || (square_is_occupied(target_coord) && square_is_occupied_by_enemy(color, coord_str))) {
+                        out.push_back(target_coord);
+                    }
+                } 
+            }
         };
         void possible_directions (string coord_str) {
 
