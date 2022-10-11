@@ -567,7 +567,7 @@ class Board {
                     // pushing forward
                     // select the amount of steps a pawn can make dep. on starting rank
                     int steps = 1;
-                    if (rank == 1) {steps = 2;}
+                    if (rank == 6) {steps = 2;}
                     // iterate possibilities
                     for (int step = 1; step < steps + 1; step++) {
                         if (rank - step >=0 ) {
