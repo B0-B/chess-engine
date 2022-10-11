@@ -482,7 +482,7 @@ class Board {
             //
         };
 
-        vector<string> reachable_target_coords (char symbol, string coord_str) {
+        vector<string> reachable_target_coords (string coord_str) {
 
             /* This method is the main part of move interpretation
             of a single piece at a coord. An array of reachable coordinates is returned, 
@@ -491,6 +491,11 @@ class Board {
             The reachable targets are not necessary legal moves. */
 
             vector<string> out = {};
+            char symbol = get_symbol_from_coord(coord_str);
+            
+            // short cut in case the square is empty
+            if (symbol == '_') {return out;}
+            
             int color = get_color_from_symbol(symbol);
             int piece = pieces.from_symbol(symbol);
 
@@ -1082,6 +1087,7 @@ int main (void) {
     // int id = 0;
     // cout << "id test " << id << " " << boardObject.get_coord_from_id(id);
     boardObject.load_starting_position();
+    boardObject.reachable_target_coords("A2");
     boardObject.print_board();
     boardObject.ignorant_move("G1", "F3");
     boardObject.print_board();
