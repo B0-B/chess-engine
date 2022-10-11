@@ -478,6 +478,10 @@ class Board {
 
 
         /* chess rules and logic */
+        vector<string> square_is_in_scope_by_enemy (string coord_str) {
+            //
+        };
+
         vector<string> reachable_target_coords (char symbol, string coord_str) {
 
             /* This method is the main part of move interpretation
@@ -526,12 +530,19 @@ class Board {
                     }
                     
                     // pushing forward
-                    if (rank + 1 < 8) {
-                        target_coord = get_coord_from_file_and_rank(file, rank+1);
-                        if (!square_is_occupied(target_coord)) {
-                            out.push_back(target_coord);
+                    // select the amount of steps a pawn can make dep. on starting rank
+                    int steps = 1;
+                    if (rank == 1) {steps = 2;}
+                    // iterate possibilities
+                    for (int step = 1; step < steps + 1; step++) {
+                        if (rank + step < 8) {
+                            target_coord = get_coord_from_file_and_rank(file, rank + step);
+                            if (!square_is_occupied(target_coord)) {
+                                out.push_back(target_coord);
+                            }
                         }
                     }
+                    
 
                     // en-passant possibility
 
@@ -554,10 +565,16 @@ class Board {
                     }
                     
                     // pushing forward
-                    if (rank - 1 >= 0) {
-                        target_coord = get_coord_from_file_and_rank(file, rank - 1);
-                        if (!square_is_occupied(target_coord)) {
-                            out.push_back(target_coord);
+                    // select the amount of steps a pawn can make dep. on starting rank
+                    int steps = 1;
+                    if (rank == 1) {steps = 2;}
+                    // iterate possibilities
+                    for (int step = 1; step < steps + 1; step++) {
+                        if (rank - step >=0 ) {
+                            target_coord = get_coord_from_file_and_rank(file, rank - step);
+                            if (!square_is_occupied(target_coord)) {
+                                out.push_back(target_coord);
+                            }
                         }
                     }
 
@@ -958,6 +975,8 @@ class Board {
                         }
                     }
                 }
+
+                // castling
                 
             }
             
