@@ -165,7 +165,12 @@ class Board {
 
     public:
 
-        // constructor
+        /* ---- General Parameters ---- */
+        // Verbose mode which prints every operation
+        bool __verbose__ = true; 
+
+
+        // constructor sequence
         Board(void) {
 
             // initialize grid
@@ -189,7 +194,7 @@ class Board {
         };
 
         string get_coord_from_file_and_rank (int file, int rank) {
-            return get_coord_from_id(file + 1 + 8 * rank);
+            return get_coord_from_id(file + 8 * rank);
         };
 
         int get_id_from_coord (string coord_str) {
@@ -240,7 +245,6 @@ class Board {
         }
 
 
-
         /* output methods */
         void print_board (int unicode = 0) {
             
@@ -266,6 +270,16 @@ class Board {
             }
             wcout << endl;
         };
+
+        void show_reachable_squares (string coord_str) {
+            
+            /* Prints the reachable targets delimited into console */
+            vector<string> targets = reachable_target_coords(coord_str);
+            for (int i = 0; i < targets.size(); i++) {
+                cout << targets[i] << " ";
+            }
+            cout << endl;
+        }
 
 
         /* manipulation/set methods */
@@ -337,7 +351,7 @@ class Board {
 
                     // determine piece and color from symbol char
                     piece = pieces.from_symbol(_char);
-                    cout << "test piece " << _char << " " << piece << endl;
+                    //cout << "test piece " << _char << " " << piece << endl;
                     
                     // if line break is parsed decrement rank
                     if (_char == '&') {
@@ -437,8 +451,9 @@ class Board {
 
             /* Places a piece on the board */
             char piece_symbol = pieces.to_symbol(piece, color);
-            cout << "place " << pieces.name_from_symbol(piece_symbol) << " (" << piece_symbol << ")" << " at " << coord_str << endl;
-            // convert the piece value to corr. symbol and set it at req. coord.
+
+            if (__verbose__)
+                cout << "place " << pieces.name_from_symbol(piece_symbol) << " (" << piece_symbol << ")" << " at " << coord_str << endl;
             
             set_symbol_at_coord(piece_symbol, coord_str);
 
@@ -448,9 +463,12 @@ class Board {
 
             /* Removes a piece from requested coordinate */
 
-            // override square value with underscore
             char piece_symbol = get_symbol_from_coord(coord_str);
-            cout << "remove " << pieces.name_from_symbol(piece_symbol) << " (" << piece_symbol << ")" << " at " << coord_str << endl;
+
+            if (__verbose__)
+                cout << "remove " << pieces.name_from_symbol(piece_symbol) << " (" << piece_symbol << ")" << " at " << coord_str << endl;
+            
+            // override square value with underscore
             set_symbol_at_coord('_', coord_str);
 
         };
@@ -477,10 +495,80 @@ class Board {
         };
 
 
-        /* chess rules and logic */
-        vector<string> square_is_in_scope_by_enemy (string coord_str) {
-            //
+        
+    private:
+
+        /*   Define global variables   */
+        // prepare letters for the board fileumns 
+        const char letter_coordinates[8] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'};
+        const string starting_position_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+        char active_color = 'w';
+
+        // castling rights
+        int castling_right_k_w = 1;
+        int castling_right_k_b = 1;
+        int castling_right_q_w = 1;
+        int castling_right_q_b = 1;
+
+        string en_passant_coord = "-";
+        int half_clock = 0;
+        int move_count = 1;
+
+        // The board grid maps the square IDs (0 ... 63) => square info.*/
+        map<string, string> grid[64] = {};
+
+        // Load the pieces
+        Piece pieces;
+
+        /*   init methods   */
+        void build_grid () {
+
+            /* We will numerate each square by an array index 0-63 
+            always starting from white's side i.e. A1 coordinate.
+            Each array element maps to the corr. square information.  
+            
+            id      0   1   2   ... 62  63
+            coord   A1  A2  A3  ... H7  H8    
+            rank    0   1   2   ... 6   7
+            file    0   0   0   ... 7   7
+            object  map map map ... map map
+                     |
+                   symbol
+                square color
+                    rank
+                    file
+                    etc.
+            */
+            
+            int rank, file;
+            string coord;
+            
+            for (int i = 0; i < 64; i++) {
+                
+                // track rank and file
+                rank = (int)( i * 0.125 + 1 );
+                file = i % 8;
+
+                // construct the coordinate by concatenating rank number and fileumn letter
+                coord = letter_coordinates[file] + to_string(rank);
+                //cout << "rank " << rank << " " << coord << endl; // for testing
+
+                // fill the info to the map at id "i"
+                grid[i]["id"] = to_string(i);
+                grid[i]["coordinate"] = coord;
+                grid[i]["rank"] = to_string(rank-1);
+                grid[i]["file"] = to_string(file);  
+                grid[i]["symbol"] = "_";
+                grid[i]["is_light_square"] = (file + rank) % 2 != 0; 
+            }
+
         };
+        
+
+        /* chess rules and logic */
+        // vector<string> square_is_in_scope_by_enemy (string coord_str) {
+        //     //
+        // };
 
         vector<string> reachable_target_coords (string coord_str) {
 
@@ -488,28 +576,34 @@ class Board {
             of a single piece at a coord. An array of reachable coordinates is returned, 
             if the square is occupied by a friendly piece which has a possible
             square to move, otherwise an empty array is returned surely. 
-            The reachable targets are not necessary legal moves. */
+            The reachable targets are not necessary legal moves. 
+            
+            Left to be added:
+            - castling options
+            - en-passant options
+            
+            */
 
             vector<string> out = {};
-            char symbol = get_symbol_from_coord(coord_str);
+            map <string, string> square = get_square_from_coord(coord_str);
+            char symbol = square["symbol"][0];
             
-            // short cut in case the square is empty
+            // cut short in case that the square is empty
             if (symbol == '_') {return out;}
+
             
             int color = get_color_from_symbol(symbol);
             int piece = pieces.from_symbol(symbol);
 
+            cout << "test 1 rank and file " << square["rank"] << " " << square["file"] << endl; 
 
             string target_coord;
-            int rank = stoi(get_square_from_coord(coord_str)["rank"]),
-                file = stoi(get_square_from_coord(coord_str)["file"]);
+            int rank = stoi(square["rank"]), //[0] - '0',
+                file = stoi(square["file"]); //[0] - '0';
 
-            // actions like forward pushing of a piece will behave swapped
-            if (color == 8) {
-                int flip = 1;
-            } else if (color == 16) {
-                int flip = -1;
-            }
+            
+            cout << "test 2 rank and file " << rank << " " << file << endl; 
+            cout << "test symbol " << symbol << endl;  
             
 
             // piece-dep. decision tree
@@ -517,6 +611,8 @@ class Board {
 
                 // if white is playing
                 if (color == 8) {
+
+                    cout << "test color white" << endl;
 
                     // check if forward-left captures is possible
                     if (file-1 >= 0 && rank + 1 < 8) {
@@ -542,6 +638,7 @@ class Board {
                     for (int step = 1; step < steps + 1; step++) {
                         if (rank + step < 8) {
                             target_coord = get_coord_from_file_and_rank(file, rank + step);
+                            cout << "test target " << target_coord << endl;
                             if (!square_is_occupied(target_coord)) {
                                 out.push_back(target_coord);
                             }
@@ -992,85 +1089,15 @@ class Board {
 
             /* Checks if the rank and file integer provided map to a valid chess square. */
 
-            if (rank >= 0 && rank < 8 && file >= 0 && file < 8) {
+            // simply check if the indices lie within the boundaries
+            if (rank >= 0 && rank < 8 && file >= 0 && file < 8)
                 return 1;
-            } else {
+            else
                 return 0;
-            }
-
+            
         }
 
-        void possible_directions (string coord_str) {
 
-            /*  */
-
-            // determine symbol
-        }
-
-    private:
-
-        /*   Define global variables   */
-        // prepare letters for the board fileumns 
-        const char letter_coordinates[8] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'};
-        const string starting_position_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-        char active_color = 'w';
-
-        // castling rights
-        int castling_right_k_w = 1;
-        int castling_right_k_b = 1;
-        int castling_right_q_w = 1;
-        int castling_right_q_b = 1;
-
-        string en_passant_coord = "-";
-        int half_clock = 0;
-        int move_count = 1;
-
-        // The board grid maps the square IDs (0 ... 63) => square info.*/
-        map<string, string> grid[64] = {};
-        // Load the pieces
-        Piece pieces;
-
-
-        /*   init methods   */
-        void build_grid () {
-
-            /* We will numerate each square by an array index 0-63 
-            always starting from white's side i.e. A1 coordinate.
-            Each array element maps to the corr. square information.  
-            
-            id      0   1   2   ... 62  63
-            coord   A1  A2  A3  ... H7  H8    
-            object  map map map ... map map
-                     |
-                   symbol
-                square color
-                    etc.
-            */
-            
-            int rank, file;
-            string coord;
-            
-            for (int i = 0; i < 64; i++) {
-                
-                // track rank and file
-                rank = (int)( i * 0.125 + 1 );
-                file = i % 8;
-
-                // construct the coordinate by concatenating rank number and fileumn letter
-                coord = letter_coordinates[file] + to_string(rank);
-                //cout << "rank " << rank << " " << coord << endl; // for testing
-
-                // fill the info to the map at id "i"
-                grid[i]["id"] = to_string(i);
-                grid[i]["coordinate"] = coord;
-                grid[i]["rank_pos"] = rank;
-                grid[i]["file_pos"] = file;  
-                grid[i]["symbol"] = "_";
-                grid[i]["is_light_square"] = (file + rank) % 2 != 0; 
-            }
-
-        };
-        
 };
 
 
@@ -1087,7 +1114,7 @@ int main (void) {
     // int id = 0;
     // cout << "id test " << id << " " << boardObject.get_coord_from_id(id);
     boardObject.load_starting_position();
-    boardObject.reachable_target_coords("A2");
+    boardObject.show_reachable_squares("A2");
     boardObject.print_board();
     boardObject.ignorant_move("G1", "F3");
     boardObject.print_board();
