@@ -42,7 +42,7 @@ class Piece {
         
 
         int is_white (char symbol) {
-            return symbol >= 'A' && symbol <= 'Z';
+            return symbol >= 'A' && symbol <= 'Z' && symbol != '_';
         }
 
         int from_symbol (char symbol) {
@@ -183,7 +183,7 @@ class Board {
         int get_color_from_symbol (char symbol) {
             if (pieces.is_white(symbol))
                 return 8;
-            else if (symbol == pieces.None)
+            else if (symbol == '_')
                 return 0;
             else
                 return 16; 
@@ -238,10 +238,13 @@ class Board {
 
         int square_is_occupied_by_enemy (int friendly_color, string coord_str) {
 
-            char target_symbol = get_symbol_from_coord(coord_str);
-            char target_color = get_color_from_symbol(target_symbol); 
+            /* Returns boolean-like integer. The return is 1 if the square is occupied by enemy piece otherwise 0 */
 
-            return target_color != friendly_color && target_color != '_';
+            char target_symbol = get_symbol_from_coord(coord_str);
+            int target_color = get_color_from_symbol(target_symbol); 
+
+            return target_color != friendly_color && target_color != 0;
+
         }
 
 
@@ -595,15 +598,15 @@ class Board {
             int color = get_color_from_symbol(symbol);
             int piece = pieces.from_symbol(symbol);
 
-            cout << "test 1 rank and file " << square["rank"] << " " << square["file"] << endl; 
+            // cout << "test 1 rank and file " << square["rank"] << " " << square["file"] << endl; 
 
             string target_coord;
-            int rank = stoi(square["rank"]), //[0] - '0',
-                file = stoi(square["file"]); //[0] - '0';
+            int rank = stoi(square["rank"]),
+                file = stoi(square["file"]); 
 
             
-            cout << "test 2 rank and file " << rank << " " << file << endl; 
-            cout << "test symbol " << symbol << endl;  
+            // cout << "test 2 rank and file " << rank << " " << file << endl; 
+            // cout << "test symbol " << symbol << endl;  
             
 
             // piece-dep. decision tree
@@ -626,6 +629,7 @@ class Board {
                     if (file + 1 < 8 && rank + 1 < 8) {
                         target_coord = get_coord_from_file_and_rank(file+1, rank+1);
                         if (square_is_occupied_by_enemy(color, target_coord)) {
+                            cout << "test captures" << endl;
                             out.push_back(target_coord);
                         }
                     }
