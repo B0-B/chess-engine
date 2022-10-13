@@ -60,7 +60,7 @@ class Piece {
 
         };
 
-        string name_from_symbol (int symbol) {
+        string name_from_symbol (char symbol) {
 
             /* Returns color and piece name from FEN symbol. */
 
@@ -157,6 +157,34 @@ class Piece {
                 }
             }
             return unicode;
+        }
+
+        int value (int piece) {
+
+            /* Returns the historically known value of a piece. 
+            The value is normalized by a pawn value i.e. 1. 
+            https://www.chess.com/terms/chess-piece-value*/
+
+            if (piece == 1)
+                return 1;
+            else if (piece == 2)
+                return 3;
+            else if (piece == 3)
+                return 3;
+            else if (piece == 4)
+                return 5;
+            else if (piece == 5)
+                return 9;
+            return 0;
+        };
+
+        int value_from_symbol (char symbol) {
+
+            /* Returns the historically known value of a piece. 
+            The value is normalized by a pawn value i.e. 1. */
+            
+            return value(from_symbol(symbol));
+            
         }
 };
 
@@ -274,6 +302,11 @@ class Board {
             wcout << endl;
         };
 
+        void show_material () {
+            cout << "White material: " << count_material(pieces.w) << endl;
+            cout << "Black material: " << count_material(pieces.b) << endl;
+        };
+
         void show_reachable_squares (string coord_str) {
             
             /* Prints the reachable targets delimited into console */
@@ -283,6 +316,7 @@ class Board {
             }
             cout << endl;
         }
+
 
 
         /* manipulation/set methods */
@@ -1095,7 +1129,6 @@ class Board {
             char symbol = square["symbol"][0];
             
             int color = get_color_from_symbol(symbol);
-            int piece = pieces.from_symbol(symbol);
 
             // cout << "test 1 rank and file " << square["rank"] << " " << square["file"] << endl; 
 
@@ -1228,6 +1261,25 @@ class Board {
             return 0;
         }
 
+        /* Evaluation */
+        int count_material (int color) {
+
+            /* Counts material for specific color */
+
+            char symbol;
+            int piece;
+            int white;
+            int value = 0;
+
+            for (int i = 0; i < 64; i++) {
+                symbol = grid[i]["symbol"][0];
+                white = pieces.is_white(symbol);
+                if (white && color == 8 || !white && color == 16 )
+                    value = value + pieces.value_from_symbol(symbol);
+            }
+
+            return value;
+        }
 };
 
 
@@ -1249,6 +1301,7 @@ int main (void) {
     boardObject.ignorant_move("E2", "E4");
     boardObject.ignorant_move("D7", "D5");
     boardObject.show_reachable_squares("E4");
+    boardObject.show_material();
     boardObject.print_board();
     
     return 0;
