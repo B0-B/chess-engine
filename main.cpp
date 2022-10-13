@@ -569,10 +569,6 @@ class Board {
         
 
         /* chess rules and logic */
-        // vector<string> square_is_in_scope_by_enemy (string coord_str) {
-        //     //
-        // };
-
         vector<string> reachable_target_coords (string coord_str) {
 
             /* This method is the main part of move interpretation
@@ -1089,6 +1085,104 @@ class Board {
             return out;
         };
         
+        vector<string> scoping_enemy_squares (string coord_str) {
+            
+            /* A function which returns all enemy squares whose direction points to a demanded square. 
+            Regardless of wether a piece is blocking it. */
+
+            vector<string> out = {};
+            map <string, string> square = get_square_from_coord(coord_str);
+            char symbol = square["symbol"][0];
+            
+            int color = get_color_from_symbol(symbol);
+            int piece = pieces.from_symbol(symbol);
+
+            // cout << "test 1 rank and file " << square["rank"] << " " << square["file"] << endl; 
+
+            string target_coord;
+            char target_symbol;
+            int piece,
+                rank = stoi(square["rank"]),
+                file = stoi(square["file"]); 
+
+            // check diagonals for enemy queen or bishop 
+            for (int i = -7; i < 8; i++) {
+                if (square_is_valid(rank+i, file+i)) {
+                    target_coord = get_coord_from_file_and_rank(rank+i, file+i);
+                    target_symbol = get_symbol_from_coord(target_coord);
+                    piece = pieces.from_symbol(target_symbol);
+                    if (square_is_occupied_by_enemy(color, target_coord) && ( piece == pieces.Queen || piece == pieces.Bishop) ) {
+                        out.push_back(target_coord);
+                    }
+                }
+                if (square_is_valid(rank-i, file+i)) {
+                    target_coord = get_coord_from_file_and_rank(rank-i, file+i);
+                    target_symbol = get_symbol_from_coord(target_coord);
+                    piece = pieces.from_symbol(target_symbol);
+                    if (square_is_occupied_by_enemy(color, target_coord) && ( piece == pieces.Queen || piece == pieces.Bishop) ) {
+                        out.push_back(target_coord);
+                    }
+                }
+            }
+
+            // check straight lines for enemy rook or queen 
+            for (int i = -7; i < 8; i++) {
+                if (square_is_valid(rank+i, file)) {
+                    target_coord = get_coord_from_file_and_rank(rank+i, file+i);
+                    target_symbol = get_symbol_from_coord(target_coord);
+                    piece = pieces.from_symbol(target_symbol);
+                    if (square_is_occupied_by_enemy(color, target_coord) && ( piece == pieces.Queen || piece == pieces.Bishop) ) {
+                        out.push_back(target_coord);
+                    }
+                }
+                if (square_is_valid(rank, file+i)) {
+                    target_coord = get_coord_from_file_and_rank(rank-i, file+i);
+                    target_symbol = get_symbol_from_coord(target_coord);
+                    piece = pieces.from_symbol(target_symbol);
+                    if (square_is_occupied_by_enemy(color, target_coord) && ( piece == pieces.Queen || piece == pieces.Rook) ) {
+                        out.push_back(target_coord);
+                    }
+                }
+            }
+            
+            return out;
+
+        };
+
+        int square_is_in_line (string coord1, string coord2, string probe_coord) {
+
+            /* Checks quickly if a probing coordinate lies within the aligned line (vert.,hor.,diag.) 
+            spanned by the first two coordinates. If the first two coordinates are not mutually aligned 
+            or they are not aligned with the probing coordinate, the return will be 0. */
+
+            int r1 = stoi(get_square_from_coord(coord1)["rank"]),
+                r2 = stoi(get_square_from_coord(coord2)["rank"]),
+                r3 = stoi(get_square_from_coord(probe_coord)["rank"]),
+                f1 = stoi(get_square_from_coord(coord1)["file"]),
+                f2 = stoi(get_square_from_coord(coord2)["file"]),
+                f3 = stoi(get_square_from_coord(probe_coord)["file"]);
+            
+            // all pieces are aligned horizontally
+            if (r1 == r2 && r3 == r1) {
+                if (f1 > f2 && f1 > f3 && f3 > f2 || f2 > f1 && f3 > f1 && f2 > f3)
+                    return 1;
+            } 
+            // all pieces are aligned vertically
+            else if (f1 == f2 && f3 == f1) {
+                if ( (r1 > r2 && r1 > r3 && r3 > r2) || (r2 > r1 && r2 > r3 && r3 > r1)) 
+                    return 1;
+            } 
+            // all pieces are aligned diagonally
+            else if (abs(f1-f2) == abs(r1-r2) && abs(r1-r3) == abs(f1-f3) && (r1-r2)/abs(r1-r2) == abs(r1-r3)/abs(r1-r3) && (f1-f2)/abs(f1-f2) == abs(f1-f3)/abs(f1-f3)) {
+                if ( !(f1 > f2 && f1 > f3 && f3 > f2) || !(f2 > f1 && f2 > f3 && f3 > f1) ) 
+                    return 0;
+                if ((r1 > r2 && r1 > r3 && r3 > r2) || (r2 > r1 && r2 > r3 && r3 > r1) ) 
+                    return 1;
+            }
+
+            return 0;
+        };
+
         int square_is_valid (int rank, int file) {
 
             /* Checks if the rank and file integer provided map to a valid chess square. */
@@ -1099,8 +1193,40 @@ class Board {
             else
                 return 0;
             
+        };
+
+        int squares_are_aligned (string coord1, string coord2) {
+            /* Check if the squares are aligned in any way. */
+            if (squares_are_aligned_diagonally(coord1, coord2) || squares_are_aligned_horizontally(coord1, coord2) || squares_are_aligned_vertically(coord1, coord2))
+                return 1;
+            return 0;
         }
 
+        int squares_are_aligned_diagonally (string coord1, string coord2) {
+            int r1 = stoi(get_square_from_coord(coord1)["rank"]);
+            int r2 = stoi(get_square_from_coord(coord2)["rank"]);
+            int f1 = stoi(get_square_from_coord(coord1)["file"]);
+            int f2 = stoi(get_square_from_coord(coord2)["file"]);
+            if (abs(r1-r2) == abs(f1-f2))
+                return 1;
+            return 0;
+        };
+
+        int squares_are_aligned_horizontally (string coord1, string coord2) {
+            int r1 = stoi(get_square_from_coord(coord1)["rank"]);
+            int r2 = stoi(get_square_from_coord(coord2)["rank"]);
+            if (r1 == r2)
+                return 1;
+            return 0;
+        };
+
+        int squares_are_aligned_vertically (string coord1, string coord2) {
+            int f1 = stoi(get_square_from_coord(coord1)["file"]);
+            int f2 = stoi(get_square_from_coord(coord2)["file"]);
+            if (f1 == f2)
+                return 1;
+            return 0;
+        }
 
 };
 
@@ -1118,9 +1244,11 @@ int main (void) {
     // int id = 0;
     // cout << "id test " << id << " " << boardObject.get_coord_from_id(id);
     boardObject.load_starting_position();
-    boardObject.show_reachable_squares("A2");
+    
     boardObject.print_board();
-    boardObject.ignorant_move("G1", "F3");
+    boardObject.ignorant_move("E2", "E4");
+    boardObject.ignorant_move("D7", "D5");
+    boardObject.show_reachable_squares("E4");
     boardObject.print_board();
     
     return 0;
