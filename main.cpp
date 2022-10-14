@@ -38,12 +38,82 @@ class Piece {
         const int w = 8;
         const int b = 16;
 
+        // map read from top to bottom (decending rank from white's perspective)
+        const float positional_weight_map[6][8][8] = {
+            // pawn
+            {
+                {1., 1., 1., 1., 1., 1., 1., 1.},
+                {.9, .9, .9, .9, .9, .9, .9, .9},
+                {.8, .8, .8, .8, .8, .8, .8, .8},
+                {.7, .7, .7, .7, .7, .7, .7, .7},
+                {.5, .5, .5, .5, .5, .5, .5, .5},
+                {.3, .3, .3, .3, .3, .3, .3, .3},
+                {.1, .1, .1, .1, .1, .1, .1, .1},
+                {0., 0., 0., 0., 0., 0., 0., 0.}
+            },
+            // knight
+            {
+                {.1, .2, .3, .4, .4, .3, .2, .1},
+                {.3, .5, .7, .5, .5, .8, .5, .3},
+                {.35, .4, .5, .7, .6, .5, .4, .35},
+                {.25, .35, .4, .5, .5, .4, .35, .25},
+                {.2, .3, .35, .4, .4, .35, .3, .2},
+                {.1, .2, .3, .1, .1, .3, .2, .1},
+                {0., 0., 0., .2, .2, 0., 0., 0.},
+                {0., 0., 0., 0., 0., 0., 0., 0.}
+            },
+            // bishop
+            {
+                {.2, 0., 0., 0., 0., 0., 0., .2},
+                {.2, .3, .4, .4, .4, .4, .3, .2},
+                {.2, .25, .4, .6, .6, .4, .25, .2},
+                {.15, .2, .4, .9, .9, .4, .2, .15},
+                {.2, .25, .6, .85, .85, .6, .25, .2},
+                {.2, .3, .5, .2, .2, .5, .3, .2},
+                {.2, .4, .2, .1, .1, .2, .4, .2},
+                {.3, 0., 0., 0., 0., 0., 0., .3}
+            },
+            // rook
+            {
+                {.2, 0., 0., 0., 0., 0., 0., .2},
+                {.5, .6, .7, .8, .9, .8, .7, .5},
+                {.2, .25, .4, .5, .8, .4, .25, .2},
+                {.35, .6, .7, .6, .7, .75, .65, .4},
+                {.3, .4, .6, .9, 1., .6, .45, .35},
+                {.3, .3, .5, .2, .2, .5, .3, .2},
+                {.2, .2, .2, .1, .1, .2, .4, .2},
+                {.1, .1, 0., .2, .3, .2, 0., .1}
+            },
+            // queen
+            {
+                {.2, 0., 0., 0., 0., 0., 0., .2},
+                {.2, .3, .4, .4, .4, .4, .3, .2},
+                {.2, .25, .4, .6, .6, .4, .25, .2},
+                {.15, .2, .4, .9, .9, .4, .2, .15},
+                {.2, .25, .6, .85, .85, .6, .25, .2},
+                {.2, .3, .5, .2, .2, .5, .3, .2},
+                {.2, .4, .2, .1, .1, .2, .4, .2},
+                {.3, 0., 0., 0., 0., 0., 0., .3}
+            },
+            // king
+            {
+                {0., 0., 0., 0., 0., 0., 0., 0.},
+                {0., 0., 0., 0., 0., 0., 0., 0.},
+                {0., 0., .1, .2, .2, .1, 0., 0.},
+                {0., 0., .2, .3, .3, .2, 0., 0.},
+                {0., 0., .2, .3, .3, .2, 0., 0.},
+                {0., .1, .1, .2, .2, .1, .1, 0.},
+                {0., .3, 0., .1, .1, 0., .4, 0.},
+                {.6, .8, .4, .0, 0., .5, .9, .7}
+            }
+        };
+
         const string symbols = "_PNBRQKpnbrqk";
         
 
         int is_white (char symbol) {
             return symbol >= 'A' && symbol <= 'Z' && symbol != '_';
-        }
+        };
 
         int from_symbol (char symbol) {
 
@@ -303,8 +373,8 @@ class Board {
         };
 
         void show_material () {
-            cout << "White material: " << count_material(pieces.w) << endl;
-            cout << "Black material: " << count_material(pieces.b) << endl;
+            cout << "white's material count: " << count_material(pieces.w) << endl;
+            cout << "black's material count: " << count_material(pieces.b) << endl;
         };
 
         void show_reachable_squares (string coord_str) {
@@ -316,7 +386,6 @@ class Board {
             }
             cout << endl;
         }
-
 
 
         /* manipulation/set methods */
@@ -1280,6 +1349,20 @@ class Board {
 
             return value;
         }
+        
+        float position_activity (char symbol, string coord_str) {
+
+            /* Returns the positional activity derived from a map for each peace. */
+
+            int piece = pieces.from_symbol(symbol);
+            int rank = stoi(get_square_from_coord(coord_str)["rank"]),
+                file = stoi(get_square_from_coord(coord_str)["file"]);
+
+            if (pieces.is_white(symbol))
+                return pieces.positional_weight_map[piece-1][7-rank][file];
+            else
+                return pieces.positional_weight_map[piece-1][rank][7-file];
+        };
 };
 
 
