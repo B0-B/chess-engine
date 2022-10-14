@@ -377,6 +377,11 @@ class Board {
             cout << "black's material count: " << count_material(pieces.b) << endl;
         };
 
+        void show_position_activity () {
+            cout << "white's position activity: " << count_position_activity(8) << endl;
+            cout << "black's position activity: " << count_position_activity(16) << endl;
+        }
+
         void show_reachable_squares (string coord_str) {
             
             /* Prints the reachable targets delimited into console */
@@ -1333,7 +1338,7 @@ class Board {
         /* Evaluation */
         int count_material (int color) {
 
-            /* Counts material for specific color */
+            /* Counts material i.e. value of all pieces for a specific color */
 
             char symbol;
             int piece;
@@ -1348,8 +1353,32 @@ class Board {
             }
 
             return value;
+        };
+
+        int count_position_activity (int color) {
+
+            /* Counts the activity of all pieces of a certain color.
+            The positional validation is drawn from the Piece.positional_weight_map 
+            and convolved with the piece value. */
+
+            char symbol;
+            int piece;
+            int white;
+            float value = 0;
+            float value_float; 
+            string coord;
+
+            for (int i = 0; i < 64; i++) {
+                symbol = grid[i]["symbol"][0];
+                white = pieces.is_white(symbol);
+                coord = grid[i]["coordinate"];
+                if (white && color == 8 || !white && color == 16 )
+                    value += pieces.value_from_symbol(symbol) * position_activity(symbol, coord);
+            }
+
+            return value;
         }
-        
+
         float position_activity (char symbol, string coord_str) {
 
             /* Returns the positional activity derived from a map for each peace. */
@@ -1385,6 +1414,7 @@ int main (void) {
     boardObject.ignorant_move("D7", "D5");
     boardObject.show_reachable_squares("E4");
     boardObject.show_material();
+    boardObject.show_position_activity();
     boardObject.print_board();
     
     return 0;
