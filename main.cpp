@@ -10,6 +10,7 @@ B0-B
 
 #include <stdio.h>
 #include <iostream>
+#include <algorithm>
 #include <map>
 #include <string>
 #include <ctype.h>
@@ -277,7 +278,7 @@ class Board {
         };
 
 
-        /* define get methods */
+        /* get methods */
         int get_color_from_symbol (char symbol) {
             if (pieces.is_white(symbol))
                 return 8;
@@ -375,6 +376,19 @@ class Board {
             cout << "black's position activity: " << count_position_activity(16) << endl;
         }
 
+        void show_move_count_for_active_color () {
+
+            /* Shows the amount of moves the active color can play. */
+
+            string col_str;
+            if (active_color == pieces.w)
+                col_str = "white";
+            else
+                col_str = "black";
+            cout << "possible moves for " << col_str << ": " << count_moves(active_color) << endl;
+
+        };
+
         void show_reachable_squares (string coord_str) {
             
             /* Prints the reachable targets delimited into console */
@@ -383,7 +397,7 @@ class Board {
                 cout << targets[i] << " ";
             }
             cout << endl;
-        }
+        };
 
 
         /* manipulation/set methods */
@@ -410,19 +424,25 @@ class Board {
 
         };
 
-        void legal_move (string origin_coord_str, string target_coord_str) {
+        bool legal_move (string origin_coord_str, string target_coord_str) {
             
             if (!move_is_legal(origin_coord_str, target_coord_str)) {
                 cout << "move " << origin_coord_str << " -> " << target_coord_str << " is not legal.";
-                return;
+                return false;
             } 
+
+            // check if active color is respected
+            if (get_color_from_symbol(get_symbol_from_coord(origin_coord_str)) != active_color) {
+                cout << "it is " << active_color << "'s turn!";
+                return false;
+            }
 
             // now the ignorant move is legal
             ignorant_move(origin_coord_str, target_coord_str);
 
-
+            return true;
         };
-
+        
         void load_position_from_fen (string fen) {
 
             /* A fen parsing implementation which generates a position from compact string.
@@ -611,7 +631,62 @@ class Board {
 
         };
 
-        
+
+        /* game methods */
+        void active_move (string origin_coord_str, string target_coord_str) {
+
+            /* Active moves manipulate the board and game parameters. */
+
+            if (legal_move(origin_coord_str, target_coord_str)) {
+
+                int color = get_color_from_symbol(get_symbol_from_coord(origin_coord_str));
+
+                if (color == pieces.b) {
+                    // raise the move count if black has finished the move
+                    move_count += 1;
+                    // switch active color
+                    active_color = pieces.w;
+                } else {
+                    active_color = pieces.b;
+                }
+
+            }
+
+        }   
+
+        void refresh () {
+
+            /* Main parsing mechanism for position and map computation. 
+            Should be called after every board alternation e.g. an active move. 
+            The method works color-wise for efficiency reasons, and will gather
+            all targets, moves and symbol mappings, for global access. */
+
+            
+            if (active_color == pieces.w) {
+                update_reachable_target_map(pieces.w);
+                update_moves_from_targets(targets_for_white, pieces.w);
+            } else {
+                update_reachable_target_map(pieces.b);
+                update_moves_from_targets(targets_for_black, pieces.b);
+            }
+            update_symbol_map();
+
+        }
+
+        /* game implementation */
+        void game () {
+
+            // intro
+            cout << "New Game!" << endl;
+
+            while (true) {
+
+                update_moves_from_targets(update_reachable_target_map(active_color), active_color);
+
+                break;    
+
+            }
+        }     
         
     private:
 
@@ -619,33 +694,41 @@ class Board {
         // prepare letters for the board fileumns 
         const char letter_coordinates[8] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'};
         const string starting_position_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-        char active_color = 'w';
+        
 
         // castling rights
-        int castling_right_k_w = 1;
-        int castling_right_k_b = 1;
-        int castling_right_q_w = 1;
-        int castling_right_q_b = 1;
+        bool castling_right_k_w = 1;
+        bool castling_right_k_b = 1;
+        bool castling_right_q_w = 1;
+        bool castling_right_q_b = 1;
         
-        // fen parameters
-        string en_passant_coord = "-";
-        int half_clock = 0;
-        int move_count = 1;
-
+        
         /* Denote everything for the next move i.e. from current position 
             map ->  attacker_coord: [attacking_coord_1, 2, ...]
                     attacker_coord: [attacking_coord_1, 2, ...]
                     ...
         */
-        map<string, vector<string>> targets_for_white;
-        map<string, vector<string>> targets_for_black;
+        map<string, vector<string>> targets_for_white,
+                                    targets_for_black,
+                                    moves_for_white,
+                                    moves_for_black;
           
 
         // The board grid maps the square IDs (0 ... 63) => square info.*/
         map<string, string> grid[64];
 
+        // also define a map symbol -> coord(symbol)
+        map<char, vector<string>> coord_symbol_map;
+
         // Load the pieces
         Piece pieces;
+
+        // Init game parameters
+        char active_color = pieces.w;
+        // fen parameters
+        string en_passant_coord = "-";
+        int half_clock = 0;
+        int move_count = 1;
 
         /*   init methods   */
         void build_grid () {
@@ -1558,6 +1641,68 @@ class Board {
 
         }
 
+        map<string, vector<string>> update_moves_from_targets (map<string, vector<string>> target_map, int color) {
+            
+            /* Filters the legal moves from target map and overrides the moves object. */
+            
+            string origin_coord;
+            vector<string> targets;
+            map<string, vector<string>> moves;
+
+            for (auto const& x : targets_for_white) {
+                origin_coord = x.first;
+                targets = x.second;
+                moves[origin_coord] = {};
+                for (int i = 0; i < targets.size(); i++) {
+                    if (!move_leaves_open_check(origin_coord, targets[i]))
+                        moves[origin_coord].push_back(targets[i]);
+                }
+            }
+
+            // override
+            if (color == pieces.w) {
+                moves_for_white = moves;
+                return moves_for_white;
+            } else {
+                moves_for_black = moves;
+                return moves_for_black;
+            }
+            
+        }
+
+        map<char, vector<string>> update_symbol_map () {
+
+            /* Maps pieces to coordinates in current position. 
+            Overrides global variable coord_symbol_map */
+
+            char symbol;
+            string coord;
+            map<char, vector<string>> m;
+            vector<string> coord_array[8];
+
+            for (int i = 0; i < 64; i++) {
+
+                symbol = grid[i]["symbol"][0];
+                coord = grid[i]["coordinate"];
+
+                if (symbol != pieces.None) {
+
+                    if (m.find(symbol) == m.end())
+                        m[symbol] = {};
+
+                    m[symbol].push_back(coord);
+                        
+                }
+
+            }
+
+            // override
+            coord_symbol_map = m;
+
+            return coord_symbol_map;
+
+        };
+
         /* Evaluation */
         int count_material (int color) {
 
@@ -1576,6 +1721,27 @@ class Board {
             }
 
             return value;
+        };
+
+        int count_moves (int color) {
+
+            /* Counts the possible moves from current position. */
+
+            int count = 0;
+            string attacker_coord;
+            vector<string> attacking_coords;
+            
+            if (color == pieces.w) {
+                for (auto const& x : targets_for_white) {
+                    count += x.second.size();
+                }
+            } else {
+                for (auto const& x : targets_for_black) {
+                    count += x.second.size();
+                }
+            }
+
+            return count;
         };
 
         int count_position_activity (int color) {
@@ -1616,7 +1782,6 @@ class Board {
                 return pieces.positional_weight_map[piece-1][rank][7-file];
         };
 
-
 };
 
 
@@ -1637,7 +1802,10 @@ int main (void) {
     boardObject.show_half_clock();
     boardObject.show_move_count();
 
+    boardObject.show_move_count_for_active_color();
+    
     boardObject.print_board();
+    
     boardObject.show_position_activity();
     boardObject.ignorant_move("E2", "E4");
     boardObject.ignorant_move("D7", "D5");
