@@ -330,22 +330,7 @@ class Board {
             return get_square_from_coord(coord_str)["symbol"][0];
         };
 
-        int square_is_occupied (string coord_str) {
-            return get_symbol_from_coord(coord_str) != '_';
-        }
-
-        int square_is_occupied_by_enemy (int friendly_color, string coord_str) {
-
-            /* Returns boolean-like integer. The return is 1 if the square is occupied by enemy piece otherwise 0 */
-
-            char target_symbol = get_symbol_from_coord(coord_str);
-            int target_color = get_color_from_symbol(target_symbol); 
-
-            return target_color != friendly_color && target_color != 0;
-
-        }
-
-
+        
         /* output methods */
         void print_board (int unicode = 0) {
             
@@ -605,7 +590,7 @@ class Board {
 
         };
 
-
+        
         
     private:
 
@@ -620,10 +605,20 @@ class Board {
         int castling_right_k_b = 1;
         int castling_right_q_w = 1;
         int castling_right_q_b = 1;
-
+        
+        // fen parameters
         string en_passant_coord = "-";
         int half_clock = 0;
         int move_count = 1;
+
+        /* Denote everything for the next move i.e. from current position 
+            map ->  attacker_coord: [attacking_coord_1, 2, ...]
+                    attacker_coord: [attacking_coord_1, 2, ...]
+                    ...
+        */
+        map<string, vector<string>> targets_for_white;
+        map<string, vector<string>> targets_for_black;
+          
 
         // The board grid maps the square IDs (0 ... 63) => square info.*/
         map<string, string> grid[64] = {};
@@ -677,6 +672,35 @@ class Board {
         
 
         /* chess rules and logic */
+        bool move_is_legal (string origin_coord_str, string target_coord_str) {
+            
+            /* Checks by quick simulation if a move is legal by checking
+            if the player is in check after that move. */
+
+            int target_color,
+                origin_color = get_color_from_symbol(get_symbol_from_coord(origin_coord_str)),
+                target_piece = pieces.from_symbol(get_symbol_from_coord(target_coord_str));
+            if (origin_color == pieces.w)
+                target_color = pieces.b;
+            else
+                target_color = pieces.w;
+            
+            // simulate
+            bool result;
+            ignorant_move(origin_coord_str, target_coord_str);
+            if (is_checked(origin_color))
+                result = false;
+            else
+                result = true;
+
+            // revert position
+            ignorant_move(target_coord_str, origin_coord_str);
+            place_piece(target_piece, target_color, target_coord_str);
+
+            return result;
+            
+        };
+
         vector<string> reachable_target_coords (string coord_str) {
 
             /* This method is the main part of move interpretation
@@ -1256,6 +1280,92 @@ class Board {
 
         };
 
+        vector<string> square_is_attacked_by_coords (string coord_str, map<string, vector<string>> enemy_targets) {
+
+            /* Returns all enemy (attacker) coordinates which are hitting the square. 
+            The coordinates are determined from the provided enemy target map.*/
+
+            string attacker_coord;
+            vector<string> attacking_coords;
+            vector<string> out = {};
+
+            for (auto const& x : enemy_targets) {
+
+                // coordinate of attacker
+                attacker_coord = x.first;
+
+                // coordinates being attacked
+                attacking_coords = x.second;
+
+                for (int i = 0; i < attacking_coords.size(); i++) {
+                    if (attacking_coords[i] == coord_str) {
+                        out.push_back(attacker_coord);
+                        break;
+                    }
+                }
+                
+            }
+
+            return out;
+            
+        };
+
+        bool is_checked (int color) {
+
+            /* Returns a boolean dep. on wether the color is in check. */
+            
+            char symbol;
+            string coord;
+            bool breaker = false;
+
+            // iterate through board to find the king's position
+            if (color == pieces.w) {
+
+                // start from 1st rank
+                for (int i = 0; i < 8; i++) {
+                    for (int j = 0; j < 8; j++) {
+                        coord = get_coord_from_file_and_rank(i, j);
+                        symbol = get_symbol_from_coord( coord );
+                        if (symbol == 'K') {
+                            breaker = true;
+                            break;
+                        }
+                    }
+                    if (breaker)
+                        break;
+                }
+                
+            } else {
+
+                // start from 8-th rank
+                for (int i = 7; i >= 0; i--) {
+                    for (int j = 0; j < 8; j++) {
+                        coord = get_coord_from_file_and_rank(i, j);
+                        symbol = get_symbol_from_coord( coord );
+                        if (symbol == 'k') {
+                            breaker = true;
+                            break;
+                        }
+                    }
+                    if (breaker)
+                        break;
+                }
+
+            }
+
+            // check if king's coordinate is being attakcked
+            vector<string> attacker_coords;
+            if (color == pieces.w)
+                attacker_coords = square_is_attacked_by_coords(coord, targets_for_black);
+            else
+                attacker_coords = square_is_attacked_by_coords(coord, targets_for_white);
+
+            if (attacker_coords.size() == 0)
+                return false;
+            else
+                return true;
+        }
+
         int square_is_in_line (string coord1, string coord2, string probe_coord) {
 
             /* Checks quickly if a probing coordinate lies within the aligned line (vert.,hor.,diag.) 
@@ -1289,6 +1399,32 @@ class Board {
 
             return 0;
         };
+
+        int square_is_occupied (string coord_str) {
+            return get_symbol_from_coord(coord_str) != '_';
+        }
+
+        int square_is_occupied_by_enemy (int friendly_color, string coord_str) {
+
+            /* Returns boolean-like integer. The return is 1 if the square is occupied by enemy piece otherwise 0 */
+
+            char target_symbol = get_symbol_from_coord(coord_str);
+            int target_color = get_color_from_symbol(target_symbol); 
+
+            return target_color != friendly_color && target_color != 0;
+
+        }
+
+        int square_is_occupied_by_friendly_piece (int friendly_color, string coord_str) {
+            
+            /* Returns bool dep. on wether a friendly piece persists on this coordinate. */
+
+            char target_symbol = get_symbol_from_coord(coord_str);
+            int target_color = get_color_from_symbol(target_symbol);
+
+            return target_color == friendly_color;
+
+        }
 
         int square_is_valid (int rank, int file) {
 
@@ -1333,6 +1469,48 @@ class Board {
             if (f1 == f2)
                 return 1;
             return 0;
+        }
+
+        map<string, vector<string>> update_reachable_target_map (int color) {
+
+            /* Updates reachable target map for provided color and 
+            overrides the persistent global variable targets_for_white/black. 
+            The overriden map will be returned at the end. */
+
+            string coord;
+            map<string, vector<string>> m;
+            map<string, vector<string>>::iterator iter;
+            int is_included;
+            
+
+            // select the right color map
+            if (color == pieces.w)
+                m = targets_for_white;
+            else 
+                m = targets_for_black;
+
+            for (int i = 0; i < 64; i++) {
+                coord = get_coord_from_id(i);
+                iter = m.find(coord);
+                is_included = iter == m.end();
+                if (square_is_occupied_by_friendly_piece(color, coord)) {
+                    // override/create entry for coord with vector of all reachable targets from that square
+                    m[coord] = reachable_target_coords(coord);
+                } else if (is_included) {
+                    // remove legacy entry
+                    m.erase(iter);
+                }
+            }
+
+            // override & return
+            if (color == pieces.w) {
+                targets_for_white = m;
+                return targets_for_white;
+            } else {
+                targets_for_black = m;
+                return targets_for_black;
+            }
+
         }
 
         /* Evaluation */
@@ -1392,6 +1570,8 @@ class Board {
             else
                 return pieces.positional_weight_map[piece-1][rank][7-file];
         };
+
+
 };
 
 
@@ -1410,6 +1590,7 @@ int main (void) {
     boardObject.load_starting_position();
     
     boardObject.print_board();
+    boardObject.show_position_activity();
     boardObject.ignorant_move("E2", "E4");
     boardObject.ignorant_move("D7", "D5");
     boardObject.show_reachable_squares("E4");

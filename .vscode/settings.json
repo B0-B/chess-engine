@@ -7,6 +7,10 @@
         "string": "cpp",
         "vector": "cpp",
         "type_traits": "cpp",
-        "functional": "cpp"
+        "functional": "cpp",
+        "array": "cpp",
+        "unordered_map": "cpp",
+        "string_view": "cpp",
+        "initializer_list": "cpp"
     }
 }
