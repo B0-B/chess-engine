@@ -357,9 +357,17 @@ class Board {
             wcout << endl;
         };
 
+        void show_half_clock () {
+            cout << "half clock: " << half_clock << endl;
+        };
+
         void show_material () {
             cout << "white's material count: " << count_material(pieces.w) << endl;
             cout << "black's material count: " << count_material(pieces.b) << endl;
+        };
+
+        void show_move_count () {
+            cout << "move count: " << move_count << endl;
         };
 
         void show_position_activity () {
@@ -399,6 +407,19 @@ class Board {
 
             // place the piece at new target
             place_piece(piece, color, target_coord_str);
+
+        };
+
+        void legal_move (string origin_coord_str, string target_coord_str) {
+            
+            if (!move_is_legal(origin_coord_str, target_coord_str)) {
+                cout << "move " << origin_coord_str << " -> " << target_coord_str << " is not legal.";
+                return;
+            } 
+
+            // now the ignorant move is legal
+            ignorant_move(origin_coord_str, target_coord_str);
+
 
         };
 
@@ -621,7 +642,7 @@ class Board {
           
 
         // The board grid maps the square IDs (0 ... 63) => square info.*/
-        map<string, string> grid[64] = {};
+        map<string, string> grid[64];
 
         // Load the pieces
         Piece pieces;
@@ -674,8 +695,32 @@ class Board {
         /* chess rules and logic */
         bool move_is_legal (string origin_coord_str, string target_coord_str) {
             
-            /* Checks by quick simulation if a move is legal by checking
-            if the player is in check after that move. */
+            /* Checks if a move is legal by general chess rules.
+            The playable moves from origin are drawn from the targets map. */
+
+            // make sure there is no check after move
+            if (move_leaves_open_check(origin_coord_str, target_coord_str))
+                return false;
+            
+            // check if the move is contained in reachable targets from that square
+            int origin_color = get_color_from_symbol(get_symbol_from_coord(origin_coord_str));
+            vector<string> reachable_moves;
+            if (origin_color == pieces.w) 
+                reachable_moves = targets_for_white[origin_coord_str];
+            else 
+                reachable_moves = targets_for_black[origin_coord_str];
+            for (int i = 0; i < reachable_moves.size(); i++) {
+                if (reachable_moves[i] == target_coord_str)
+                    return true;
+            }
+
+            return false;
+            
+        }
+
+        bool move_leaves_open_check (string origin_coord_str, string target_coord_str) {
+            
+            /* Checks by quick simulation if a move leaves an open check, i.e. is ultimately pinned. */
 
             int target_color,
                 origin_color = get_color_from_symbol(get_symbol_from_coord(origin_coord_str)),
@@ -689,9 +734,9 @@ class Board {
             bool result;
             ignorant_move(origin_coord_str, target_coord_str);
             if (is_checked(origin_color))
-                result = false;
-            else
                 result = true;
+            else
+                result = false;
 
             // revert position
             ignorant_move(target_coord_str, origin_coord_str);
@@ -1589,6 +1634,9 @@ int main (void) {
     // cout << "id test " << id << " " << boardObject.get_coord_from_id(id);
     boardObject.load_starting_position();
     
+    boardObject.show_half_clock();
+    boardObject.show_move_count();
+
     boardObject.print_board();
     boardObject.show_position_activity();
     boardObject.ignorant_move("E2", "E4");
