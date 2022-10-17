@@ -661,16 +661,22 @@ class Board {
             The method works color-wise for efficiency reasons, and will gather
             all targets, moves and symbol mappings, for global access. */
 
-            
+            // update target map and move object depending on color
+            cout << "test 1" << endl;
             if (active_color == pieces.w) {
                 update_reachable_target_map(pieces.w);
+                cout << "test 2" << endl;
                 update_moves_from_targets(targets_for_white, pieces.w);
+                cout << "test 3" << endl;
             } else {
                 update_reachable_target_map(pieces.b);
                 update_moves_from_targets(targets_for_black, pieces.b);
             }
-            update_symbol_map();
 
+            // map all symbols to their current coordinate
+            cout << "test 4" << endl;
+            update_symbol_map();
+            cout << "test 5" << endl;
         }
 
         /* game implementation */
@@ -1620,7 +1626,7 @@ class Board {
             for (int i = 0; i < 64; i++) {
                 coord = get_coord_from_id(i);
                 iter = m.find(coord);
-                is_included = iter == m.end();
+                is_included = iter != m.end();
                 if (square_is_occupied_by_friendly_piece(color, coord)) {
                     // override/create entry for coord with vector of all reachable targets from that square
                     m[coord] = reachable_target_coords(coord);
@@ -1801,7 +1807,7 @@ int main (void) {
     
     boardObject.show_half_clock();
     boardObject.show_move_count();
-
+    boardObject.refresh();
     boardObject.show_move_count_for_active_color();
     
     boardObject.print_board();
