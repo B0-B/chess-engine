@@ -389,6 +389,40 @@ class Board {
 
         };
 
+        void show_moves_for_active_color () {
+            
+            string  col_str,
+                    target_string,
+                    coord;
+            vector<string> targets;
+            map<string, vector<string>> m;
+
+            if (active_color == pieces.w) {
+                col_str = "white";
+                m = moves_for_white;
+            } else {
+                m = moves_for_black;
+                col_str = "black";
+            }
+
+            cout << "moves for " << col_str << ":" << endl;
+            for (auto const& x : m) {
+
+                coord = x.first;
+                targets = x.second;
+
+                target_string = "";
+
+                for (int i = 0; i < targets.size(); i++) {   
+                    target_string += targets[i] + " ";
+                }
+                
+                cout << get_symbol_from_coord(coord) << " (" << coord << "): " << target_string << endl;
+
+            }
+
+        }
+
         void show_reachable_squares (string coord_str) {
             
             /* Prints the reachable targets delimited into console */
@@ -527,7 +561,11 @@ class Board {
                 
                 // check for active color & override
                 } else if (pieces_completely_parsed && !active_color_parsed && (_char == 'b' || _char == 'w')) {
-                    active_color = _char;
+                    //cout << "active color test: " << _char << endl;
+                    if (_char == 'w')
+                        active_color = pieces.w;
+                    else
+                        active_color = pieces.b;
                     active_color_parsed = 1;
                     file++;
 
@@ -631,6 +669,7 @@ class Board {
 
         };
 
+        
 
         /* game methods */
         void active_move (string origin_coord_str, string target_coord_str) {
@@ -662,21 +701,16 @@ class Board {
             all targets, moves and symbol mappings, for global access. */
 
             // update target map and move object depending on color
-            cout << "test 1" << endl;
             if (active_color == pieces.w) {
                 update_reachable_target_map(pieces.w);
-                cout << "test 2" << endl;
                 update_moves_from_targets(targets_for_white, pieces.w);
-                cout << "test 3" << endl;
             } else {
                 update_reachable_target_map(pieces.b);
                 update_moves_from_targets(targets_for_black, pieces.b);
             }
 
             // map all symbols to their current coordinate
-            cout << "test 4" << endl;
             update_symbol_map();
-            cout << "test 5" << endl;
         }
 
         /* game implementation */
@@ -730,7 +764,8 @@ class Board {
         Piece pieces;
 
         // Init game parameters
-        char active_color = pieces.w;
+        int active_color = pieces.w;
+
         // fen parameters
         string en_passant_coord = "-";
         int half_clock = 0;
@@ -1807,7 +1842,10 @@ int main (void) {
     
     boardObject.show_half_clock();
     boardObject.show_move_count();
+
     boardObject.refresh();
+
+    boardObject.show_moves_for_active_color();
     boardObject.show_move_count_for_active_color();
     
     boardObject.print_board();
