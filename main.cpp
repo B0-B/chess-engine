@@ -439,10 +439,39 @@ class Board {
             /* Prints the reachable targets delimited into console */
             vector<string> targets = reachable_target_coords(coord_str);
             for (int i = 0; i < targets.size(); i++) {
-                cout << targets[i] << " ";
+                cout << get_symbol_from_coord(coord_str) << " (" << coord_str << "): " << targets[i] << " " << endl;
             }
-            cout << endl;
         };
+
+        void show_reachable_squares_for_active_color () {
+
+            /* Prints the reachable square coordinates for all pieces of active color. */
+
+            string  col_str,
+                    target_string,
+                    coord;
+            vector<string> targets;
+            map<string, vector<string>> m;
+
+            if (active_color == pieces.w) {
+                col_str = "white";
+                m = targets_for_white;
+            } else {
+                m = targets_for_black;
+                col_str = "black";
+            }
+
+            cout << "reachable squares for " << col_str << ":" << endl;
+
+            for (auto const& x : m) {
+
+                coord = x.first;
+                // show the square for the piece on coord
+                show_reachable_squares (coord);
+
+            }
+
+        }
 
 
         /* manipulation/set methods */
@@ -925,8 +954,6 @@ class Board {
                 // if white is playing
                 if (color == 8) {
 
-                    cout << "test color white" << endl;
-
                     // check if forward-left captures is possible
                     if (file-1 >= 0 && rank + 1 < 8) {
                         target_coord = get_coord_from_file_and_rank(file-1, rank+1);
@@ -939,7 +966,7 @@ class Board {
                     if (file + 1 < 8 && rank + 1 < 8) {
                         target_coord = get_coord_from_file_and_rank(file+1, rank+1);
                         if (!contains_string(out, target_coord) && square_is_occupied_by_enemy(color, target_coord)) {
-                            cout << "test captures" << endl;
+                            //cout << "test captures" << endl;
                             out.push_back(target_coord);
                         }
                     }
@@ -1001,20 +1028,26 @@ class Board {
 
             } else if (piece == pieces.Knight) {
 
+                //cout << "coord test " << file << " " << rank << endl;
+
                 // front 2 left 1
-                if (file - 1 >= 0 && rank + 2 <= 7) {
+                if (file - 1 >= 0 && rank + 2 < 8) {
+                    
                     target_coord = get_coord_from_file_and_rank(file-1, rank+2);
-                    if (contains_string(out, target_coord))
-                        if (!square_is_occupied(target_coord) || (square_is_occupied(target_coord) && square_is_occupied_by_enemy(color, coord_str))) {
+                    cout << "coord test 1 " << file << " " << rank << " " << target_coord << endl;
+                    if (!contains_string(out, target_coord))
+                        if (!square_is_occupied(target_coord) || square_is_occupied_by_enemy(color, coord_str)) {
                             out.push_back(target_coord);
                         }
                 }
                 
                 // front 1 left 2
-                if (file - 2 >= 0 && rank + 1 <= 7) {
-                    target_coord = get_coord_from_file_and_rank(file-1, rank+2);
+                if (file - 2 >= 0 && rank + 1 < 8) {
+                    
+                    target_coord = get_coord_from_file_and_rank(file - 2, rank + 1);
+                    cout << "coord test 2 " << file << " " << rank << " " << target_coord << endl;
                     if (!contains_string(out, target_coord))
-                        if (!square_is_occupied(target_coord) || (square_is_occupied(target_coord) && square_is_occupied_by_enemy(color, coord_str))) {
+                        if (!square_is_occupied(target_coord) || square_is_occupied_by_enemy(color, coord_str)) {
                             out.push_back(target_coord);
                         }
                 } 
@@ -1022,17 +1055,19 @@ class Board {
                 // front 2 right 1
                 if (file + 1 < 8 && rank + 2 < 8) {
                     target_coord = get_coord_from_file_and_rank(file + 1, rank + 2);
+                    cout << "coord test 3 " << file << " " << rank << " " << target_coord << endl;
                     if (!contains_string(out, target_coord))
-                        if (!square_is_occupied(target_coord) || (square_is_occupied(target_coord) && square_is_occupied_by_enemy(color, coord_str))) {
+                        if (!square_is_occupied(target_coord) || square_is_occupied_by_enemy(color, coord_str)) {
                             out.push_back(target_coord);
                         }
                 } 
 
                 // front 1 right 2
-                if (file + 2 >= 0 && rank + 1 < 8) {
+                if (file + 2 < 8 && rank + 1 < 8) {
                     target_coord = get_coord_from_file_and_rank(file + 2, rank + 1);
+                    cout << "coord test 4 " << file << " " << rank << " " << target_coord << endl;
                     if (!contains_string(out, target_coord))
-                        if (!square_is_occupied(target_coord) || (square_is_occupied(target_coord) && square_is_occupied_by_enemy(color, coord_str))) {
+                        if (!square_is_occupied(target_coord) || square_is_occupied_by_enemy(color, coord_str)) {
                             out.push_back(target_coord);
                         }
                 } 
@@ -1041,7 +1076,7 @@ class Board {
                 if (file - 1 >= 0 && rank - 2 >= 0) {
                     target_coord = get_coord_from_file_and_rank(file - 1, rank - 2);
                     if (!contains_string(out, target_coord))
-                        if (!square_is_occupied(target_coord) || (square_is_occupied(target_coord) && square_is_occupied_by_enemy(color, coord_str))) {
+                        if (!square_is_occupied(target_coord) || square_is_occupied_by_enemy(color, coord_str)) {
                             out.push_back(target_coord);
                         }
                 } 
@@ -1050,7 +1085,7 @@ class Board {
                 if (file - 2 >= 0 && rank - 1 >= 0) {
                     target_coord = get_coord_from_file_and_rank(file - 2, rank - 1);
                     if (!contains_string(out, target_coord))
-                        if (!square_is_occupied(target_coord) || (square_is_occupied(target_coord) && square_is_occupied_by_enemy(color, coord_str))) {
+                        if (!square_is_occupied(target_coord) || square_is_occupied_by_enemy(color, coord_str)) {
                             out.push_back(target_coord);
                         }
                 } 
@@ -1059,7 +1094,7 @@ class Board {
                 if (file + 1 < 8 && rank - 2 >= 0) {
                     target_coord = get_coord_from_file_and_rank(file + 1, rank - 2);
                     if (!contains_string(out, target_coord))
-                        if (!square_is_occupied(target_coord) || (square_is_occupied(target_coord) && square_is_occupied_by_enemy(color, coord_str))) {
+                        if (!square_is_occupied(target_coord) ||  square_is_occupied_by_enemy(color, coord_str)) {
                             out.push_back(target_coord);
                         }
                 } 
@@ -1068,7 +1103,7 @@ class Board {
                 if (file + 2 < 8 && rank - 1 >= 0) {
                     target_coord = get_coord_from_file_and_rank(file + 2, rank - 1);
                     if (!contains_string(out, target_coord))
-                        if (!square_is_occupied(target_coord) || (square_is_occupied(target_coord) && square_is_occupied_by_enemy(color, coord_str))) {
+                        if (!square_is_occupied(target_coord) || square_is_occupied_by_enemy(color, coord_str)) {
                             out.push_back(target_coord);
                         }
                 } 
@@ -1408,7 +1443,8 @@ class Board {
                     for (int j = -1; j < 2; j++) {
                         // skip origin square
                         if ( !(i == 0 && j == 0) && square_is_valid(rank+i, file+j) ) {
-                            target_coord = get_coord_from_file_and_rank(rank+i, file+j);
+                            target_coord = get_coord_from_file_and_rank(file+j,  rank+i);
+                            //cout << "coord test " << rank+i << " " << file+j << " " << target_coord << endl;
                             if (!contains_string(out, target_coord))
                                 if (!square_is_occupied(target_coord) || square_is_occupied_by_enemy(color, target_coord)) {
                                     out.push_back(target_coord);
@@ -1883,8 +1919,9 @@ int main (void) {
 
     boardObject.refresh();
 
-    boardObject.show_moves_for_active_color();
     boardObject.show_move_count_for_active_color();
+    boardObject.show_moves_for_active_color();
+    boardObject.show_reachable_squares_for_active_color();
     
     boardObject.print_board();
     
