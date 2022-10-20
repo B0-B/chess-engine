@@ -1208,11 +1208,8 @@ class Board {
             of a single piece at a coord. An array of reachable coordinates is returned, 
             if the square is occupied by a friendly piece which has a possible
             square to move, otherwise an empty array is returned surely. 
-            The reachable targets are not necessary legal moves. 
-            
-            Left to be added:
-            - castling options
-            - en-passant options
+            The reachable targets are not always legal moves as it is not checked if the
+            movement would leave an open check. 
             
             */
 
