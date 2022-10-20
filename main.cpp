@@ -384,6 +384,7 @@ class Board {
             castling_right_q_w << " " <<
             castling_right_q_b << " " << endl;
         };
+        
         void show_en_passant () {
             cout << "En passant coordinate: " << en_passant_coord << endl;
         };
@@ -530,8 +531,73 @@ class Board {
                 return false;
             }
 
-            // now the ignorant move is legal
+            // check before the actual move if the moving piece is the king 
+            int piece = pieces.from_symbol(get_symbol_from_coord(origin_coord_str));
+            bool king_move = piece == pieces.King;
+            vector<string> castle_coords = {};
+            if (piece == pieces.King) {
+                if (active_color == pieces.w && can_castle_king_side(active_color)) {
+                    castle_coords.push_back("G1");
+                } 
+                if (active_color == pieces.w && can_castle_queen_side(active_color)) {
+                    castle_coords.push_back("C1");
+                }
+                if (active_color == pieces.b && can_castle_king_side(active_color)) {
+                    castle_coords.push_back("G8");
+                } 
+                if (active_color == pieces.b && can_castle_queen_side(active_color)) {
+                    castle_coords.push_back("C8");
+                }
+            }
+            
+            // now the main ignorant move is legal
             ignorant_move(origin_coord_str, target_coord_str);
+
+            // if the move matches with the castling options determine and play the corresponding rook move
+            if (king_move && castle_coords.size() > 0 && contains_string(castle_coords, target_coord_str)) {
+                
+                // determine rook move
+                if (target_coord_str == "G1") 
+                    ignorant_move("H1", "F1");
+                else if (target_coord_str == "C1")
+                    ignorant_move("A1", "D1");
+                else if (target_coord_str == "G8")
+                    ignorant_move("H8", "F8");
+                else if (target_coord_str == "C8")
+                    ignorant_move("A8", "D8");
+
+            } 
+
+            // check if an en-passant option popped up
+            else if (piece == pieces.Pawn) {
+
+                int rank_origin = stoi(get_square_from_coord(origin_coord_str)["rank"]);
+                map<string, string> square = get_square_from_coord(target_coord_str);
+                int file = stoi(square["file"]),
+                    rank = stoi(square["rank"]);
+                string coord;
+                char symbol;
+
+                // activate only if the pawn is moved from origin square for two ranks at once
+                if (active_color == pieces.w && rank_origin == 1 && rank == 3) {
+
+                    if (square_is_valid(rank, file+1)) {
+                        coord = get_coord_from_file_and_rank(file+1, rank);
+                        symbol = get_symbol_from_coord(coord);
+                        if (square_is_occupied_by_enemy(active_color, coord) && pieces.from_symbol(symbol) == pieces.Pawn) {
+
+                        }
+
+                    }
+
+                    if (square_is_valid(rank, file-1)) {
+                        coord = get_coord_from_file_and_rank(file+1, rank);
+                        symbol = get_symbol_from_coord(coord);
+                    }
+                }
+                
+                
+            }
 
             return true;
         };
@@ -743,16 +809,21 @@ class Board {
         void active_move (string origin_coord_str, string target_coord_str) {
 
             /* Active moves manipulate the board and game parameters. */
+            
+            int color = get_color_from_symbol(get_symbol_from_coord(origin_coord_str));
+            bool captures = 0;
+
+            if (square_is_occupied_by_enemy(color, target_coord_str))
+                captures = 1;
 
             if (legal_move(origin_coord_str, target_coord_str)) {
-
-                int color = get_color_from_symbol(get_symbol_from_coord(origin_coord_str));
 
                 if (color == pieces.b) {
                     // raise the move count if black has finished the move
                     move_count += 1;
                     // switch active color
                     active_color = pieces.w;
+
                 } else {
                     active_color = pieces.b;
                 }
@@ -928,13 +999,47 @@ class Board {
             /* Checks if a move is legal by general chess rules.
             The playable moves from origin are drawn from the targets map. */
 
+            vector<string> reachable_moves;
+            char symbol = get_symbol_from_coord(origin_coord_str);
+            int piece = pieces.from_symbol(symbol);
+            int origin_color = get_color_from_symbol(symbol);
+
+            // first check if move is a castling move and if it is valid, otherwise continue
+            if (piece == pieces.King) {
+                if (origin_color == pieces.w && origin_coord_str == "E1" && target_coord_str == "G1") {
+                    if (can_castle_king_side(origin_color))
+                        return true;
+                    else
+                        return false;
+                }
+                if (origin_color == pieces.b && origin_coord_str == "E8" && target_coord_str == "G8") {
+                    if (can_castle_king_side(origin_color))
+                        return true;
+                    else
+                        return false;
+                }
+                if (origin_color == pieces.w && origin_coord_str == "E1" && target_coord_str == "C1") {
+                    if (can_castle_queen_side(origin_color))
+                        return true;
+                    else
+                        return false;
+                } 
+                if (origin_color == pieces.b && origin_coord_str == "E8" && target_coord_str == "C8") {
+                    if (can_castle_queen_side(origin_color))
+                        return true;
+                    else
+                        return false;
+                } 
+            }
+
             // make sure there is no check after move
             if (move_leaves_open_check(origin_coord_str, target_coord_str))
                 return false;
+
+            
+
             
             // check if the move is contained in reachable targets from that square
-            int origin_color = get_color_from_symbol(get_symbol_from_coord(origin_coord_str));
-            vector<string> reachable_moves;
             if (origin_color == pieces.w) 
                 reachable_moves = targets_for_white[origin_coord_str];
             else 
@@ -1017,7 +1122,7 @@ class Board {
             if (piece == pieces.Pawn) {
 
                 // if white is playing
-                if (color == 8) {
+                if (color == pieces.w) {
 
                     // check if forward-left captures is possible
                     if (file-1 >= 0 && rank + 1 < 8) {
@@ -1053,8 +1158,20 @@ class Board {
                     
 
                     // en-passant possibility
+                    if (en_passant_coord != "-") {
 
-                } else if (color == 16) {
+                        // check if the selected pawn is next to en-passant coord
+                        map <string, string> ep_square = get_square_from_coord(en_passant_coord); 
+                        int ep_rank = stoi(ep_square["rank"]);
+                        int ep_file = stoi(ep_square["file"]);
+                        
+                        if (rank == ep_rank-1 && (file+1 == ep_file || file-1 == ep_file))
+                            out.push_back(en_passant_coord);
+
+                    }
+                        
+
+                } else if (color == pieces.b) {
 
                     // check if forward-left captures is possible
                     if (file+1 < 8 && rank - 1 >= 0) {
@@ -1087,7 +1204,18 @@ class Board {
                     }
 
                     // en-passant possibility
+                    if (en_passant_coord != "-") {
 
+                        // check if the selected pawn is next to en-passant coord
+                        map <string, string> ep_square = get_square_from_coord(en_passant_coord); 
+                        int ep_rank = stoi(ep_square["rank"]);
+                        int ep_file = stoi(ep_square["file"]);
+                        
+                        if (rank == ep_rank+1 && (file+1 == ep_file || file-1 == ep_file))
+                            out.push_back(en_passant_coord);
+                            
+                    }
+                    
                 }
                 
 
