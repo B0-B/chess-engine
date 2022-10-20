@@ -507,6 +507,15 @@ class Board {
             else 
                 color = 16;
             
+            // if captures then apriori denote the enemy symbol at target coord
+            if (square_is_occupied_by_enemy(color, target_coord_str)) {
+                last_captured_symbol = get_symbol_from_coord(target_coord_str);
+                last_captured_symbol_coord = target_coord_str;
+            } else {
+                last_captured_symbol = '_';
+                last_captured_symbol_coord = "";
+            }
+            
             // determine piece
             int piece = pieces.from_symbol(origin_symbol);
             
@@ -515,6 +524,43 @@ class Board {
 
             // place the piece at new target
             place_piece(piece, color, target_coord_str);
+
+            /* ---- Appendix Moves ---- */
+            // check for castling, if so do another move with the rook
+            if (piece == pieces.King && origin_coord_str == "E1" && target_coord_str == "G1") {
+                remove_piece("H1");
+                place_piece(piece, color, "F1");
+            } else if (piece == pieces.King && origin_coord_str == "E1" && target_coord_str == "C1") {
+                remove_piece("A1");
+                place_piece(piece, color, "D1");
+            } else if (piece == pieces.King && origin_coord_str == "E8" && target_coord_str == "G8") {
+                remove_piece("H8");
+                place_piece(piece, color, "F8");
+            } else if (piece == pieces.King && origin_coord_str == "E8" && target_coord_str == "C8") {
+                remove_piece("A8");
+                place_piece(piece, color, "D8");
+            }
+
+            // check for en-passant captures
+            if (piece == pieces.Pawn && target_coord_str == en_passant_coord) {
+                int target_file_str = en_passant_coord[0]; //stoi(get_square_from_coord(en_passant_coord)["file"]); 
+                
+                // depending on color 
+                if (color == pieces.w) {
+                    // black pawn captured on 5th rank
+                    last_captured_symbol_coord = target_coord_str + '5';
+                } else if (color == pieces.b) {
+                    // white pawn captured on 4th rank
+                    last_captured_symbol_coord = target_coord_str + '4';
+                }
+
+                remove_piece(last_captured_symbol_coord);
+            }
+
+            // override global variables but not game variables 
+            // (since the move can be executed outside of a game)
+            last_move[0] = origin_coord_str;
+            last_move[1] = target_coord_str;
 
         };
 
@@ -803,7 +849,65 @@ class Board {
 
         };
 
-        
+        void undo_ignorant_move () {
+
+            /* Undos the last ignorant move. */
+
+            // skip if there is no previous move defined
+            if (last_move[0] == "" || last_move[1] == "") {
+                return;
+            }
+
+            // undo the first main move
+            string  target = last_move[0],
+                    origin = last_move[1];
+            char symbol = get_symbol_from_coord(origin);
+            int piece = pieces.from_symbol(symbol);
+            ignorant_move(origin, target);
+            
+            // check for appendix moves
+            if (piece == pieces.King) {
+
+                int color = get_color_from_symbol(symbol);
+                if (color == pieces.w)
+                    if (target == "E1" && origin == "G1") {
+                        remove_piece("F1");
+                        place_piece(pieces.Rook, color, "H1");
+                    } else if (target == "E1" && target == "C1") {
+                        remove_piece("D1");
+                        place_piece(pieces.Rook, color, "A1");
+                    } 
+                else if (color == pieces.b)
+                    if (target == "E8" && target == "G8") {
+                        remove_piece("H8");
+                        place_piece(pieces.Rook, color, "F8");
+                    } else if (target == "E8" && target == "C8") {
+                        remove_piece("A8");
+                        place_piece(pieces.Rook, color, "D8");
+                    }
+
+            } else if (piece == pieces.Pawn) {
+
+                if (last_captured_symbol_coord != origin) {
+                    string pawn_origin;
+                    char file_str = last_captured_symbol_coord[0]; 
+                    int rank = stoi(get_square_from_coord(last_captured_symbol_coord)["rank"]);
+                    if (rank == 4) 
+                        pawn_origin = file_str + "5";
+                    else if (rank == 3) 
+                        pawn_origin = file_str + "4";
+                    place_piece(pieces.Pawn, pieces.b, pawn_origin);
+                }
+
+            }
+
+            // remove the last move & capture information
+            last_move[0] = "";
+            last_move[1] = "";
+            last_captured_symbol = '_';
+            last_captured_symbol_coord = "";
+
+        }
 
         /* game methods */
         void active_move (string origin_coord_str, string target_coord_str) {
@@ -812,9 +916,12 @@ class Board {
             
             int color = get_color_from_symbol(get_symbol_from_coord(origin_coord_str));
             bool captures = 0;
+            char captured_symbol;
 
+            // apriori denote
             if (square_is_occupied_by_enemy(color, target_coord_str))
                 captures = 1;
+                captured_symbol = get_symbol_from_coord(target_coord_str); 
 
             if (legal_move(origin_coord_str, target_coord_str)) {
 
@@ -828,7 +935,13 @@ class Board {
                     active_color = pieces.b;
                 }
 
+                // override last move variable
+                last_move[0] = origin_coord_str;
+                last_move[1] = target_coord_str;
+                last_captured_symbol = get_symbol_from_coord(targe)
             }
+
+             
 
         }   
 
@@ -904,6 +1017,9 @@ class Board {
 
         // Init game parameters
         int active_color = pieces.w;
+        string last_move[2] = {"", ""};
+        char last_captured_symbol = '_';
+        string last_captured_symbol_coord = "";
 
         // fen parameters
         string en_passant_coord = "-";
@@ -1032,12 +1148,13 @@ class Board {
                 } 
             }
 
+            // en-passant
+            // was checked already in reachable_targets object, it only needs to be checked if the en-passant
+            // move leaves an open check which will be done by default in the following.
+
             // make sure there is no check after move
             if (move_leaves_open_check(origin_coord_str, target_coord_str))
                 return false;
-
-            
-
             
             // check if the move is contained in reachable targets from that square
             if (origin_color == pieces.w) 
@@ -1058,8 +1175,7 @@ class Board {
             /* Checks by quick simulation if a move leaves an open check, i.e. is ultimately pinned. */
 
             int target_color,
-                origin_color = get_color_from_symbol(get_symbol_from_coord(origin_coord_str)),
-                target_piece = pieces.from_symbol(get_symbol_from_coord(target_coord_str));
+                origin_color = get_color_from_symbol(get_symbol_from_coord(origin_coord_str));
             if (origin_color == pieces.w)
                 target_color = pieces.b;
             else
@@ -1073,11 +1189,15 @@ class Board {
             else
                 result = false;
 
-            // revert position
-            ignorant_move(target_coord_str, origin_coord_str);
-            if (target_piece != pieces.None)
-                place_piece(target_piece, target_color, target_coord_str);
-
+            // revert position, the undo function will take care about castling and en-passant appendix moves
+            // to do this quickly it uses the last move and capture information.
+            undo_ignorant_move();
+            // ignorant_move(target_coord_str, origin_coord_str);
+            // if (last_captured_symbol != '_') {
+            //     place_piece(pieces.from_symbol(last_captured_symbol), target_color, target_coord_str);
+            //     last_captured_symbol = '_';
+            // }
+                
             return result;
             
         };
@@ -1215,7 +1335,7 @@ class Board {
                             out.push_back(en_passant_coord);
                             
                     }
-                    
+
                 }
                 
 
