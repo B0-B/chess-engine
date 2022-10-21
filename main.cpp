@@ -207,60 +207,6 @@ class Piece {
 
         }
 
-        wstring to_unicode (char symbol) {
-
-            /* Returns unicode for each piece (or symbol) which 
-            when printed shows renders a chess piece in console. */
-
-            int piece = from_symbol(symbol);
-            wstring unicode;
-
-            //wstring s = L"\u2659";
-            //wcout << "test unicode " << s.c_str() << endl;
-
- 
-            if (piece == 0) {
-                unicode = '_';
-            } else if (piece == 1) {
-                if (is_white(piece)) {
-                    unicode = L"\u2659";
-                } else {
-                    unicode = L"\u265F";
-                }
-            } else if (piece == 2) {
-                if (is_white(piece)) {
-                    unicode = L"\u2658";
-                } else {
-                    unicode = L"\u065E";
-                }
-            } else if (piece == 3) {
-                if (is_white(piece)) {
-                    unicode = L"\u0657";
-                } else {
-                    unicode = L"\u265D";
-                }
-            } else if (piece == 4) {
-                if (is_white(piece)) {
-                    unicode = L"\u2656";
-                } else {
-                    unicode = L"\u265C";
-                }
-            } else if (piece == 5) {
-                if (is_white(piece)) {
-                    unicode = L"\u2655";
-                } else {
-                    unicode = L"\u265B";
-                }
-            } else if (piece == 6) {
-                if (is_white(piece)) {
-                    unicode = L"\u2654";
-                } else {
-                    unicode = L"\u265A";
-                }
-            }
-            return unicode;
-        }
-
         int value (int piece) {
 
             /* Returns the historically known value of a piece. 
@@ -384,20 +330,17 @@ class Board {
             // iterate through grid
             int id;
             string line;
-            wcout << endl;
+            cout << endl;
             for (int rank = 7; rank >= 0; rank--) {
                 line = "";
                 for (int file = 0; file < 8; file++) {
                     id = rank * 8 + file;
-                    if (unicode) {
-                        wcout << pieces.to_unicode(grid[id]["symbol"][0]).c_str();
-                    } else {
-                        wcout << grid[id]["symbol"][0];
-                    }
+                    cout << grid[id]["symbol"][0];
                 }
-                wcout << endl;
+                cout << endl;
             }
-            wcout << endl;
+            cout << endl;
+            
         };
 
         void show_castling_rights () {
@@ -734,14 +677,12 @@ class Board {
             for (int i = 0; i < fen.size(); i++) {
                 
                 _char = fen[i];
-                //cout << "test y " << i << " " <<  _char << endl;
 
                 // parse piece locations
                 if (!pieces_completely_parsed) {
 
                     // determine piece and color from symbol char
                     piece = pieces.from_symbol(_char);
-                    //cout << "test piece " << _char << " " << piece << endl;
                     
                     // if line break is parsed decrement rank
                     if (_char == '&') {
@@ -753,7 +694,6 @@ class Board {
                     // if integer is parsed shift file
                     } else if (isdigit(_char)) {
                         // integers account for file shifts
-                        cout << "file shift: " << _char << endl;
                         file += _char - '0';
                         continue;
                     // finish parsing pieces on space
@@ -2394,7 +2334,7 @@ class Board {
 
             /* Counts the activity of all pieces of a certain color.
             The positional validation is drawn from the Piece.positional_weight_map 
-            and convolved with the piece value. */
+            and convolved with the material value. */
 
             char symbol;
             int piece;
@@ -2433,9 +2373,6 @@ class Board {
 
 
 int main (void) {
-
-    // set output mode for unicode printing
-    //_setmode(_fileno(stdout), _O_WTEXT);
 
     // initialize a new board and pieces objects
     Piece pieces;
