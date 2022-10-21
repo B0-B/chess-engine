@@ -281,6 +281,17 @@ class Piece {
 /*  Chess Board Implementation */
 class Board {   
 
+    /*
+    Chess board implementation with internal Pieces instance.
+    
+    - Provides move mechanics, with an undo depth of 1
+    - Counts possible squares, checks, legality and other chess rules.
+    - Can parse and output positions in FEN or PGN format 
+      (PGN move reversibility will be handled by the engine)
+    - denotes the moves in PGN format, move count and clock
+
+    */
+
     public:
 
         /* ---- General Parameters ---- */
@@ -497,7 +508,9 @@ class Board {
         /* manipulation/set methods */
         void ignorant_move (string origin_coord_str, string target_coord_str) {
 
-            /* Moves a piece disregarding chess rules by a combination of remove and place methods */
+            /* Moves a piece disregarding chess rules by a combination of remove and place methods. 
+            Open checks are disregarded, however additional en-passant and castling moves are accounted. 
+            Also the move information are saved in global last move and capture variables. */
 
             // determine the piece color
             int color;
@@ -527,34 +540,40 @@ class Board {
 
             /* ---- Appendix Moves ---- */
             // check for castling, if so do another move with the rook
-            if (piece == pieces.King && origin_coord_str == "E1" && target_coord_str == "G1") {
-                remove_piece("H1");
-                place_piece(piece, color, "F1");
-            } else if (piece == pieces.King && origin_coord_str == "E1" && target_coord_str == "C1") {
-                remove_piece("A1");
-                place_piece(piece, color, "D1");
-            } else if (piece == pieces.King && origin_coord_str == "E8" && target_coord_str == "G8") {
-                remove_piece("H8");
-                place_piece(piece, color, "F8");
-            } else if (piece == pieces.King && origin_coord_str == "E8" && target_coord_str == "C8") {
-                remove_piece("A8");
-                place_piece(piece, color, "D8");
-            }
-
-            // check for en-passant captures
-            if (piece == pieces.Pawn && target_coord_str == en_passant_coord) {
-                int target_file_str = en_passant_coord[0]; //stoi(get_square_from_coord(en_passant_coord)["file"]); 
-                
-                // depending on color 
-                if (color == pieces.w) {
-                    // black pawn captured on 5th rank
-                    last_captured_symbol_coord = target_coord_str + '5';
-                } else if (color == pieces.b) {
-                    // white pawn captured on 4th rank
-                    last_captured_symbol_coord = target_coord_str + '4';
+            if (piece == pieces.King) {
+                if (origin_coord_str == "E1" && target_coord_str == "G1") {
+                    remove_piece("H1");
+                    place_piece(piece, color, "F1");
+                } else if (origin_coord_str == "E1" && target_coord_str == "C1") {
+                    remove_piece("A1");
+                    place_piece(piece, color, "D1");
+                } else if (origin_coord_str == "E8" && target_coord_str == "G8") {
+                    remove_piece("H8");
+                    place_piece(piece, color, "F8");
+                } else if (origin_coord_str == "E8" && target_coord_str == "C8") {
+                    remove_piece("A8");
+                    place_piece(piece, color, "D8");
                 }
+            }
+            
+            // check for en-passant captures
+             else if (piece == pieces.Pawn) {
 
-                remove_piece(last_captured_symbol_coord);
+                if (target_coord_str == en_passant_coord) {
+                    int target_file_str = en_passant_coord[0]; //stoi(get_square_from_coord(en_passant_coord)["file"]); 
+                
+                    // depending on color 
+                    if (color == pieces.w) {
+                        // black pawn captured on 5th rank
+                        last_captured_symbol_coord = target_coord_str + '5';
+                    } else if (color == pieces.b) {
+                        // white pawn captured on 4th rank
+                        last_captured_symbol_coord = target_coord_str + '4';
+                    }
+
+                    remove_piece(last_captured_symbol_coord);
+                }
+                
             }
 
             // override global variables but not game variables 
@@ -572,78 +591,82 @@ class Board {
             } 
 
             // check if active color is respected
-            if (get_color_from_symbol(get_symbol_from_coord(origin_coord_str)) != active_color) {
-                cout << "it is " << active_color << "'s turn!";
-                return false;
-            }
+            // if (get_color_from_symbol(get_symbol_from_coord(origin_coord_str)) != active_color) {
+            //     cout << "it is " << active_color << "'s turn!";
+            //     return false;
+            // }
 
-            // check before the actual move if the moving piece is the king 
-            int piece = pieces.from_symbol(get_symbol_from_coord(origin_coord_str));
-            bool king_move = piece == pieces.King;
-            vector<string> castle_coords = {};
-            if (piece == pieces.King) {
-                if (active_color == pieces.w && can_castle_king_side(active_color)) {
-                    castle_coords.push_back("G1");
-                } 
-                if (active_color == pieces.w && can_castle_queen_side(active_color)) {
-                    castle_coords.push_back("C1");
-                }
-                if (active_color == pieces.b && can_castle_king_side(active_color)) {
-                    castle_coords.push_back("G8");
-                } 
-                if (active_color == pieces.b && can_castle_queen_side(active_color)) {
-                    castle_coords.push_back("C8");
-                }
-            }
+            // castling moves are  checked by the move_is_legal function and then executed by the ignorant move in the following
+
+
+            // int piece = pieces.from_symbol(get_symbol_from_coord(origin_coord_str));
+            // bool king_move = piece == pieces.King;
+            // vector<string> castle_coords = {};
+            // if (piece == pieces.King) {
+            //     if (active_color == pieces.w && can_castle_king_side(active_color)) {
+            //         castle_coords.push_back("G1");
+            //     } 
+            //     if (active_color == pieces.w && can_castle_queen_side(active_color)) {
+            //         castle_coords.push_back("C1");
+            //     }
+            //     if (active_color == pieces.b && can_castle_king_side(active_color)) {
+            //         castle_coords.push_back("G8");
+            //     } 
+            //     if (active_color == pieces.b && can_castle_queen_side(active_color)) {
+            //         castle_coords.push_back("C8");
+            //     }
+            // }
             
             // now the main ignorant move is legal
             ignorant_move(origin_coord_str, target_coord_str);
 
             // if the move matches with the castling options determine and play the corresponding rook move
-            if (king_move && castle_coords.size() > 0 && contains_string(castle_coords, target_coord_str)) {
+            // if (king_move && castle_coords.size() > 0 && contains_string(castle_coords, target_coord_str)) {
                 
-                // determine rook move
-                if (target_coord_str == "G1") 
-                    ignorant_move("H1", "F1");
-                else if (target_coord_str == "C1")
-                    ignorant_move("A1", "D1");
-                else if (target_coord_str == "G8")
-                    ignorant_move("H8", "F8");
-                else if (target_coord_str == "C8")
-                    ignorant_move("A8", "D8");
+            //     // determine rook move
+            //     if (target_coord_str == "G1") 
+            //         ignorant_move("H1", "F1");
+            //     else if (target_coord_str == "C1")
+            //         ignorant_move("A1", "D1");
+            //     else if (target_coord_str == "G8")
+            //         ignorant_move("H8", "F8");
+            //     else if (target_coord_str == "C8")
+            //         ignorant_move("A8", "D8");
 
-            } 
+            // } 
 
-            // check if an en-passant option popped up
-            else if (piece == pieces.Pawn) {
+            // check if King or rook was moved to remove castling right
 
-                int rank_origin = stoi(get_square_from_coord(origin_coord_str)["rank"]);
-                map<string, string> square = get_square_from_coord(target_coord_str);
-                int file = stoi(square["file"]),
-                    rank = stoi(square["rank"]);
-                string coord;
-                char symbol;
+            // // check if an en-passant option popped up
+            // if (piece == pieces.Pawn) {
 
-                // activate only if the pawn is moved from origin square for two ranks at once
-                if (active_color == pieces.w && rank_origin == 1 && rank == 3) {
+            //     int rank_origin = stoi(get_square_from_coord(origin_coord_str)["rank"]);
+            //     map<string, string> square = get_square_from_coord(target_coord_str);
+            //     int file = stoi(square["file"]),
+            //         rank = stoi(square["rank"]);
+            //     string coord;
+            //     char symbol;
 
-                    if (square_is_valid(rank, file+1)) {
-                        coord = get_coord_from_file_and_rank(file+1, rank);
-                        symbol = get_symbol_from_coord(coord);
-                        if (square_is_occupied_by_enemy(active_color, coord) && pieces.from_symbol(symbol) == pieces.Pawn) {
+            //     // activate only if the pawn is moved from origin square for two ranks at once
+            //     if (active_color == pieces.w && rank_origin == 1 && rank == 3) {
 
-                        }
+            //         if (square_is_valid(rank, file+1)) {
+            //             coord = get_coord_from_file_and_rank(file+1, rank);
+            //             symbol = get_symbol_from_coord(coord);
+            //             if (square_is_occupied_by_enemy(active_color, coord) && pieces.from_symbol(symbol) == pieces.Pawn) {
 
-                    }
+            //             }
 
-                    if (square_is_valid(rank, file-1)) {
-                        coord = get_coord_from_file_and_rank(file+1, rank);
-                        symbol = get_symbol_from_coord(coord);
-                    }
-                }
+            //         }
+
+            //         if (square_is_valid(rank, file-1)) {
+            //             coord = get_coord_from_file_and_rank(file+1, rank);
+            //             symbol = get_symbol_from_coord(coord);
+            //         }
+            //     }
                 
                 
-            }
+            // }
 
             return true;
         };
@@ -914,7 +937,8 @@ class Board {
 
             /* Active moves manipulate the board and game parameters. */
             
-            int color = get_color_from_symbol(get_symbol_from_coord(origin_coord_str));
+            char symbol = get_symbol_from_coord(origin_coord_str);
+            int color = get_color_from_symbol(symbol);
             bool captures = 0;
             char captured_symbol;
 
@@ -923,25 +947,57 @@ class Board {
                 captures = 1;
                 captured_symbol = get_symbol_from_coord(target_coord_str); 
 
+            // format the move before the board is altered
+            string move_notation = move_to_pgn(origin_coord_str, target_coord_str);
+
             if (legal_move(origin_coord_str, target_coord_str)) {
 
-                if (color == pieces.b) {
-                    // raise the move count if black has finished the move
-                    move_count += 1;
-                    // switch active color
-                    active_color = pieces.w;
+                // denote if a new en-passant possibility arises from this move
+                if (pieces.from_symbol(symbol) == pieces.Pawn) {
 
+                    int rank_origin = stoi(get_square_from_coord(origin_coord_str)["rank"]);
+                    map<string, string> square = get_square_from_coord(target_coord_str);
+                    int file = stoi(square["file"]),
+                        rank = stoi(square["rank"]);
+                    string coord;
+                    char symbol;
+
+                    // finally check if the pawn is moved from origin square for two ranks at once
+                    if ((active_color == pieces.w && rank_origin == 1 && rank == 3) || (active_color == pieces.b && rank_origin == 6 && rank == 4)) {
+
+                        if (square_is_valid(rank, file+1)) {
+                            coord = get_coord_from_file_and_rank(file+1, rank);
+                            symbol = get_symbol_from_coord(coord);
+                            if (square_is_occupied_by_enemy(active_color, coord) && pieces.from_symbol(symbol) == pieces.Pawn) {
+                                en_passant_coord = coord;
+                            }
+                        }
+
+                        if (square_is_valid(rank, file-1)) {
+                            coord = get_coord_from_file_and_rank(file+1, rank);
+                            symbol = get_symbol_from_coord(coord);
+                            if (square_is_occupied_by_enemy(active_color, coord) && pieces.from_symbol(symbol) == pieces.Pawn) {
+                                en_passant_coord = coord;
+                            }
+                        }
+
+                    }
+                }
+
+                // denote the legal move
+                if (color == pieces.w)
+                    move_history[move_count] = {};
+                move_history[move_count].push_back(move_notation);
+
+                // override move count only if black has played and alternate active color
+                if (color == pieces.b) {
+                    move_count += 1;
+                    active_color = pieces.w;
                 } else {
                     active_color = pieces.b;
                 }
 
-                // override last move variable
-                last_move[0] = origin_coord_str;
-                last_move[1] = target_coord_str;
-                last_captured_symbol = get_symbol_from_coord(targe)
             }
-
-             
 
         }   
 
@@ -1020,6 +1076,7 @@ class Board {
         string last_move[2] = {"", ""};
         char last_captured_symbol = '_';
         string last_captured_symbol_coord = "";
+        map<int, vector<string>> move_history;
 
         // fen parameters
         string en_passant_coord = "-";
@@ -1110,6 +1167,89 @@ class Board {
 
         };
 
+        string move_to_pgn (string origin_coord_str, string target_coord_str) {
+            
+            /*
+            Converts a move to portable game notation string, depending on board postion etc.
+            This function should be called within the active move function but before the ignorant move within is played,
+            as this would alter the board position.
+            */
+
+            map<string, string> origin_square = get_square_from_coord(origin_coord_str);
+            char origin_symbol = origin_square["symbol"][0];
+            int color = get_color_from_symbol(origin_symbol);
+            int origin_piece = pieces.from_symbol(origin_symbol);
+            int origin_file = stoi(origin_square["file"]);
+            int origin_rank = stoi(origin_square["rank"]);
+            char origin_file_str = origin_coord_str[0];
+            int attacker_piece;
+            string attacker_coord;
+            string formatted = target_coord_str; // output
+
+            /* ---- castling ---- */
+            // castling shortcut
+            if ( origin_piece == pieces.King && ((origin_coord_str == "E1" && target_coord_str == "G1") || (origin_coord_str == "E8" && target_coord_str == "G8")))
+                return "O-O"; // king-side castle
+            else if (origin_piece == pieces.King && ((origin_coord_str == "E1" && target_coord_str == "C1") || (origin_coord_str == "E8" && target_coord_str == "C8")))
+                return "O-O-O"; // queen-side castle
+
+            // check if move will capture
+            if (square_is_occupied_by_enemy(color, target_coord_str))
+                formatted = 'x' + formatted;
+            
+            /* ---- pawn ---- */
+            // check if pawn captured
+            if (origin_piece == pieces.Pawn && formatted[0] == 'x')
+                return origin_file_str + formatted;
+            // check if pawn is just pushed
+            else if (origin_piece == pieces.Pawn && formatted[0] != 'x')
+                return formatted;
+
+
+            /*  First check how many pieces attack the target coordinate.
+                The aim is to determine if multiple pieces of same kind are attaking. */
+            
+            // get possible moves map
+            map<string, vector<string>> m;
+            if (color == pieces.w)
+                m = moves_for_white;
+            else
+                m = moves_for_black;
+
+            // iterate through all other attackers of origin color, if another attacker
+            // is the same piece as the origin piece, we need to distinguish either the file or rank
+            map<string, string> attacker_square;
+            int attacker_rank, attacker_file;
+            bool ambiguous = false;
+            for (auto const& x : m) {
+                // if attacker square is different from origin proceed
+                if (x.first != origin_coord_str) {
+                    
+                    // if the other attacker square is attacking the target as well proceed
+                    if (contains_string(x.second, target_coord_str)) {
+
+                        attacker_coord = x.first;
+                        attacker_square = get_square_from_coord(attacker_coord);
+                        attacker_rank = stoi(attacker_square["rank"]);
+                        attacker_file = stoi(attacker_square["file"]);
+                        attacker_piece = pieces.from_symbol(attacker_square["symbol"][0]);
+                        
+                        // if the attacking piece is no pawn and is one of two pieces of same kind which attack add the file
+                        if (attacker_piece == origin_piece) 
+                            // if on same file denote the rank
+                            if (attacker_file == origin_file) 
+                                return origin_symbol + (origin_coord_str[1] + formatted);
+                            // otherwise denote file
+                            return origin_symbol + (origin_file_str + formatted);
+                    }
+                }
+                
+            }
+
+            return origin_symbol + formatted;
+
+        };
+
         bool move_is_legal (string origin_coord_str, string target_coord_str) {
             
             /* Checks if a move is legal by general chess rules.
@@ -1119,6 +1259,12 @@ class Board {
             char symbol = get_symbol_from_coord(origin_coord_str);
             int piece = pieces.from_symbol(symbol);
             int origin_color = get_color_from_symbol(symbol);
+
+            // check if active color is respected
+            if (get_color_from_symbol(symbol) != active_color) {
+                cout << "it is " << active_color << "'s turn!";
+                return false;
+            }
 
             // first check if move is a castling move and if it is valid, otherwise continue
             if (piece == pieces.King) {
@@ -1220,20 +1366,12 @@ class Board {
             // cut short in case that the square is empty
             if (symbol == '_') {return out;}
 
-            
             int color = get_color_from_symbol(symbol);
             int piece = pieces.from_symbol(symbol);
-
-            // cout << "test 1 rank and file " << square["rank"] << " " << square["file"] << endl; 
 
             string target_coord;
             int rank = stoi(square["rank"]),
                 file = stoi(square["file"]); 
-
-            
-            // cout << "test 2 rank and file " << rank << " " << file << endl; 
-            // cout << "test symbol " << symbol << endl;  
-            
 
             // piece-dep. decision tree
             if (piece == pieces.Pawn) {
