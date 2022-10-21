@@ -14,6 +14,7 @@ B0-B
 #include <map>
 #include <string>
 #include <ctype.h>
+#include <cctype>
 #include <vector>
 
 using namespace std;
@@ -36,6 +37,17 @@ bool contains_substring (string s, string ss) {
     return s.find(ss) != std::string::npos;
 
 };
+
+string lower_case (string s) {
+    
+    /* Returns lowercase of string */
+
+    for (int i = 0; i < s.size(); i++) {
+        s[i] = tolower(s[i]);
+    }
+    return s;
+
+}
 
 /* Chess pieces implementation */
 class Piece {
@@ -997,14 +1009,16 @@ class Board {
                     active_color = pieces.b;
                 }
 
+                // refresh the board
+                refresh_position();
             }
 
         }   
 
-        void refresh () {
+        void refresh_position () {
 
             /* Main parsing mechanism for position and map computation. 
-            Should be called after every board alternation e.g. an active move. 
+            Should be called after every board alternation e.g. at the end of an active move. 
             The method works color-wise for efficiency reasons, and will gather
             all targets, moves and symbol mappings, for global access. */
 
@@ -1179,10 +1193,7 @@ class Board {
             char origin_symbol = origin_square["symbol"][0];
             int color = get_color_from_symbol(origin_symbol);
             int origin_piece = pieces.from_symbol(origin_symbol);
-            int origin_file = stoi(origin_square["file"]);
-            int origin_rank = stoi(origin_square["rank"]);
             char origin_file_str = origin_coord_str[0];
-            int attacker_piece;
             string attacker_coord;
             string formatted = target_coord_str; // output
 
@@ -1200,11 +1211,10 @@ class Board {
             /* ---- pawn ---- */
             // check if pawn captured
             if (origin_piece == pieces.Pawn && formatted[0] == 'x')
-                return origin_file_str + formatted;
+                return lower_case(origin_file_str + formatted);
             // check if pawn is just pushed
             else if (origin_piece == pieces.Pawn && formatted[0] != 'x')
-                return formatted;
-
+                return lower_case(formatted);
 
             /*  First check how many pieces attack the target coordinate.
                 The aim is to determine if multiple pieces of same kind are attaking. */
@@ -1219,8 +1229,7 @@ class Board {
             // iterate through all other attackers of origin color, if another attacker
             // is the same piece as the origin piece, we need to distinguish either the file or rank
             map<string, string> attacker_square;
-            int attacker_rank, attacker_file;
-            bool ambiguous = false;
+            int attacker_rank, attacker_file, attacker_piece;
             for (auto const& x : m) {
                 // if attacker square is different from origin proceed
                 if (x.first != origin_coord_str) {
@@ -1235,18 +1244,25 @@ class Board {
                         attacker_piece = pieces.from_symbol(attacker_square["symbol"][0]);
                         
                         // if the attacking piece is no pawn and is one of two pieces of same kind which attack add the file
-                        if (attacker_piece == origin_piece) 
+                        if (attacker_piece == origin_piece) {
+
+                            int origin_file = stoi(origin_square["file"]);
+                            
                             // if on same file denote the rank
                             if (attacker_file == origin_file) 
-                                return origin_symbol + (origin_coord_str[1] + formatted);
+                                return lower_case(origin_symbol + (origin_coord_str[1] + formatted));
+
                             // otherwise denote file
-                            return origin_symbol + (origin_file_str + formatted);
+                            return lower_case(origin_symbol + (origin_file_str + formatted));
+
+                        }
+
                     }
                 }
                 
             }
 
-            return origin_symbol + formatted;
+            return lower_case(origin_symbol + formatted);
 
         };
 
@@ -2397,7 +2413,7 @@ int main (void) {
     boardObject.show_en_passant();
     boardObject.show_castling_rights();
 
-    boardObject.refresh();
+    boardObject.refresh_position();
 
 
     boardObject.show_move_count_for_active_color();
