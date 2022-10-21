@@ -477,6 +477,15 @@ class Board {
 
         }
 
+        void show_pgn () {
+
+            /* Outputs the PGN code to console. */
+            
+            for (auto const& x : move_history) 
+                cout << x.first << ". " << x.second[0] << " " << x.second[1] << endl;
+        
+        }
+
         void show_reachable_squares (string coord_str) {
             
             /* Prints the reachable targets delimited into console */
@@ -964,8 +973,10 @@ class Board {
 
             if (legal_move(origin_coord_str, target_coord_str)) {
 
+                int piece = pieces.from_symbol(symbol);
+
                 // denote if a new en-passant possibility arises from this move
-                if (pieces.from_symbol(symbol) == pieces.Pawn) {
+                if (piece == pieces.Pawn) {
 
                     int rank_origin = stoi(get_square_from_coord(origin_coord_str)["rank"]);
                     map<string, string> square = get_square_from_coord(target_coord_str);
@@ -994,6 +1005,33 @@ class Board {
                         }
 
                     }
+                } 
+                
+                // check if King moved to remove castling rights
+                else if (piece == pieces.King) {
+
+                    if (color == pieces.w) {
+                        castling_right_k_w = 0;
+                        castling_right_q_w = 0;
+                    } else if (color == pieces.b) {
+                        castling_right_k_b = 0;
+                        castling_right_q_b = 0;
+                    }
+
+                }
+
+                // check if a rook moved to remove castling right
+                else if (piece == pieces.Rook) {
+
+                    if (origin_coord_str == "H1")
+                        castling_right_k_w = 0;
+                    else if (origin_coord_str == "A1")
+                        castling_right_q_w = 0;
+                    else if (origin_coord_str == "A8")
+                        castling_right_q_b = 0;
+                    else if (origin_coord_str == "H8")
+                        castling_right_k_b = 0;
+
                 }
 
                 // denote the legal move
@@ -2402,33 +2440,43 @@ int main (void) {
     // initialize a new board and pieces objects
     Piece pieces;
     Board boardObject;
-    
+
+    boardObject.load_starting_position();
+
+    // play the scandinavian for test
+    boardObject.active_move("E2", "E4");
+    boardObject.active_move("D7", "D5");
+    boardObject.active_move("E4", "D5");
+    boardObject.active_move("G8", "F6");
+
+    boardObject.show_pgn();
+
     // int id = 0;
     // cout << "id test " << id << " " << boardObject.get_coord_from_id(id);
-    boardObject.load_starting_position();
+    // boardObject.load_starting_position();
     
-    boardObject.show_half_clock();
-    boardObject.show_move_count();
+    // boardObject.show_half_clock();
+    // boardObject.show_move_count();
 
-    boardObject.show_en_passant();
-    boardObject.show_castling_rights();
+    // boardObject.show_en_passant();
+    // boardObject.show_castling_rights();
 
-    boardObject.refresh_position();
+    // boardObject.refresh_position();
 
 
-    boardObject.show_move_count_for_active_color();
-    boardObject.show_moves_for_active_color();
-    boardObject.show_reachable_squares_for_active_color();
+    // boardObject.show_move_count_for_active_color();
+    // boardObject.show_moves_for_active_color();
+    // boardObject.show_reachable_squares_for_active_color();
     
-    boardObject.print_board();
+    // boardObject.print_board();
     
-    boardObject.show_position_activity();
-    boardObject.ignorant_move("E2", "E4");
-    boardObject.ignorant_move("D7", "D5");
-    boardObject.show_reachable_squares("E4");
-    boardObject.show_material();
-    boardObject.show_position_activity();
-    boardObject.print_board();
+    // boardObject.show_position_activity();
+    // boardObject.ignorant_move("E2", "E4");
+    // boardObject.ignorant_move("D7", "D5");
+    // boardObject.show_reachable_squares("E4");
+    // boardObject.show_material();
+    // boardObject.show_position_activity();
+    // boardObject.print_board();
     
     return 0;
 }
