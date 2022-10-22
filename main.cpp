@@ -492,7 +492,31 @@ class Board {
 
 
         /* manipulation/set methods */
-        void ignorant_move (string origin_coord_str, string target_coord_str) {
+
+        /*
+
+        Move dependency tree
+
+                           active_move  ->  changes active game parameters like move count
+                                |           move is denoted, denotes en-passant possibility. Removes castling rights.
+                                |           Refreshes the board position, by parsing new targets and moves.
+                                v
+        move_is_legal  -->  legal_move  ->  checks if the move is is legal via next dependency
+        [simulation]            |           if so, will allow the ingorant move.
+                ^               |           
+                |               v
+                |------  ignorant_move  ->  removes a piece at origin and places it at target,
+                |                           regardless of open checks this may leave.
+                |                           Also appendix moves like rook at castling or en-passant
+                |                           caputures are recognized, played and denoted.
+                |                           The saving of the last move allows to undo the last move only.
+                |                           This is for pure simulation purposes not for depth analysis,
+                |                           as this will be handled later by the engine.
+            
+            undo_ignorant_move -> Undos the last ignorant move played by the last move information.
+
+        */
+        void ignorant_move (string origin_coord_str, string target_coord_str, bool verbose=1) {
 
             /* Moves a piece disregarding chess rules by a combination of remove and place methods. 
             Open checks are disregarded, however additional en-passant and castling moves are accounted. 
@@ -519,26 +543,26 @@ class Board {
             int piece = pieces.from_symbol(origin_symbol);
             
             // remove the piece from origin
-            remove_piece(origin_coord_str);
+            remove_piece(origin_coord_str, verbose);
 
             // place the piece at new target
-            place_piece(piece, color, target_coord_str);
+            place_piece(piece, color, target_coord_str, verbose);
 
             /* ---- Appendix Moves ---- */
             // check for castling, if so do another move with the rook
             if (piece == pieces.King) {
                 if (origin_coord_str == "E1" && target_coord_str == "G1") {
-                    remove_piece("H1");
-                    place_piece(piece, color, "F1");
+                    remove_piece("H1", verbose);
+                    place_piece(piece, color, "F1", verbose);
                 } else if (origin_coord_str == "E1" && target_coord_str == "C1") {
-                    remove_piece("A1");
-                    place_piece(piece, color, "D1");
+                    remove_piece("A1", verbose);
+                    place_piece(piece, color, "D1", verbose);
                 } else if (origin_coord_str == "E8" && target_coord_str == "G8") {
-                    remove_piece("H8");
-                    place_piece(piece, color, "F8");
+                    remove_piece("H8", verbose);
+                    place_piece(piece, color, "F8", verbose);
                 } else if (origin_coord_str == "E8" && target_coord_str == "C8") {
-                    remove_piece("A8");
-                    place_piece(piece, color, "D8");
+                    remove_piece("A8", verbose);
+                    place_piece(piece, color, "D8", verbose);
                 }
             }
             
@@ -557,7 +581,7 @@ class Board {
                         last_captured_symbol_coord = target_coord_str + '4';
                     }
 
-                    remove_piece(last_captured_symbol_coord);
+                    remove_piece(last_captured_symbol_coord, verbose);
                 }
                 
             }
@@ -572,7 +596,7 @@ class Board {
         bool legal_move (string origin_coord_str, string target_coord_str) {
             
             if (!move_is_legal(origin_coord_str, target_coord_str)) {
-                cout << "move " << origin_coord_str << " -> " << target_coord_str << " is not legal.";
+                cout << "move " << origin_coord_str << " -> " << target_coord_str << " is not legal." << endl;
                 return false;
             } 
 
@@ -808,25 +832,25 @@ class Board {
             cout << "successfully loaded starting position." << endl;
         };
 
-        void place_piece (int piece, int color, string coord_str) {
+        void place_piece (int piece, int color, string coord_str, bool verbose=1) {
 
             /* Places a piece on the board */
             char piece_symbol = pieces.to_symbol(piece, color);
 
-            if (__verbose__)
+            if (verbose)
                 cout << "place " << pieces.name_from_symbol(piece_symbol) << " (" << piece_symbol << ")" << " at " << coord_str << endl;
             
             set_symbol_at_coord(piece_symbol, coord_str);
 
         };
 
-        void remove_piece (string coord_str) {
+        void remove_piece (string coord_str, bool verbose=1) {
 
             /* Removes a piece from requested coordinate */
 
             char piece_symbol = get_symbol_from_coord(coord_str);
 
-            if (__verbose__)
+            if (verbose)
                 cout << "remove " << pieces.name_from_symbol(piece_symbol) << " (" << piece_symbol << ")" << " at " << coord_str << endl;
             
             // override square value with underscore
@@ -869,7 +893,7 @@ class Board {
                     origin = last_move[1];
             char symbol = get_symbol_from_coord(origin);
             int piece = pieces.from_symbol(symbol);
-            ignorant_move(origin, target);
+            ignorant_move(origin, target, 0);
 
             // check for appendix moves
             if (piece == pieces.King) {
@@ -878,19 +902,19 @@ class Board {
                 int color = get_color_from_symbol(symbol);
                 if (color == pieces.w)
                     if (target == "E1" && origin == "G1") {
-                        remove_piece("F1");
-                        place_piece(pieces.Rook, color, "H1");
+                        remove_piece("F1", 0);
+                        place_piece(pieces.Rook, color, "H1", 0);
                     } else if (target == "E1" && target == "C1") {
-                        remove_piece("D1");
-                        place_piece(pieces.Rook, color, "A1");
+                        remove_piece("D1", 0);
+                        place_piece(pieces.Rook, color, "A1", 0);
                     } 
                 else if (color == pieces.b)
                     if (target == "E8" && target == "G8") {
-                        remove_piece("H8");
-                        place_piece(pieces.Rook, color, "F8");
+                        remove_piece("H8", 0);
+                        place_piece(pieces.Rook, color, "F8", 0);
                     } else if (target == "E8" && target == "C8") {
-                        remove_piece("A8");
-                        place_piece(pieces.Rook, color, "D8");
+                        remove_piece("A8", 0);
+                        place_piece(pieces.Rook, color, "D8", 0);
                     }
 
             } else if (piece == pieces.Pawn) {
@@ -904,7 +928,7 @@ class Board {
                         pawn_origin = file_str + "5";
                     else if (rank == 3) 
                         pawn_origin = file_str + "4";
-                    place_piece(pieces.Pawn, pieces.b, pawn_origin);
+                    place_piece(pieces.Pawn, pieces.b, pawn_origin, 0);
                 }
 
             }
@@ -1273,14 +1297,19 @@ class Board {
             /* Checks if a move is legal by general chess rules.
             The playable moves from origin are drawn from the targets map. */
 
-            vector<string> reachable_moves;
+            vector<string> playable_moves;
             char symbol = get_symbol_from_coord(origin_coord_str);
             int piece = pieces.from_symbol(symbol);
             int origin_color = get_color_from_symbol(symbol);
 
             // check if active color is respected
-            if (get_color_from_symbol(symbol) != active_color) {
-                cout << "it is " << active_color << "'s turn!";
+            if (origin_color != active_color) {
+                string col_str;
+                if (origin_color == pieces.w) 
+                    col_str = "white";
+                else 
+                    col_str = "black";
+                cout << "it is " << col_str << "'s turn!" << endl;
                 return false;
             }
             
@@ -1320,13 +1349,13 @@ class Board {
             if (move_leaves_open_check(origin_coord_str, target_coord_str))
                 return false;
 
-            // check if the move is contained in reachable targets from that square
+            // check if the move is contained in set of moves (which leave no check) from that square
             if (origin_color == pieces.w) 
-                reachable_moves = targets_for_white[origin_coord_str];
+                playable_moves = moves_for_white[origin_coord_str];
             else 
-                reachable_moves = targets_for_black[origin_coord_str];
-            for (int i = 0; i < reachable_moves.size(); i++) {
-                if (reachable_moves[i] == target_coord_str)
+                playable_moves = moves_for_black[origin_coord_str];
+            for (int i = 0; i < playable_moves.size(); i++) {
+                if (playable_moves[i] == target_coord_str)
                     return true;
             }
 
@@ -1347,7 +1376,7 @@ class Board {
             
             // simulate
             bool result;
-            ignorant_move(origin_coord_str, target_coord_str);
+            ignorant_move(origin_coord_str, target_coord_str, 0);
             if (is_checked(origin_color))
                 result = true;
             else
@@ -2404,6 +2433,7 @@ int main (void) {
     Board boardObject;
 
     boardObject.load_starting_position();
+    boardObject.refresh_position();
 
     boardObject.show_board();
 
