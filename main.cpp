@@ -1,11 +1,33 @@
 /* 
 
-C++ chess engine implementation.
-This code is inteded for C++ compiler version >=11.
-B0-B
+    C++ chess engine implementation.
+    This code is inteded for C++ compiler version >=11.
+
+    Copyright 2022 B0-B
+    Permission is hereby granted, free of charge, to any person obtaining a copy of 
+    this software and associated documentation files (the "Software"), to deal in the 
+    Software without restriction, including without limitation the rights to use, copy, 
+    modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, 
+    and to permit persons to whom the Software is furnished to do so, subject to the 
+    following conditions:
+    The above copyright notice and this permission notice shall be included in all copies 
+    or substantial portions of the Software.
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+    INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
+    PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+    HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF 
+    CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE 
+    OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+
+    _________________________________________________________________________________________
+
+    BUGS
+
+    move_is_legal -> move_leaves_open_check -> undo_ignorant_move
 
 */
-
 
 
 #include <stdio.h>
@@ -321,7 +343,7 @@ class Board {
 
         
         /* output methods */
-        void print_board (int unicode = 0) {
+        void show_board (int unicode = 0) {
             
             /* Prints the board in the terminal.
             If 'unicode' is enabled chess unicode symbols will be displayed
@@ -340,7 +362,7 @@ class Board {
                 cout << endl;
             }
             cout << endl;
-            
+
         };
 
         void show_castling_rights () {
@@ -562,7 +584,7 @@ class Board {
 
             // castling moves are  checked by the move_is_legal function and then executed by the ignorant move in the following
 
-
+            
             // int piece = pieces.from_symbol(get_symbol_from_coord(origin_coord_str));
             // bool king_move = piece == pieces.King;
             // vector<string> castle_coords = {};
@@ -848,10 +870,11 @@ class Board {
             char symbol = get_symbol_from_coord(origin);
             int piece = pieces.from_symbol(symbol);
             ignorant_move(origin, target);
-            
+
             // check for appendix moves
             if (piece == pieces.King) {
 
+                // undo castling
                 int color = get_color_from_symbol(symbol);
                 if (color == pieces.w)
                     if (target == "E1" && origin == "G1") {
@@ -872,7 +895,8 @@ class Board {
 
             } else if (piece == pieces.Pawn) {
 
-                if (last_captured_symbol_coord != origin) {
+                // undo en-passant
+                if (last_captured_symbol_coord.size() > 0 && last_captured_symbol_coord != origin) {
                     string pawn_origin;
                     char file_str = last_captured_symbol_coord[0]; 
                     int rank = stoi(get_square_from_coord(last_captured_symbol_coord)["rank"]);
@@ -910,9 +934,9 @@ class Board {
 
             // format the move before the board is altered
             string move_notation = move_to_pgn(origin_coord_str, target_coord_str);
-
+            
             if (legal_move(origin_coord_str, target_coord_str)) {
-
+                
                 int piece = pieces.from_symbol(symbol);
 
                 // denote if a new en-passant possibility arises from this move
@@ -986,7 +1010,7 @@ class Board {
                 } else {
                     active_color = pieces.b;
                 }
-
+                
                 // refresh the board
                 refresh_position();
             }
@@ -1259,7 +1283,7 @@ class Board {
                 cout << "it is " << active_color << "'s turn!";
                 return false;
             }
-
+            
             // first check if move is a castling move and if it is valid, otherwise continue
             if (piece == pieces.King) {
                 if (origin_color == pieces.w && origin_coord_str == "E1" && target_coord_str == "G1") {
@@ -1287,15 +1311,15 @@ class Board {
                         return false;
                 } 
             }
-
+            
             // en-passant
             // was checked already in reachable_targets object, it only needs to be checked if the en-passant
             // move leaves an open check which will be done by default in the following.
 
-            // make sure there is no check after move
+            // make sure there is no check after move (possible bottleneck)
             if (move_leaves_open_check(origin_coord_str, target_coord_str))
                 return false;
-            
+
             // check if the move is contained in reachable targets from that square
             if (origin_color == pieces.w) 
                 reachable_moves = targets_for_white[origin_coord_str];
@@ -1328,10 +1352,11 @@ class Board {
                 result = true;
             else
                 result = false;
-
+            
             // revert position, the undo function will take care about castling and en-passant appendix moves
             // to do this quickly it uses the last move and capture information.
             undo_ignorant_move();
+
             // ignorant_move(target_coord_str, origin_coord_str);
             // if (last_captured_symbol != '_') {
             //     place_piece(pieces.from_symbol(last_captured_symbol), target_color, target_coord_str);
@@ -2380,11 +2405,15 @@ int main (void) {
 
     boardObject.load_starting_position();
 
+    boardObject.show_board();
+
     // play the scandinavian for test
     boardObject.active_move("E2", "E4");
     boardObject.active_move("D7", "D5");
     boardObject.active_move("E4", "D5");
     boardObject.active_move("G8", "F6");
+
+    boardObject.show_board();
 
     boardObject.show_pgn();
 
