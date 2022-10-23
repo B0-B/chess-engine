@@ -25,10 +25,13 @@
 
     BUGS
 
-    move_is_legal -> move_leaves_open_check -> undo_ignorant_move
+    active_move -> refresh_position -> update_reachable_targets (not the problem)
+                                    -> update_moves
+    White targets are the same as black targets.
+
+    move_is_legal -> move_leaves_open_check -> undo_ignorant_move   *** solved ***
 
 */
-
 
 #include <stdio.h>
 #include <iostream>
@@ -70,6 +73,7 @@ string lower_case (string s) {
     return s;
 
 }
+
 
 /* Chess pieces implementation */
 class Piece {
@@ -1346,7 +1350,6 @@ class Board {
                 return false;
             
             // check if the move is contained in set of moves (which leave no check) from that square
-            show_moves_for_active_color();
             if (origin_color == pieces.w) 
                 playable_moves = moves_for_white[origin_coord_str];
             else 
@@ -2250,7 +2253,10 @@ class Board {
                 coord = get_coord_from_id(i);
                 if (square_is_occupied_by_friendly_piece(color, coord)) {
                     // override/create entry for coord with vector of all reachable targets from that square
+                    
                     m[coord] = reachable_target_coords(coord);
+                    if (m[coord].size() > 0)
+                        cout << "coord test " << coord << ": " << m[coord][0] << endl;
                 } 
             }
 
@@ -2260,6 +2266,7 @@ class Board {
                 return targets_for_white;
             } else {
                 targets_for_black = m;
+                cout << "target test " << coord << ": " << targets_for_black["D7"][0] << endl;
                 return targets_for_black;
             }
 
@@ -2273,7 +2280,7 @@ class Board {
             vector<string> targets;
             map<string, vector<string>> moves;
 
-            for (auto const& x : targets_for_white) {
+            for (auto const& x : target_map) {
                 origin_coord = x.first;
                 targets = x.second;
                 moves[origin_coord] = {};
@@ -2423,14 +2430,16 @@ int main (void) {
 
     // play the scandinavian for test
     boardObject.active_move("E2", "E4");
+    
     cout << "end of 1st move" << endl;
-    boardObject.active_move("D7", "D5");
-    boardObject.active_move("E4", "D5");
-    boardObject.active_move("G8", "F6");
+    boardObject.show_moves_for_active_color();
+    // boardObject.active_move("D7", "D5");
+    // boardObject.active_move("E4", "D5");
+    // boardObject.active_move("G8", "F6");
 
-    boardObject.show_board();
+    // boardObject.show_board();
 
-    boardObject.show_pgn();
+    // boardObject.show_pgn();
 
     // int id = 0;
     // cout << "id test " << id << " " << boardObject.get_coord_from_id(id);
