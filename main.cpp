@@ -512,10 +512,11 @@ class Board {
                 |                           The saving of the last move allows to undo the last move only.
                 |                           This is for pure simulation purposes not for depth analysis,
                 |                           as this will be handled later by the engine.
-            
-            undo_ignorant_move -> Undos the last ignorant move played by the last move information.
+                |
+        undo_ignorant_move -> Undos the last ignorant move played by the last move information.
 
         */
+
         void ignorant_move (string origin_coord_str, string target_coord_str, bool verbose=1) {
 
             /* Moves a piece disregarding chess rules by a combination of remove and place methods. 
@@ -948,12 +949,10 @@ class Board {
             
             char symbol = get_symbol_from_coord(origin_coord_str);
             int color = get_color_from_symbol(symbol);
-            bool captures = 0;
             char captured_symbol;
 
             // apriori denote
             if (square_is_occupied_by_enemy(color, target_coord_str))
-                captures = 1;
                 captured_symbol = get_symbol_from_coord(target_coord_str); 
 
             // format the move before the board is altered
@@ -1049,13 +1048,10 @@ class Board {
             all targets, moves and symbol mappings, for global access. */
 
             // update target map and move object depending on color
-            if (active_color == pieces.w) {
-                update_reachable_target_map(pieces.w);
-                update_moves_from_targets(targets_for_white, pieces.w);
-            } else {
-                update_reachable_target_map(pieces.b);
-                update_moves_from_targets(targets_for_black, pieces.b);
-            }
+            if (active_color == pieces.w)
+                update_moves_from_targets(update_reachable_target_map(pieces.w), pieces.w);
+            else 
+                update_moves_from_targets(update_reachable_target_map(pieces.b), pieces.b);
 
             // map all symbols to their current coordinate
             update_symbol_map();
@@ -1348,8 +1344,9 @@ class Board {
             // make sure there is no check after move (possible bottleneck)
             if (move_leaves_open_check(origin_coord_str, target_coord_str))
                 return false;
-
+            
             // check if the move is contained in set of moves (which leave no check) from that square
+            show_moves_for_active_color();
             if (origin_color == pieces.w) 
                 playable_moves = moves_for_white[origin_coord_str];
             else 
@@ -2247,27 +2244,14 @@ class Board {
 
             string coord;
             map<string, vector<string>> m;
-            map<string, vector<string>>::iterator iter;
-            int is_included;
-            
 
-            // select the right color map
-            if (color == pieces.w)
-                m = targets_for_white;
-            else 
-                m = targets_for_black;
-
+            // iterate through field
             for (int i = 0; i < 64; i++) {
                 coord = get_coord_from_id(i);
-                iter = m.find(coord);
-                is_included = iter != m.end();
                 if (square_is_occupied_by_friendly_piece(color, coord)) {
                     // override/create entry for coord with vector of all reachable targets from that square
                     m[coord] = reachable_target_coords(coord);
-                } else if (is_included) {
-                    // remove legacy entry
-                    m.erase(iter);
-                }
+                } 
             }
 
             // override & return
@@ -2439,6 +2423,7 @@ int main (void) {
 
     // play the scandinavian for test
     boardObject.active_move("E2", "E4");
+    cout << "end of 1st move" << endl;
     boardObject.active_move("D7", "D5");
     boardObject.active_move("E4", "D5");
     boardObject.active_move("G8", "F6");
