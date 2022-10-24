@@ -25,6 +25,8 @@
 
     BUGS
 
+    undo_ignorant_move
+
     promotion of pawns is not implemented.
 
     active_move -> refresh_position -> update_reachable_targets (not the problem)
@@ -883,6 +885,7 @@ class Board {
             int id = i + rank * 8;
             // override the symbol value
             grid[id]["symbol"] = symbol;
+            //cout << "symbol test " << grid[id]["symbol"] << endl;
 
         };
 
@@ -1390,7 +1393,9 @@ class Board {
             
             // revert position, the undo function will take care about castling and en-passant appendix moves
             // to do this quickly it uses the last move and capture information.
+            show_board();
             undo_ignorant_move();
+            show_board();
 
             // ignorant_move(target_coord_str, origin_coord_str);
             // if (last_captured_symbol != '_') {
@@ -1444,10 +1449,12 @@ class Board {
                     /* push forward */
                     for (int step = 1; step <= steps; step++) {
                         // assign coord if valid
-                        if (!square_is_valid(file, rank+step*sign)) break; 
+                        if (!square_is_valid(file, rank+step*sign)) 
+                            break; 
                         target_coord = get_coord_from_file_and_rank(file, rank+step*sign);
-                        if (!square_is_occupied(target_coord))
-                            out.push_back(target_coord);
+                        if (square_is_occupied(target_coord))
+                            break;
+                        out.push_back(target_coord);
                     }
 
                     /* captures */
@@ -1495,7 +1502,7 @@ class Board {
                         steps = 2;
                     // iterate direction
                     for (int i = 0; i < decrement.size(); i++) {
-                        for (int step = 1; step < 8; step++) {
+                        for (int step = 1; step < steps; step++) {
                             r = rank + step*decrement[i][0],
                             f = file + step*decrement[i][1];
                             if (square_is_valid(r, f)) {
@@ -1517,7 +1524,6 @@ class Board {
             
             // check for castling opportunity in case of king
             if (piece == pieces.King) {
-                
                 if (can_castle_king_side(color)) {
                     if (color == pieces.w) 
                         out.push_back("G1");
@@ -2614,13 +2620,26 @@ int main (void) {
 
     boardObject.show_board();
 
+    boardObject.show_moves_for_active_color();
+    boardObject.show_move_count_for_active_color();
+
     // play the scandinavian for test
     boardObject.active_move("E2", "E4");
+    
+    // boardObject.show_board();
+    // boardObject.show_moves_for_active_color();
     boardObject.active_move("D7", "D5");
+    // boardObject.show_board();
+    // boardObject.show_moves_for_active_color();
     boardObject.active_move("E4", "D5");
+    // boardObject.show_board();
+    // boardObject.show_moves_for_active_color();
     boardObject.active_move("G8", "F6");
+    // boardObject.show_board();
+    // boardObject.show_moves_for_active_color();
     boardObject.active_move("G1", "F3");
-    boardObject.show_moves_for_active_color();
+    // boardObject.show_board();
+    // boardObject.show_moves_for_active_color();
     //boardObject.active_move("D8", "D5");
 
     // output
