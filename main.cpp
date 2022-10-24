@@ -25,8 +25,10 @@
 
     BUGS
 
+    promotion of pawns is not implemented.
+
     active_move -> refresh_position -> update_reachable_targets (not the problem)
-                                    -> update_moves
+                                    -> update_moves *** solved ***
     White targets are the same as black targets.
 
     move_is_legal -> move_leaves_open_check -> undo_ignorant_move   *** solved ***
@@ -1079,7 +1081,7 @@ class Board {
     private:
 
         /*   Define global variables   */
-        // prepare letters for the board fileumns 
+        // prepare letters for the board files
         const char letter_coordinates[8] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'};
         const string starting_position_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
         
@@ -1100,7 +1102,11 @@ class Board {
                                     targets_for_black,
                                     moves_for_white,
                                     moves_for_black;
-          
+        // define relative decrementation coordinates, which persist
+        vector<vector<int>> n_coords {{1,2}, {2,1}, {-1,2}, {-2,1}, {-1,-2}, {-2,-1}, {1,-2}, {2,-1}}; // knight relative coordinates
+        vector<vector<int>> d_coords {{1,1}, {1,-1}, {-1,-1}, {-1,1}};
+        vector<vector<int>> v_coords {{1,0}, {-1,0}};
+        vector<vector<int>> h_coords {{0,1}, {0,-1}};  
 
         // The board grid maps the square IDs (0 ... 63) => square info.*/
         map<string, string> grid[64];
@@ -1397,6 +1403,120 @@ class Board {
         };
 
         vector<string> reachable_target_coords (string coord_str) {
+
+            vector<string> out = {};
+            map <string, string> square = get_square_from_coord(coord_str);
+            char symbol = square["symbol"][0];
+            vector<vector<int>> decrement;
+
+            // cut short in case that the square is empty
+            if (symbol == '_') {return out;}
+
+            int color = get_color_from_symbol(symbol);
+            int piece = pieces.from_symbol(symbol);
+
+            string target_coord;
+            int rank = stoi(square["rank"]),
+                file = stoi(square["file"]);
+            vector<char> cases;
+
+            // pick the cases depending on piece
+            if (piece == pieces.Pawn) 
+                cases.push_back('p');
+            else if (piece == pieces.Knight)
+                cases.push_back('n');
+            else if (piece == pieces.Bishop)
+                cases.push_back('d');
+            else if (piece == pieces.Rook)
+                cases = {'v', 'h'};
+            else if (piece == pieces.Queen)
+                cases = {'v', 'h', 'd'};
+                
+            
+            for (int i = 0; i < cases.size(); i++) {
+                
+                if (cases[i] == 'p') { // edge case for pawn
+
+                    int sign=1, steps=1;
+                    if (color == pieces.b) sign = -1;
+                    if ((sign == 1 && rank == 1) || (sign == -1 && rank == 6)) steps = 2;
+
+                    /* push forward */
+                    for (int step = 1; step <= steps; step++) {
+                        // assign coord if valid
+                        if (!square_is_valid(file, rank+step*sign)) break; 
+                        target_coord = get_coord_from_file_and_rank(file, rank+step*sign);
+                        if (!square_is_occupied(target_coord))
+                            out.push_back(target_coord);
+                    }
+
+                    /* captures */
+                    int s = 1;
+                    for (int i = 0; i < 2; i++) {
+                        s *= -1;
+                        if (square_is_valid(file+s, rank+sign)) {
+                            target_coord = get_coord_from_file_and_rank(file+s, rank+sign);
+                            if (square_is_occupied_by_enemy(color, target_coord))
+                                out.push_back(target_coord);
+                        }
+                    }
+                    
+                    /* en-passant */
+                    if (en_passant_coord != "-") {
+                        // check if the selected pawn is next to en-passant coord
+                        map <string, string> ep_square = get_square_from_coord(en_passant_coord); 
+                        int ep_file = stoi(ep_square["file"]);
+                        if (rank == stoi(ep_square["rank"])-sign && (file+1 == ep_file || file-1 == ep_file))
+                            out.push_back(en_passant_coord);
+                    }
+                    
+                } else if (cases[i] == 'n') { // edge case for knight
+                    int r, f;
+                    for (int i = 0; i < 8; i++) {
+                        r = rank + n_coords[i][0], 
+                        f = file + n_coords[i][1];
+                        if (square_is_valid(r, f)) {
+                            target_coord = get_coord_from_file_and_rank(f, r);
+                            if (!square_is_occupied(target_coord) || square_is_occupied_by_enemy(color, target_coord))
+                                out.push_back(target_coord);
+                        }
+                    }
+                } else if (cases[i] == 'd')   // load diagonal decrementation coords
+                    decrement = d_coords;
+                else if (cases[i] == 'v')   // load vertical decrementation coords
+                    decrement = v_coords;
+                else if (cases[i] == 'h')   // load horizontal decrementation coords
+                    decrement = h_coords;
+
+                // decrementation algorithm for v, h, d
+                if (cases[i] == 'v' || cases[i] == 'h' || cases[i] == 'd') {
+                    int r, f;
+                    // iterate direction
+                    for (int i = 0; i < decrement.size(); i++) {
+                        for (int step = 1; step < decrement.size(); step++) {
+                            r = rank + step*decrement[i][0],
+                            f = file + step*decrement[i][1];
+                            if (square_is_valid(r, f)) {
+                                target_coord = get_coord_from_file_and_rank(f,r);
+                                if (square_is_occupied_by_enemy(color, target_coord)) {
+                                    out.push_back(target_coord);
+                                    break;
+                                } else if (!square_is_occupied(target_coord))
+                                    out.push_back(target_coord);
+                                else
+                                    break;
+                            }
+                            
+                        }
+                    }
+                }
+                
+            }
+            
+
+        }
+
+        vector<string> reachable_target_coords_legacy (string coord_str) {
 
             /* This method is the main part of move interpretation
             of a single piece at a coord. An array of reachable coordinates is returned, 
