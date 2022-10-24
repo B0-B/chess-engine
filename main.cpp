@@ -1420,7 +1420,7 @@ class Board {
                 file = stoi(square["file"]);
             vector<char> cases;
 
-            // pick the cases depending on piece
+            // pick the direction cases depending on piece
             if (piece == pieces.Pawn) 
                 cases.push_back('p');
             else if (piece == pieces.Knight)
@@ -1429,10 +1429,10 @@ class Board {
                 cases.push_back('d');
             else if (piece == pieces.Rook)
                 cases = {'v', 'h'};
-            else if (piece == pieces.Queen)
+            else if (piece == pieces.Queen || piece == pieces.King)
                 cases = {'v', 'h', 'd'};
                 
-            
+            // iterate through selected cases
             for (int i = 0; i < cases.size(); i++) {
                 
                 if (cases[i] == 'p') { // edge case for pawn
@@ -1490,10 +1490,12 @@ class Board {
 
                 // decrementation algorithm for v, h, d
                 if (cases[i] == 'v' || cases[i] == 'h' || cases[i] == 'd') {
-                    int r, f;
+                    int r, f, steps = 8;
+                    if (piece == pieces.King)
+                        steps = 2;
                     // iterate direction
                     for (int i = 0; i < decrement.size(); i++) {
-                        for (int step = 1; step < decrement.size(); step++) {
+                        for (int step = 1; step < 8; step++) {
                             r = rank + step*decrement[i][0],
                             f = file + step*decrement[i][1];
                             if (square_is_valid(r, f)) {
@@ -1513,6 +1515,24 @@ class Board {
                 
             }
             
+            // check for castling opportunity in case of king
+            if (piece == pieces.King) {
+                
+                if (can_castle_king_side(color)) {
+                    if (color == pieces.w) 
+                        out.push_back("G1");
+                    else
+                        out.push_back("G8");
+                }
+                if (can_castle_queen_side(color)) {
+                    if (color == pieces.w) 
+                        out.push_back("C1");
+                    else
+                        out.push_back("C8");
+                }
+            }
+
+            return out;
 
         }
 
