@@ -894,7 +894,7 @@ class Board {
             if (legal_move(origin_coord_str, target_coord_str)) {
                 
                 int piece = pieces.from_symbol(symbol);
-
+                
                 // denote if a new en-passant possibility arises from this move
                 if (piece == pieces.Pawn) {
 
@@ -1273,18 +1273,15 @@ class Board {
             // move leaves an open check which will be done by default in the following.
 
             // make sure there is no check after move (possible bottleneck)
-            if (move_leaves_open_check(origin_coord_str, target_coord_str))
-                return false;
-            
-            // check if the move is contained in set of moves (which leave no check) from that square
-            if (origin_color == pieces.w) 
+            // not sure if this is actually needed since the moves object contains the moves which leave no open check.
+            // if (move_leaves_open_check(origin_coord_str, target_coord_str))
+            //     return false;
+            // insted try to find the corresponding move in pre-computed move object
+            playable_moves = moves_for_black[origin_coord_str];
+            if (origin_color == pieces.w)
                 playable_moves = moves_for_white[origin_coord_str];
-            else 
-                playable_moves = moves_for_black[origin_coord_str];
-            for (int i = 0; i < playable_moves.size(); i++) {
-                if (playable_moves[i] == target_coord_str)
-                    return true;
-            }
+            if (contains_string(playable_moves, target_coord_str))
+                return true;
 
             return false;
             
@@ -2559,7 +2556,7 @@ int main (void) {
     // boardObject.active_move("D8", "D5");
 
     // output
-    boardObject.show_board();
+    //boardObject.show_board();
     //boardObject.show_pgn();
 
     // int id = 0;
