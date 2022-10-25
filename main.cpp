@@ -78,6 +78,17 @@ string lower_case (string s) {
 
 }
 
+string upper_case (string s) {
+    
+    /* Returns lowercase of string */
+
+    for (int i = 0; i < s.size(); i++) {
+        s[i] = toupper(s[i]);
+    }
+    return s;
+
+}
+
 
 /* Chess pieces implementation */
 class Piece {
@@ -609,7 +620,6 @@ class Board {
             
             // now the main ignorant move is legal
             ignorant_move(origin_coord_str, target_coord_str);
-            show_board();
 
             return true;
         };
@@ -771,7 +781,7 @@ class Board {
             char piece_symbol = pieces.to_symbol(piece, color);
 
             if (verbose)
-                cout << "place 2" << pieces.name_from_symbol(piece_symbol) << " (" << piece_symbol << ")" << " at " << coord_str << endl;
+                cout << "place " << pieces.name_from_symbol(piece_symbol) << " (" << piece_symbol << ")" << " at " << coord_str << endl;
             
             set_symbol_at_coord(piece_symbol, coord_str);
 
@@ -836,7 +846,7 @@ class Board {
             int piece = pieces.from_symbol(symbol);
             
             // use remove and place instead of ignorant move to keep the capture information persistent
-            remove_piece(origin);
+            remove_piece(origin, 0);
             place_symbol(symbol, target);
             //ignorant_move(origin, target, 0);
 
@@ -1147,6 +1157,7 @@ class Board {
 
             map<string, string> origin_square = get_square_from_coord(origin_coord_str);
             char origin_symbol = origin_square["symbol"][0];
+            char symbol_cap = toupper(origin_symbol);
             int color = get_color_from_symbol(origin_symbol);
             int origin_piece = pieces.from_symbol(origin_symbol);
             char origin_file_str = origin_coord_str[0];
@@ -1206,10 +1217,10 @@ class Board {
                             
                             // if on same file denote the rank
                             if (attacker_file == origin_file) 
-                                return lower_case(origin_symbol + (origin_coord_str[1] + formatted));
+                                return symbol_cap + lower_case(origin_coord_str[1] + formatted);
 
                             // otherwise denote file
-                            return lower_case(origin_symbol + (origin_file_str + formatted));
+                            return symbol_cap + lower_case(origin_file_str + formatted);
 
                         }
 
@@ -1218,7 +1229,7 @@ class Board {
                 
             }
 
-            return lower_case(origin_symbol + formatted);
+            return symbol_cap + lower_case(formatted);
 
         };
 
@@ -2535,26 +2546,15 @@ int main (void) {
 
     // play the scandinavian for test
     boardObject.active_move("E2", "E4");
-    
-    //boardObject.show_board();
-    // boardObject.show_moves_for_active_color();
     boardObject.active_move("D7", "D5");
-    //boardObject.show_board();
-    // // boardObject.show_moves_for_active_color();
-    // boardObject.active_move("E4", "D5");
-    // boardObject.show_board();
-    // // boardObject.show_moves_for_active_color();
-    // boardObject.active_move("G8", "F6");
-    // boardObject.show_board();
-    // // boardObject.show_moves_for_active_color();
-    // boardObject.active_move("G1", "F3");
-    // boardObject.show_board();
-    // boardObject.show_moves_for_active_color();
-    // boardObject.active_move("D8", "D5");
+    boardObject.active_move("E4", "D5");
+    boardObject.active_move("G8", "F6");
+    boardObject.active_move("G1", "F3");
+    boardObject.active_move("D8", "D5");
 
     // output
-    //boardObject.show_board();
-    //boardObject.show_pgn();
+    boardObject.show_board();
+    boardObject.show_pgn();
 
     // int id = 0;
     // cout << "id test " << id << " " << boardObject.get_coord_from_id(id);
@@ -2580,7 +2580,7 @@ int main (void) {
     // boardObject.ignorant_move("D7", "D5");
     // boardObject.show_reachable_squares("E4");
     // boardObject.show_material();
-    // boardObject.show_position_activity();
+    boardObject.show_position_activity();
     // boardObject.print_board();
     
     return 0;
