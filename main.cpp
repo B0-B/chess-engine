@@ -576,7 +576,7 @@ class Board {
             }
             
             // check for en-passant captures
-             else if (piece == pieces.Pawn) {
+            else if (piece == pieces.Pawn) {
 
                 if (target_coord_str == en_passant_coord) {
                     int target_file_str = en_passant_coord[0]; //stoi(get_square_from_coord(en_passant_coord)["file"]); 
@@ -983,20 +983,21 @@ class Board {
 
                     // finally check if the pawn is moved from origin square for two ranks at once
                     if ((active_color == pieces.w && rank_origin == 1 && rank == 3) || (active_color == pieces.b && rank_origin == 6 && rank == 4)) {
-
-                        if (square_is_valid(rank, file+1)) {
-                            coord = get_coord_from_file_and_rank(file+1, rank);
-                            symbol = get_symbol_from_coord(coord);
-                            if (square_is_occupied_by_enemy(active_color, coord) && pieces.from_symbol(symbol) == pieces.Pawn) {
-                                en_passant_coord = coord;
-                            }
-                        }
-
-                        if (square_is_valid(rank, file-1)) {
-                            coord = get_coord_from_file_and_rank(file+1, rank);
-                            symbol = get_symbol_from_coord(coord);
-                            if (square_is_occupied_by_enemy(active_color, coord) && pieces.from_symbol(symbol) == pieces.Pawn) {
-                                en_passant_coord = coord;
+                        
+                        int sign = 1, en_passant_target_rank;
+                        for (int x = 0; x < 2; x++) {
+                            sign *= -1;
+                            if (square_is_valid(rank, file+sign)) {
+                                coord = get_coord_from_file_and_rank(file+sign, rank);
+                                symbol = get_symbol_from_coord(coord);
+                                if (square_is_occupied_by_enemy(active_color, coord) && pieces.from_symbol(symbol) == pieces.Pawn) {
+                                    string en_passant_target_rank_str = "3";
+                                    if (color == pieces.b)
+                                        en_passant_target_rank_str = "5";
+                                    // finally merge and override en passant coord
+                                    en_passant_coord = square["file"] + en_passant_target_rank_str;
+                                    break;
+                                }
                             }
                         }
 
@@ -1393,9 +1394,7 @@ class Board {
             
             // revert position, the undo function will take care about castling and en-passant appendix moves
             // to do this quickly it uses the last move and capture information.
-            show_board();
             undo_ignorant_move();
-            show_board();
 
             // ignorant_move(target_coord_str, origin_coord_str);
             // if (last_captured_symbol != '_') {
@@ -1414,7 +1413,7 @@ class Board {
             char symbol = square["symbol"][0];
             vector<vector<int>> decrement;
 
-            // cut short in case that the square is empty
+            // cut short in case the square is empty
             if (symbol == '_') {return out;}
 
             int color = get_color_from_symbol(symbol);
@@ -2626,21 +2625,21 @@ int main (void) {
     // play the scandinavian for test
     boardObject.active_move("E2", "E4");
     
-    // boardObject.show_board();
+    boardObject.show_board();
     // boardObject.show_moves_for_active_color();
     boardObject.active_move("D7", "D5");
-    // boardObject.show_board();
+    boardObject.show_board();
     // boardObject.show_moves_for_active_color();
     boardObject.active_move("E4", "D5");
-    // boardObject.show_board();
+    boardObject.show_board();
     // boardObject.show_moves_for_active_color();
     boardObject.active_move("G8", "F6");
-    // boardObject.show_board();
+    boardObject.show_board();
     // boardObject.show_moves_for_active_color();
     boardObject.active_move("G1", "F3");
-    // boardObject.show_board();
-    // boardObject.show_moves_for_active_color();
-    //boardObject.active_move("D8", "D5");
+    boardObject.show_board();
+    boardObject.show_moves_for_active_color();
+    boardObject.active_move("D8", "D5");
 
     // output
     boardObject.show_board();
