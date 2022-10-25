@@ -541,7 +541,6 @@ class Board {
             
             // if captures then apriori denote the enemy symbol at target coord
             if (square_is_occupied_by_enemy(color, target_coord_str)) {
-                cout << "captured" << endl;
                 last_captured_symbol = get_symbol_from_coord(target_coord_str);
                 last_captured_symbol_coord = target_coord_str;
             } else {
@@ -557,7 +556,7 @@ class Board {
 
             // place the piece at new target
             place_piece(piece, color, target_coord_str, verbose);
-
+            
             /* ---- Appendix Moves ---- */
             // check for castling, if so do another move with the rook
             if (piece == pieces.King) {
@@ -772,7 +771,7 @@ class Board {
             char piece_symbol = pieces.to_symbol(piece, color);
 
             if (verbose)
-                cout << "place " << pieces.name_from_symbol(piece_symbol) << " (" << piece_symbol << ")" << " at " << coord_str << endl;
+                cout << "place 2" << pieces.name_from_symbol(piece_symbol) << " (" << piece_symbol << ")" << " at " << coord_str << endl;
             
             set_symbol_at_coord(piece_symbol, coord_str);
 
@@ -825,7 +824,6 @@ class Board {
         void undo_ignorant_move () {
 
             /* Undos the last ignorant move. */
-
             // skip if there is no previous move defined
             if (last_move[0] == "" || last_move[1] == "") {
                 return;
@@ -836,7 +834,11 @@ class Board {
                     origin = last_move[1];
             char symbol = get_symbol_from_coord(origin);
             int piece = pieces.from_symbol(symbol);
-            ignorant_move(origin, target, 0);
+            
+            // use remove and place instead of ignorant move to keep the capture information persistent
+            remove_piece(origin);
+            place_symbol(symbol, target);
+            //ignorant_move(origin, target, 0);
 
             // check for appendix rook when castles and place it back to origin
             if (piece == pieces.King) {
@@ -862,27 +864,9 @@ class Board {
 
             } 
             
-            // en-passant rank is corrected already in ignorant move, so this has become a legacy
-            // else if (piece == pieces.Pawn) {
-
-            //     // undo en-passant
-            //     if (last_captured_symbol_coord.size() > 0 && last_captured_symbol_coord != origin) {
-                    
-            //         // string pawn_origin;
-            //         // char file_str = last_captured_symbol_coord[0]; 
-            //         // int rank = stoi(get_square_from_coord(last_captured_symbol_coord)["rank"]);
-            //         // if (rank == 4) 
-            //         //     pawn_origin = file_str + "5";
-            //         // else if (rank == 3) 
-            //         //     pawn_origin = file_str + "4";
-            //         place_piece(pieces.Pawn, pieces.b, pawn_origin, 0);
-            //         place_symbol(cap)
-            //     }
-
-            // }
+            // en-passant rank is corrected already in ignorant move.
 
             // if a piece was captured place it where it was
-            cout << "test_capture " << last_captured_symbol << " " << last_captured_symbol_coord << endl;
             if (last_captured_symbol != '_')
                 place_symbol(last_captured_symbol, last_captured_symbol_coord);
 
@@ -1324,16 +1308,10 @@ class Board {
                 result = true;
             else
                 result = false;
-            show_board();
+            
             // revert position, the undo function will take care about castling and en-passant appendix moves
             // to do this quickly it uses the last move and capture information.
             undo_ignorant_move();
-            show_board();
-            // ignorant_move(target_coord_str, origin_coord_str);
-            // if (last_captured_symbol != '_') {
-            //     place_piece(pieces.from_symbol(last_captured_symbol), target_color, target_coord_str);
-            //     last_captured_symbol = '_';
-            // }
                 
             return result;
             
