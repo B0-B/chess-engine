@@ -575,21 +575,19 @@ class Board {
                 }
             }
             
-            // check for en-passant captures
+            // check if en-passant is captured to remove the captured pawn, as it's misplaced
             else if (piece == pieces.Pawn) {
 
                 if (target_coord_str == en_passant_coord) {
-                    int target_file_str = en_passant_coord[0]; //stoi(get_square_from_coord(en_passant_coord)["file"]); 
+                    int target_file_str = en_passant_coord[0]; 
                 
                     // depending on color 
-                    if (color == pieces.w) {
+                    if (color == pieces.w)
                         // black pawn captured on 5th rank
                         last_captured_symbol_coord = target_coord_str + '5';
-                    } else if (color == pieces.b) {
+                    else if (color == pieces.b) 
                         // white pawn captured on 4th rank
                         last_captured_symbol_coord = target_coord_str + '4';
-                    }
-
                     remove_piece(last_captured_symbol_coord, verbose);
                 }
                 
@@ -608,84 +606,10 @@ class Board {
                 cout << "move " << origin_coord_str << " -> " << target_coord_str << " is not legal." << endl;
                 return false;
             } 
-
-            // check if active color is respected
-            // if (get_color_from_symbol(get_symbol_from_coord(origin_coord_str)) != active_color) {
-            //     cout << "it is " << active_color << "'s turn!";
-            //     return false;
-            // }
-
-            // castling moves are  checked by the move_is_legal function and then executed by the ignorant move in the following
-
-            
-            // int piece = pieces.from_symbol(get_symbol_from_coord(origin_coord_str));
-            // bool king_move = piece == pieces.King;
-            // vector<string> castle_coords = {};
-            // if (piece == pieces.King) {
-            //     if (active_color == pieces.w && can_castle_king_side(active_color)) {
-            //         castle_coords.push_back("G1");
-            //     } 
-            //     if (active_color == pieces.w && can_castle_queen_side(active_color)) {
-            //         castle_coords.push_back("C1");
-            //     }
-            //     if (active_color == pieces.b && can_castle_king_side(active_color)) {
-            //         castle_coords.push_back("G8");
-            //     } 
-            //     if (active_color == pieces.b && can_castle_queen_side(active_color)) {
-            //         castle_coords.push_back("C8");
-            //     }
-            // }
             
             // now the main ignorant move is legal
             ignorant_move(origin_coord_str, target_coord_str);
-
-            // if the move matches with the castling options determine and play the corresponding rook move
-            // if (king_move && castle_coords.size() > 0 && contains_string(castle_coords, target_coord_str)) {
-                
-            //     // determine rook move
-            //     if (target_coord_str == "G1") 
-            //         ignorant_move("H1", "F1");
-            //     else if (target_coord_str == "C1")
-            //         ignorant_move("A1", "D1");
-            //     else if (target_coord_str == "G8")
-            //         ignorant_move("H8", "F8");
-            //     else if (target_coord_str == "C8")
-            //         ignorant_move("A8", "D8");
-
-            // } 
-
-            // check if King or rook was moved to remove castling right
-
-            // // check if an en-passant option popped up
-            // if (piece == pieces.Pawn) {
-
-            //     int rank_origin = stoi(get_square_from_coord(origin_coord_str)["rank"]);
-            //     map<string, string> square = get_square_from_coord(target_coord_str);
-            //     int file = stoi(square["file"]),
-            //         rank = stoi(square["rank"]);
-            //     string coord;
-            //     char symbol;
-
-            //     // activate only if the pawn is moved from origin square for two ranks at once
-            //     if (active_color == pieces.w && rank_origin == 1 && rank == 3) {
-
-            //         if (square_is_valid(rank, file+1)) {
-            //             coord = get_coord_from_file_and_rank(file+1, rank);
-            //             symbol = get_symbol_from_coord(coord);
-            //             if (square_is_occupied_by_enemy(active_color, coord) && pieces.from_symbol(symbol) == pieces.Pawn) {
-
-            //             }
-
-            //         }
-
-            //         if (square_is_valid(rank, file-1)) {
-            //             coord = get_coord_from_file_and_rank(file+1, rank);
-            //             symbol = get_symbol_from_coord(coord);
-            //         }
-            //     }
-                
-                
-            // }
+            show_board();
 
             return true;
         };
@@ -984,6 +908,7 @@ class Board {
                     // finally check if the pawn is moved from origin square for two ranks at once
                     if ((active_color == pieces.w && rank_origin == 1 && rank == 3) || (active_color == pieces.b && rank_origin == 6 && rank == 4)) {
                         
+                        // check if a new en-passant possibility pops up for enemy
                         int sign = 1, en_passant_target_rank;
                         for (int x = 0; x < 2; x++) {
                             sign *= -1;
@@ -1005,21 +930,15 @@ class Board {
                 } 
                 
                 // check if King moved to remove castling rights
-                else if (piece == pieces.King) {
-
-                    if (color == pieces.w) {
-                        castling_right_k_w = 0;
-                        castling_right_q_w = 0;
-                    } else if (color == pieces.b) {
-                        castling_right_k_b = 0;
-                        castling_right_q_b = 0;
-                    }
-
-                }
+                else if (piece == pieces.King) 
+                    if (color == pieces.w) 
+                        castling_right_k_w = 0, castling_right_q_w = 0;
+                    else if (color == pieces.b) 
+                        castling_right_k_b = 0, castling_right_q_b = 0;
+                    
 
                 // check if a rook moved to remove castling right
-                else if (piece == pieces.Rook) {
-
+                else if (piece == pieces.Rook) 
                     if (origin_coord_str == "H1")
                         castling_right_k_w = 0;
                     else if (origin_coord_str == "A1")
@@ -1028,8 +947,6 @@ class Board {
                         castling_right_q_b = 0;
                     else if (origin_coord_str == "H8")
                         castling_right_k_b = 0;
-
-                }
 
                 // denote the legal move
                 if (color == pieces.w)
@@ -2617,7 +2534,7 @@ int main (void) {
     boardObject.load_starting_position();
     boardObject.refresh_position();
 
-    boardObject.show_board();
+    //boardObject.show_board();
 
     boardObject.show_moves_for_active_color();
     boardObject.show_move_count_for_active_color();
@@ -2625,21 +2542,21 @@ int main (void) {
     // play the scandinavian for test
     boardObject.active_move("E2", "E4");
     
-    boardObject.show_board();
+    //boardObject.show_board();
     // boardObject.show_moves_for_active_color();
     boardObject.active_move("D7", "D5");
-    boardObject.show_board();
+    //boardObject.show_board();
+    // // boardObject.show_moves_for_active_color();
+    // boardObject.active_move("E4", "D5");
+    // boardObject.show_board();
+    // // boardObject.show_moves_for_active_color();
+    // boardObject.active_move("G8", "F6");
+    // boardObject.show_board();
+    // // boardObject.show_moves_for_active_color();
+    // boardObject.active_move("G1", "F3");
+    // boardObject.show_board();
     // boardObject.show_moves_for_active_color();
-    boardObject.active_move("E4", "D5");
-    boardObject.show_board();
-    // boardObject.show_moves_for_active_color();
-    boardObject.active_move("G8", "F6");
-    boardObject.show_board();
-    // boardObject.show_moves_for_active_color();
-    boardObject.active_move("G1", "F3");
-    boardObject.show_board();
-    boardObject.show_moves_for_active_color();
-    boardObject.active_move("D8", "D5");
+    // boardObject.active_move("D8", "D5");
 
     // output
     boardObject.show_board();
