@@ -25,7 +25,7 @@
 
     BUGS
 
-    undo_ignorant_move
+    update_moves_from_targets -> move_leaves_open_check -> undo_ignorant_move
 
     promotion of pawns is not implemented.
 
@@ -541,6 +541,7 @@ class Board {
             
             // if captures then apriori denote the enemy symbol at target coord
             if (square_is_occupied_by_enemy(color, target_coord_str)) {
+                cout << "captured" << endl;
                 last_captured_symbol = get_symbol_from_coord(target_coord_str);
                 last_captured_symbol_coord = target_coord_str;
             } else {
@@ -777,6 +778,14 @@ class Board {
 
         };
 
+        void place_symbol (char symbol, string coord_str) {
+
+            /* Just an alias for symbol placement. */
+
+            set_symbol_at_coord(symbol, coord_str);
+
+        };
+
         void remove_piece (string coord_str, bool verbose=1) {
 
             /* Removes a piece from requested coordinate */
@@ -829,7 +838,7 @@ class Board {
             int piece = pieces.from_symbol(symbol);
             ignorant_move(origin, target, 0);
 
-            // check for appendix moves
+            // check for appendix rook when castles and place it back to origin
             if (piece == pieces.King) {
 
                 // undo castling
@@ -851,21 +860,31 @@ class Board {
                         place_piece(pieces.Rook, color, "D8", 0);
                     }
 
-            } else if (piece == pieces.Pawn) {
+            } 
+            
+            // en-passant rank is corrected already in ignorant move, so this has become a legacy
+            // else if (piece == pieces.Pawn) {
 
-                // undo en-passant
-                if (last_captured_symbol_coord.size() > 0 && last_captured_symbol_coord != origin) {
-                    string pawn_origin;
-                    char file_str = last_captured_symbol_coord[0]; 
-                    int rank = stoi(get_square_from_coord(last_captured_symbol_coord)["rank"]);
-                    if (rank == 4) 
-                        pawn_origin = file_str + "5";
-                    else if (rank == 3) 
-                        pawn_origin = file_str + "4";
-                    place_piece(pieces.Pawn, pieces.b, pawn_origin, 0);
-                }
+            //     // undo en-passant
+            //     if (last_captured_symbol_coord.size() > 0 && last_captured_symbol_coord != origin) {
+                    
+            //         // string pawn_origin;
+            //         // char file_str = last_captured_symbol_coord[0]; 
+            //         // int rank = stoi(get_square_from_coord(last_captured_symbol_coord)["rank"]);
+            //         // if (rank == 4) 
+            //         //     pawn_origin = file_str + "5";
+            //         // else if (rank == 3) 
+            //         //     pawn_origin = file_str + "4";
+            //         place_piece(pieces.Pawn, pieces.b, pawn_origin, 0);
+            //         place_symbol(cap)
+            //     }
 
-            }
+            // }
+
+            // if a piece was captured place it where it was
+            cout << "test_capture " << last_captured_symbol << " " << last_captured_symbol_coord << endl;
+            if (last_captured_symbol != '_')
+                place_symbol(last_captured_symbol, last_captured_symbol_coord);
 
             // remove the last move & capture information
             last_move[0] = "";
@@ -973,13 +992,13 @@ class Board {
             Should be called after every board alternation e.g. at the end of an active move. 
             The method works color-wise for efficiency reasons, and will gather
             all targets, moves and symbol mappings, for global access. */
-
+            
             // update target map and move object depending on color
             if (active_color == pieces.w)
                 update_moves_from_targets(update_reachable_target_map(pieces.w), pieces.w);
             else 
                 update_moves_from_targets(update_reachable_target_map(pieces.b), pieces.b);
-
+            
             // map all symbols to their current coordinate
             update_symbol_map();
         }
@@ -1305,11 +1324,11 @@ class Board {
                 result = true;
             else
                 result = false;
-            
+            show_board();
             // revert position, the undo function will take care about castling and en-passant appendix moves
             // to do this quickly it uses the last move and capture information.
             undo_ignorant_move();
-
+            show_board();
             // ignorant_move(target_coord_str, origin_coord_str);
             // if (last_captured_symbol != '_') {
             //     place_piece(pieces.from_symbol(last_captured_symbol), target_color, target_coord_str);
@@ -2356,7 +2375,7 @@ class Board {
 
             string coord;
             map<string, vector<string>> m;
-
+            
             // iterate through field
             for (int i = 0; i < 64; i++) {
                 coord = get_coord_from_id(i);
@@ -2365,7 +2384,7 @@ class Board {
                     m[coord] = reachable_target_coords(coord);
                 } 
             }
-
+            
             // override & return
             if (color == pieces.w) {
                 targets_for_white = m;
@@ -2394,7 +2413,7 @@ class Board {
                         moves[origin_coord].push_back(targets[i]);
                 }
             }
-
+            
             // override
             if (color == pieces.w) {
                 moves_for_white = moves;
