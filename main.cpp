@@ -78,18 +78,6 @@ string lower_case (string s) {
 
 }
 
-string upper_case (string s) {
-    
-    /* Returns lowercase of string */
-
-    for (int i = 0; i < s.size(); i++) {
-        s[i] = toupper(s[i]);
-    }
-    return s;
-
-}
-
-
 /* Chess pieces implementation */
 class Piece {
 
@@ -536,6 +524,15 @@ class Board {
 
         */
 
+        void clear () {
+
+            /* Removes all pieces from the board. */
+
+            for (int i = 0; i < 64; i++)
+                grid[i]["symbol"] = '_';
+            
+        };
+
         void ignorant_move (string origin_coord_str, string target_coord_str, bool verbose=1) {
 
             /* Moves a piece disregarding chess rules by a combination of remove and place methods. 
@@ -612,7 +609,7 @@ class Board {
 
         };
 
-        bool legal_move (string origin_coord_str, string target_coord_str) {
+        bool legal_move (string origin_coord_str, string target_coord_str, bool verbose) {
             
             if (!move_is_legal(origin_coord_str, target_coord_str)) {
                 cout << "move " << origin_coord_str << " -> " << target_coord_str << " is not legal." << endl;
@@ -620,7 +617,7 @@ class Board {
             } 
             
             // now the main ignorant move is legal
-            ignorant_move(origin_coord_str, target_coord_str);
+            ignorant_move(origin_coord_str, target_coord_str, verbose);
 
             return true;
         };
@@ -796,6 +793,15 @@ class Board {
 
         };
 
+        void reset () {
+
+            /* Resets the board by loading the starting position. */
+
+            clear();
+            load_starting_position();
+
+        };
+
         void remove_piece (string coord_str, bool verbose=1) {
 
             /* Removes a piece from requested coordinate */
@@ -890,7 +896,7 @@ class Board {
         }
 
         /* game methods */
-        void active_move (string origin_coord_str, string target_coord_str) {
+        void active_move (string origin_coord_str, string target_coord_str, bool verbose) {
 
             /* Active moves manipulate the board and game parameters. */
             
@@ -905,7 +911,7 @@ class Board {
             // format the move before the board is altered
             string move_notation = move_to_pgn(origin_coord_str, target_coord_str);
             
-            if (legal_move(origin_coord_str, target_coord_str)) {
+            if (legal_move(origin_coord_str, target_coord_str, verbose)) {
                 
                 int piece = pieces.from_symbol(symbol);
                 
@@ -981,21 +987,39 @@ class Board {
 
         }   
 
+        void active_undo () {
+
+            /* Unmakes the last active move. works on single depth only. */
+        };
+
+        map<string, vector<string>> get_possible_moves_for_active_color () {
+            if (active_color == pieces.w)
+                return moves_for_white;
+            return moves_for_black;
+        }
+
         void refresh_position () {
 
             /* Main parsing mechanism for position and map computation. 
             Should be called after every board alternation e.g. at the end of an active move. 
             The method works color-wise for efficiency reasons, and will gather
             all targets, moves and symbol mappings, for global access. */
-            
+
+            // keep the recent moves and targets persistent
             // update target map and move object depending on color
-            if (active_color == pieces.w)
+            if (active_color == pieces.w) {
+                old_moves = moves_for_white;
+                old_targets = targets_for_white;
                 update_moves_from_targets(update_reachable_target_map(pieces.w), pieces.w);
-            else 
+            } else {
+                old_moves = moves_for_black;
+                old_targets = targets_for_black;
                 update_moves_from_targets(update_reachable_target_map(pieces.b), pieces.b);
-            
+            }
+
             // map all symbols to their current coordinate
             update_symbol_map();
+
         }
 
         /* game implementation */
@@ -1036,7 +1060,10 @@ class Board {
         map<string, vector<string>> targets_for_white,
                                     targets_for_black,
                                     moves_for_white,
-                                    moves_for_black;
+                                    moves_for_black,
+                                    old_targets,
+                                    old_moves;
+
         // define relative decrementation coordinates, which persist
         vector<vector<int>> n_coords {{1,2}, {2,1}, {-1,2}, {-2,1}, {-1,-2}, {-2,-1}, {1,-2}, {2,-1}}; // knight relative coordinates
         vector<vector<int>> d_coords {{1,1}, {1,-1}, {-1,-1}, {-1,1}};
@@ -1911,7 +1938,63 @@ class Board {
 
 };
 
+class Engine {
 
+    private:
+
+        // instantiate board
+        Board board_main;
+        Board board_test;
+
+        /* test suites */
+        int sequence_count_simulation (int depth) {
+
+            /* 
+            An iterative sim approach to find the total move count for any specific depth. 
+            Move Count Table from starting position:
+            depth   lines
+            1       20
+            2       400
+            3  
+            */
+
+            // check for arg
+            if (depth < 1) {
+                cout << "Error: depth must be an integer > 1.";
+                return 0;
+            }
+
+            int counts = 0;
+            map<string, vector<string>> moves = board_test.get_possible_moves_for_active_color();
+            
+            // setup test board from start
+            board_test.load_starting_position();
+            board_test.refresh_position();
+
+            string origin;
+            vector<string> targets;
+
+            for (auto const& x : moves) {
+                origin = x.first;
+                targets = x.second;
+                for (int i = 0; i < targets.size(); i++) {
+                    board_test.active_move(origin, targets[i], 0);
+                    // repeat iteratively
+                    counts += sequence_count_simulation(depth-1);
+                    board_test.active_undo();
+                }
+            }
+            
+            return counts;
+
+        }
+
+
+    public:
+
+        
+
+};
 
 int main (void) {
 
@@ -1927,7 +2010,7 @@ int main (void) {
     boardObject.show_moves_for_active_color();
     boardObject.show_move_count_for_active_color();
 
-    // play the scandinavian for test
+    // play the scandinavian for testing
     boardObject.active_move("E2", "E4");
     boardObject.active_move("D7", "D5");
     boardObject.active_move("E4", "D5");
