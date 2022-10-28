@@ -45,6 +45,7 @@
 #include <ctype.h>
 #include <cctype>
 #include <vector>
+#include <chrono>
 
 using namespace std;
 
@@ -325,17 +326,23 @@ class Board {
 
             /* Returns the square within the grid accociated with the coordinate */
 
-            // retrieve rank from mapping the 2nd char to an integer
+            // retrieve rank from mapping the 2nd char to 
+            // an integer.
             int rank  = coord_str[1] - '0' - 1;
+            
             // letter from first char
             char letter = coord_str[0];
+            
             // find the correct fileumn index from letter
             int i;
             for (i = 0; i < 8; i++) 
                 if (letter == letter_coordinates[i])
                     break;
+            
             // return square with this id
             int id = i + rank * 8;
+            //cout << "hit 1" << endl;
+            
             return grid[id];
 
         };
@@ -344,8 +351,9 @@ class Board {
 
             /* Returns the occupation symbol i.e. chess piece at the 
             desired coordinate. The return '_' indicates an empty square. */
-
+            //cout << "hit 2 " << get_square_from_coord(coord_str)["symbol"][0] << " " << coord_str << endl;
             return get_square_from_coord(coord_str)["symbol"][0];
+
         };
 
         
@@ -606,7 +614,8 @@ class Board {
             // (since the move can be executed outside of a game)
             last_move[0] = origin_coord_str;
             last_move[1] = target_coord_str;
-
+            last_move_persistent[0] = origin_coord_str;
+            last_move_persistent[1] = target_coord_str;
         };
 
         bool legal_move (string origin_coord_str, string target_coord_str, bool verbose) {
@@ -622,7 +631,7 @@ class Board {
             return true;
         };
         
-        void load_position_from_fen (string fen) {
+        void load_position_from_fen (string fen, bool verbose=1) {
 
             /* A fen parsing implementation which generates a position from compact string.
             The reading starts from upper left corner i.e. rank is decremented while the files
@@ -701,7 +710,7 @@ class Board {
                     coord = get_coord_from_id(id);
 
                     // place the piece
-                    place_piece(piece, color, coord);
+                    place_piece(piece, color, coord, verbose);
 
                     // increment file
                     file++;
@@ -755,7 +764,8 @@ class Board {
                     if (i == fen.size()-1) {
                         //cout << "test moves " << moves << endl;
                         move_count = stoi(moves);
-                        cout << "Successfully loaded position from FEN." << endl;
+                        if (verbose)
+                            cout << "Successfully loaded position from FEN." << endl;
                         // finished   
                     }
                 } 
@@ -763,14 +773,16 @@ class Board {
             };
         };
         
-        void load_starting_position () {
+        void load_starting_position (bool verbose=1) {
             
             /* Loads all pieces to the board grid by using their 
             symbol values. Start position fen is loaded via fen parser.*/
 
-            cout << "load starting position ..." << endl;
-            load_position_from_fen(starting_position_fen);
-            cout << "successfully loaded starting position." << endl;
+            if (verbose)
+                cout << "load starting position ..." << endl;
+            load_position_from_fen(starting_position_fen, verbose);
+            if (verbose)
+                cout << "successfully loaded starting position." << endl;
         };
 
         void place_piece (int piece, int color, string coord_str, bool verbose=1) {
@@ -807,7 +819,7 @@ class Board {
             /* Removes a piece from requested coordinate */
 
             char piece_symbol = get_symbol_from_coord(coord_str);
-
+            //cout << "hit 2" << endl;
             if (verbose)
                 cout << "remove " << pieces.name_from_symbol(piece_symbol) << " (" << piece_symbol << ")" << " at " << coord_str << endl;
             
@@ -995,10 +1007,11 @@ class Board {
                 } else {
                     active_color = pieces.b;
                 }
-                
+
                 // refresh the board
                 refresh_position();
 
+                
             }
 
         }   
@@ -1006,23 +1019,27 @@ class Board {
         void active_undo () {
 
             /* Unmakes the last active move. works on single depth only. */
-
-            string  origin = last_move[1],
-                    target = last_move[0];
+            
+            // draw the last move securely from persitent object
+            string  origin = last_move_persistent[1],
+                    target = last_move_persistent[0];
+            
             char symbol = get_symbol_from_coord(target);
             int piece = pieces.from_symbol(symbol);
+            
 
             // switch back active color
             int enemy_color;
             if (active_color == pieces.w) {
                 active_color = pieces.b;
                 enemy_color = pieces.w;
-                move_count--;
+                if (move_count > 1)
+                    move_count--;
             } else {
                 active_color = pieces.w;
                 enemy_color = pieces.w;
             }
-
+            
             // bring back moves and targets for origin position
             if (active_color == pieces.w) {
                 targets_for_white = old_targets;
@@ -1031,7 +1048,7 @@ class Board {
                 targets_for_black = old_targets;
                 moves_for_black = old_moves;
             }
-
+            
             // remove the move from PGN notation
             if (move_history.count(move_count))
                 move_history[move_count].pop_back();
@@ -1064,7 +1081,7 @@ class Board {
                 place_piece(pieces.Pawn, enemy_color, coord, 0);
 
             }
-
+            
             // check for appendix rook when castles and place it back to origin
             if (piece == pieces.King) {
 
@@ -1087,7 +1104,7 @@ class Board {
                     }
 
             } 
-
+            
             // revert main move
             remove_piece(origin, 0);
             place_piece(piece, active_color, target, 0);
@@ -1187,7 +1204,11 @@ class Board {
 
         // Init game parameters
         int active_color = pieces.w;
+        /* while the last_move object is for quick iteration this  
+        will be empty after position refresh
+        while the persistent object remains. */ 
         string last_move[2] = {"", ""};
+        string last_move_persistent[2] = {"", ""};
         char last_captured_symbol = '_';
         string last_captured_symbol_coord = "";
         map<int, vector<string>> move_history;
@@ -1215,8 +1236,8 @@ class Board {
                 square color
                     rank
                     file
-                    etc.
-            */
+                    etc.                                            */
+            
             
             int rank, file;
             string coord;
@@ -2047,29 +2068,55 @@ class Board {
 
 class Engine {
 
-    private:
+    public:
 
-        // instantiate board
-        Board board_main;
-        Board board_test;
+        Engine(void) {
+            cout << "load engine ..." << endl;
+        };
 
         /* test suites */
-        int sequence_count_simulation_test (int depth) {
-
-            /* 
-            An iterative sim approach to find the total move count for any specific depth. 
-            Move Count Table from starting position:
+        void sequence_count_simulation_test (int depth) {
+            
+            /*
+            Sequence Count Table from start position:
             depth   lines
             1       20
             2       400
             3  
             */
 
+            cout << "Start sequence count simulation test:" << endl;
+
+            // setup test board from start
+            board_test.load_starting_position(0);
+            board_test.refresh_position();
+            board_test.show_moves_for_active_color();
+            int s;
+
+            for (int d = 1; d <= depth; d++) {
+                auto ts = std::chrono::system_clock::now();
+                s = sequence_count_simulation(d);
+                cout << "Sequences for depth " << d << " (" << std::chrono::duration_cast<std::chrono::seconds>(ts.time_since_epoch()).count() << "s): " << s << endl;
+            }
+                
+        }
+
+    private:
+
+        // instantiate board
+        Board board_main;
+        Board board_test;
+
+        int sequence_count_simulation (int depth) {
+
+            /* 
+            An iterative sim approach to find all move sequences for any specific depth. 
+            The number of possible positions deviate because of transpositions.
+            The sim will start from current position.
+            */
+
             // check for depth arg
-            if (depth < 1) {
-                cout << "Error: depth must be an integer > 1.";
-                return 0;
-            } else if (depth == 0)
+            if (depth == 0)
                 return 1;
 
             // init counts of sequences
@@ -2078,10 +2125,6 @@ class Engine {
             // draw the active move possibilities
             map<string, vector<string>> moves = board_test.get_possible_moves_for_active_color();
             
-            // setup test board from start
-            board_test.load_starting_position();
-            board_test.refresh_position();
-
             string origin;
             vector<string> targets;
 
@@ -2091,7 +2134,7 @@ class Engine {
                 for (int i = 0; i < targets.size(); i++) {
                     board_test.active_move(origin, targets[i], 0);
                     // repeat iteratively
-                    counts += sequence_count_simulation_test(depth-1);
+                    counts += sequence_count_simulation(depth-1);
                     board_test.active_undo();
                 }
             }
@@ -2099,43 +2142,39 @@ class Engine {
             return counts;
 
         }
-
-
-    public:
-
-        
-
+    
 };
 
 int main (void) {
 
     // initialize a new board and pieces objects
-    Piece pieces;
-    Board boardObject;
+    //Piece pieces;
+    //Board boardObject;
+    Engine engine;
 
-    boardObject.load_starting_position();
-    boardObject.refresh_position();
+    //boardObject.load_starting_position();
+    //boardObject.refresh_position();
 
     //boardObject.show_board();
-
-    boardObject.show_moves_for_active_color();
-    boardObject.show_move_count_for_active_color();
+    int depth = 5;
+    engine.sequence_count_simulation_test(depth);
+    // boardObject.show_moves_for_active_color();
+    // boardObject.show_move_count_for_active_color();
 
     // play the scandinavian for testing
-    boardObject.active_move("E2", "E4");
-    boardObject.active_move("D7", "D5");
-    boardObject.active_move("E4", "D5");
+    // boardObject.active_move("E2", "E4");
+    // boardObject.active_move("D7", "D5");
+    // boardObject.active_move("E4", "D5");
     
-    boardObject.active_move("G8", "F6");
-    boardObject.active_move("G1", "F3");
-    boardObject.active_move("D8", "D5");
-    boardObject.active_move("F1", "E2");
-    boardObject.active_move("B8", "C6");
-    boardObject.active_move("E1", "G1");
-    boardObject.active_move("E7", "E5");
+    // boardObject.active_move("G8", "F6");
+    // boardObject.active_move("G1", "F3");
+    // boardObject.active_move("D8", "D5");
+    // boardObject.active_move("F1", "E2");
+    // boardObject.active_move("B8", "C6");
+    // boardObject.active_move("E1", "G1");
+    // boardObject.active_move("E7", "E5");
 
     // output
-    boardObject.show_board();
     //boardObject.show_pgn();
 
     // int id = 0;
@@ -2162,7 +2201,7 @@ int main (void) {
     // boardObject.ignorant_move("D7", "D5");
     // boardObject.show_reachable_squares("E4");
     // boardObject.show_material();
-    boardObject.show_position_activity();
+    //boardObject.show_position_activity();
     // boardObject.print_board();
     
     return 0;
