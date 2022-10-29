@@ -1035,7 +1035,7 @@ class Board {
             string  origin = last_move_persistent[1],
                     target = last_move_persistent[0];
             
-            char symbol = get_symbol_from_coord(target);
+            char symbol = get_symbol_from_coord(origin);
             int piece = pieces.from_symbol(symbol);
             
 
@@ -1118,7 +1118,7 @@ class Board {
             
             // revert main move
             remove_piece(origin, 0);
-            cout << "test 3 " << origin << " -> " << target << endl;
+            cout << "test 3 " << origin << " -> " << target << " " << piece << endl;
             place_piece(piece, active_color, target, 0);
             
         };
