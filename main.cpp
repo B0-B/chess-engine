@@ -358,6 +358,15 @@ class Board {
 
         
         /* output methods */
+        void show_active_color () {
+            string col;
+            if (active_color == pieces.w) 
+                col = "white";
+            else
+                col = "black";
+            cout << "It's " << col << "'s move." << endl;
+        };
+
         void show_board (int unicode = 0) {
             
             /* Prints the board in the terminal.
@@ -614,8 +623,7 @@ class Board {
             // (since the move can be executed outside of a game)
             last_move[0] = origin_coord_str;
             last_move[1] = target_coord_str;
-            last_move_persistent[0] = origin_coord_str;
-            last_move_persistent[1] = target_coord_str;
+            
         };
 
         bool legal_move (string origin_coord_str, string target_coord_str, bool verbose) {
@@ -908,7 +916,7 @@ class Board {
         }
 
         /* game methods */
-        void active_move (string origin_coord_str, string target_coord_str, bool verbose=0) {
+        bool active_move (string origin_coord_str, string target_coord_str, bool verbose=0) {
 
             /* Active moves manipulate the board and game parameters. */
             
@@ -927,6 +935,9 @@ class Board {
 
                 int piece = pieces.from_symbol(symbol);
 
+                last_move_persistent[0] = origin_coord_str;
+                last_move_persistent[1] = target_coord_str;
+
                 // denote if an en-passant is on the board (for undo)
                 if (en_passant_coord != "-")
                     en_passant_was_on = en_passant_coord;
@@ -940,7 +951,6 @@ class Board {
                     bool castling_right_q_w_before = castling_right_q_w;
                     bool castling_right_q_b_before = castling_right_q_b;
                 }
-                
                 
                 // denote if a new en-passant possibility arises from this move
                 if (piece == pieces.Pawn) {
@@ -1011,9 +1021,10 @@ class Board {
                 // refresh the board
                 refresh_position();
 
-                
+                return 1;
             }
 
+            return 0;
         }   
 
         void active_undo () {
@@ -1107,6 +1118,7 @@ class Board {
             
             // revert main move
             remove_piece(origin, 0);
+            cout << "test 3 " << origin << " -> " << target << endl;
             place_piece(piece, active_color, target, 0);
             
         };
@@ -1398,11 +1410,15 @@ class Board {
             char symbol = get_symbol_from_coord(origin_coord_str);
             int piece = pieces.from_symbol(symbol);
             int origin_color = get_color_from_symbol(symbol);
+            
+            cout << "test 2 " << target_coord_str << " " << origin_color << endl; 
 
             // check if active color is respected
-            if (origin_color != active_color) {
+            if (origin_color == 0)
+                return false;
+            else if (origin_color != active_color) {
                 string col_str;
-                if (origin_color == pieces.w) 
+                if (active_color == pieces.w) 
                     col_str = "white";
                 else 
                     col_str = "black";
@@ -2123,6 +2139,7 @@ class Engine {
             int counts = 0;
 
             // draw the active move possibilities
+            
             map<string, vector<string>> moves = board_test.get_possible_moves_for_active_color();
             
             string origin;
@@ -2133,6 +2150,8 @@ class Engine {
                 targets = x.second;
                 for (int i = 0; i < targets.size(); i++) {
                     board_test.active_move(origin, targets[i], 0);
+                    board_test.show_active_color();
+                    cout << "depth: " << depth << endl;
                     // repeat iteratively
                     counts += sequence_count_simulation(depth-1);
                     board_test.active_undo();
@@ -2149,15 +2168,33 @@ int main (void) {
 
     // initialize a new board and pieces objects
     //Piece pieces;
-    //Board boardObject;
-    Engine engine;
+    Board boardObject;
+    boardObject.load_starting_position();
+    boardObject.refresh_position();
+    boardObject.show_board();
+
+    boardObject.show_active_color();
+    boardObject.active_move("E2", "E4", 1);
+
+    boardObject.show_board();
+
+    boardObject.active_undo();
+
+    boardObject.show_board();
+
+    boardObject.show_move_count();
+    boardObject.show_active_color();
+    boardObject.active_undo();
+    boardObject.show_active_color();
+    
+    //Engine engine;
 
     //boardObject.load_starting_position();
     //boardObject.refresh_position();
 
     //boardObject.show_board();
-    int depth = 5;
-    engine.sequence_count_simulation_test(depth);
+    //int depth = 5;
+    //engine.sequence_count_simulation_test(depth);
     // boardObject.show_moves_for_active_color();
     // boardObject.show_move_count_for_active_color();
 
