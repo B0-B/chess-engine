@@ -975,6 +975,14 @@ class Board {
                 info.origin = origin_coord_str;
                 info.target = target_coord_str;
                 info.en_passant_coord = en_passant_coord;
+                if (color == pieces.w) {
+                    info.targets = targets_for_white;
+                    info.moves = moves_for_white;
+                } else {
+                    info.targets = targets_for_black;
+                    info.moves = moves_for_black;
+                }
+                
                 // if (en_passant_coord != "-")
                 //     en_passant_was_on = en_passant_coord;
                 // else 
@@ -1468,7 +1476,7 @@ class Board {
             int piece = pieces.from_symbol(symbol);
             int origin_color = get_color_from_symbol(symbol);
             
-            cout << "test 2 " << target_coord_str << " " << origin_color << endl; 
+            
 
             // check if active color is respected
             if (origin_color == 0)
@@ -1482,7 +1490,7 @@ class Board {
                 cout << "it is " << col_str << "'s turn!" << endl;
                 return false;
             }
-            
+           
             // first check if move is a castling move and if it is valid, otherwise continue
             if (piece == pieces.King) {
                 if (origin_color == pieces.w && origin_coord_str == "E1" && target_coord_str == "G1") {
@@ -1510,7 +1518,7 @@ class Board {
                         return false;
                 } 
             }
-            
+             
             // en-passant
             // was checked already in reachable_targets object, it only needs to be checked if the en-passant
             // move leaves an open check which will be done by default in the following.
@@ -1523,9 +1531,10 @@ class Board {
             playable_moves = moves_for_black[origin_coord_str];
             if (origin_color == pieces.w)
                 playable_moves = moves_for_white[origin_coord_str];
+                show_moves_for_active_color();
             if (contains_string(playable_moves, target_coord_str))
                 return true;
-
+            
             return false;
             
         };
@@ -2210,12 +2219,13 @@ class Engine {
                 origin = x.first;
                 targets = x.second;
                 for (int i = 0; i < targets.size(); i++) {
+                    board_test.show_moves_for_active_color();
                     info = board_test.active_move(origin, targets[i], 0);
                     board_test.show_board();
                     cout << "depth: " << depth << endl;
                     // repeat iteratively
                     counts += sequence_count_simulation(depth-1);
-                    board_test.active_undo_from_info(info);
+                    board_test.show_moves_for_active_color();
                     board_test.show_board();
                 }
             }
