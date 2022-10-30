@@ -50,6 +50,18 @@
 using namespace std;
 
 // global methods
+void clear_console () {
+    #if defined _WIN32
+        system("cls");
+        //clrscr(); // including header file : conio.h
+    #elif defined (__LINUX__) || defined(__gnu_linux__) || defined(__linux__)
+        system("clear");
+        //std::cout<< u8"\033[2J\033[1;1H"; //Using ANSI Escape Sequences 
+    #elif defined (__APPLE__)
+        system("clear");
+    #endif
+}
+
 bool contains_string (vector<string> v, string s) {
     
     /* Checks if a string-type vector contains a specific string. */
@@ -1087,23 +1099,11 @@ class Board {
             char symbol = info.symbol;
             int piece = pieces.from_symbol(symbol);
             
-
             // switch back active color
             active_color = info.color;
             move_count = info.move_count;
 
-
-            // int enemy_color;
-            // if (active_color == pieces.w) {
-            //     active_color = pieces.b;
-            //     enemy_color = pieces.w;
-            //     if (move_count > 1)
-            //         move_count--;
-            // } else {
-            //     active_color = pieces.w;
-            //     enemy_color = pieces.w;
-            // }
-
+            // reset castling rights
             castling_right_k_w = info.castling_right_k_w;
             castling_right_k_b = info.castling_right_k_b;
             castling_right_q_w = info.castling_right_q_w;
@@ -1123,33 +1123,6 @@ class Board {
                 move_history[move_count].pop_back();
             else
                 move_history[move_count-1].pop_back();
-            
-            // reset castling rights
-            // if (piece == pieces.King || piece == pieces.Rook) {
-            //     bool castling_right_k_w_before = castling_right_k_w;
-            //     bool castling_right_k_b_before = castling_right_k_b;
-            //     bool castling_right_q_w_before = castling_right_q_w;
-            //     bool castling_right_q_b_before = castling_right_q_b;
-            // }
-            
-            // check if en-passant was allowed during last move
-            // if (en_passant_was_on != "-") {
-
-            //     en_passant_coord = en_passant_was_on;
-            //     char target_file_str = en_passant_coord[0]; 
-            //     string coord = target_file_str + "5";
-                
-            //     // depending on color 
-            //     if (active_color == pieces.w)
-            //         // black pawn captured on 5th rank
-            //         last_captured_symbol_coord = target_file_str + '5';
-            //     else if (active_color == pieces.b) 
-            //         // white pawn captured on 4th rank
-            //         last_captured_symbol_coord = target_file_str + '4';
-
-            //     place_piece(pieces.Pawn, enemy_color, coord, 0);
-
-            // }
             
             // check for appendix rook when castles and place it back to origin
             if (piece == pieces.King) {
@@ -1178,13 +1151,9 @@ class Board {
             if (info.capture_coord != "") 
                 place_symbol(info.capture_symbol, info.capture_coord);
             
-            
             // revert main move
             remove_piece(info.target, 0);
-            // cout << "test 3 " << origin << " -> " << target << " " << piece << endl;
             place_symbol(info.symbol, info.origin);
-
-            show_board();
             
         };
 
@@ -1531,7 +1500,6 @@ class Board {
             playable_moves = moves_for_black[origin_coord_str];
             if (origin_color == pieces.w)
                 playable_moves = moves_for_white[origin_coord_str];
-                show_moves_for_active_color();
             if (contains_string(playable_moves, target_coord_str))
                 return true;
             
@@ -2160,7 +2128,7 @@ class Engine {
         };
 
         /* test suites */
-        void sequence_count_simulation_test (int depth) {
+        void sequence_count_simulation_test (int depth, bool visual=false) {
             
             /*
             Sequence Count Table from start position:
@@ -2175,12 +2143,11 @@ class Engine {
             // setup test board from start
             board_test.load_starting_position(0);
             board_test.refresh_position();
-            board_test.show_moves_for_active_color();
             int s;
 
             for (int d = 1; d <= depth; d++) {
                 auto ts = std::chrono::system_clock::now();
-                s = sequence_count_simulation(d);
+                s = sequence_count_simulation(d, visual);
                 cout << "Sequences for depth " << d << " (" << std::chrono::duration_cast<std::chrono::seconds>(ts.time_since_epoch()).count() << "s): " << s << endl;
             }
                 
@@ -2192,7 +2159,7 @@ class Engine {
         // Board board_main;
         // Board board_test;
 
-        int sequence_count_simulation (int depth) {
+        int sequence_count_simulation (int depth, bool visual=false) {
 
             /* 
             An iterative sim approach to find all move sequences for any specific depth. 
@@ -2219,14 +2186,19 @@ class Engine {
                 origin = x.first;
                 targets = x.second;
                 for (int i = 0; i < targets.size(); i++) {
-                    board_test.show_moves_for_active_color();
                     info = board_test.active_move(origin, targets[i], 0);
-                    board_test.show_board();
-                    cout << "depth: " << depth << endl;
+                    if (visual) {
+                        clear_console();
+                        board_test.show_board();
+                    }
                     // repeat iteratively
-                    counts += sequence_count_simulation(depth-1);
-                    board_test.show_moves_for_active_color();
-                    board_test.show_board();
+                    counts += sequence_count_simulation(depth-1, visual);
+                    board_test.active_undo_from_info(info);
+                    if (visual) {
+                        clear_console();
+                        board_test.show_board();
+                    }
+                        
                 }
             }
             
@@ -2268,9 +2240,9 @@ int main (void) {
     //boardObject.refresh_position();
 
     //boardObject.show_board();
-    int depth = 2;
-    engine.sequence_count_simulation_test(depth);
-    engine.board_test.show_board();
+    int depth = 3;
+    engine.sequence_count_simulation_test(depth, 1);
+    // engine.board_test.show_board();
     // boardObject.show_moves_for_active_color();
     // boardObject.show_move_count_for_active_color();
 
