@@ -266,6 +266,25 @@ class Piece {
         }
 };
 
+class MoveInfo {
+    public:
+        bool legal = 0;
+        int color = 0;
+        int move_count;
+        char symbol = '_';
+        string en_passant_coord = "-";
+        string origin = "";
+        string target = "";
+        string capture_coord = "";
+        char capture_symbol = '_';
+        bool castling_right_k_w = 1;
+        bool castling_right_q_w = 1;
+        bool castling_right_k_b = 1;
+        bool castling_right_q_b = 1;
+        map<string, vector<string>> moves;
+        map<string, vector<string>> targets;
+};
+
 /*  Chess Board Implementation */
 class Board {   
 
@@ -916,41 +935,62 @@ class Board {
         }
 
         /* game methods */
-        bool active_move (string origin_coord_str, string target_coord_str, bool verbose=0) {
+        MoveInfo active_move (string origin_coord_str, string target_coord_str, bool verbose=0) {
 
             /* Active moves manipulate the board and game parameters. */
-            
+            MoveInfo info;
             char symbol = get_symbol_from_coord(origin_coord_str);
             int color = get_color_from_symbol(symbol);
             char captured_symbol;
+            info.legal = 0;
+            info.symbol = symbol;
+            info.color = color;
+            
 
-            // apriori denote the symbol which is captured
-            if (square_is_occupied_by_enemy(color, target_coord_str))
-                captured_symbol = get_symbol_from_coord(target_coord_str); 
+            // apriori denote the symbol which is captured, including en-passant
+            if (square_is_occupied_by_enemy(color, target_coord_str)) {
+                info.capture_symbol = get_symbol_from_coord(target_coord_str); 
+                info.capture_coord = get_symbol_from_coord(target_coord_str); 
+            } else if (target_coord_str == en_passant_coord) {
+                string pawn_coord;
+                if (color == pieces.w)
+                    // black pawn captured on 5th rank
+                    pawn_coord = target_coord_str[0] + '5';
+                else if (color == pieces.b) 
+                    // white pawn captured on 4th rank
+                    pawn_coord = target_coord_str[0] + '4';
+                info.capture_symbol = get_symbol_from_coord(pawn_coord);
+                info.capture_coord = pawn_coord;
+            }
 
             // format the move before the board is altered
             string move_notation = move_to_pgn(origin_coord_str, target_coord_str);
-            
+
             if (legal_move(origin_coord_str, target_coord_str, verbose)) {
 
                 int piece = pieces.from_symbol(symbol);
 
-                last_move_persistent[0] = origin_coord_str;
-                last_move_persistent[1] = target_coord_str;
-
-                // denote if an en-passant is on the board (for undo)
-                if (en_passant_coord != "-")
-                    en_passant_was_on = en_passant_coord;
-                else 
-                    en_passant_was_on = "-";  
+                // denote all necessary information to info object
+                info.legal = 1;
+                info.origin = origin_coord_str;
+                info.target = target_coord_str;
+                info.en_passant_coord = en_passant_coord;
+                // if (en_passant_coord != "-")
+                //     en_passant_was_on = en_passant_coord;
+                // else 
+                //     en_passant_was_on = "-";  
 
                 // denote the castling rights if king or rook move (for undo)
-                if (piece == pieces.King || piece == pieces.Rook) {
-                    bool castling_right_k_w_before = castling_right_k_w;
-                    bool castling_right_k_b_before = castling_right_k_b;
-                    bool castling_right_q_w_before = castling_right_q_w;
-                    bool castling_right_q_b_before = castling_right_q_b;
-                }
+                info.castling_right_k_b = castling_right_k_b;
+                info.castling_right_q_b = castling_right_q_b;
+                info.castling_right_k_w = castling_right_k_w;
+                info.castling_right_q_w = castling_right_q_w;
+                // if (piece == pieces.King || piece == pieces.Rook) {
+                //     bool castling_right_k_w_before = castling_right_k_w;
+                //     bool castling_right_k_b_before = castling_right_k_b;
+                //     bool castling_right_q_w_before = castling_right_q_w;
+                //     bool castling_right_q_b_before = castling_right_q_b;
+                // }
                 
                 // denote if a new en-passant possibility arises from this move
                 if (piece == pieces.Pawn) {
@@ -978,6 +1018,7 @@ class Board {
                                         en_passant_target_rank_str = "5";
                                     // finally merge and override en passant coord
                                     en_passant_coord = square["file"] + en_passant_target_rank_str;
+
                                     break;
                                 }
                             }
@@ -1011,6 +1052,7 @@ class Board {
                 move_history[move_count].push_back(move_notation);
 
                 // override move count only if black has played and alternate active color
+                info.move_count = move_count;
                 if (color == pieces.b) {
                     move_count++;
                     active_color = pieces.w;
@@ -1021,43 +1063,51 @@ class Board {
                 // refresh the board
                 refresh_position();
 
-                return 1;
             }
 
-            return 0;
+            return info;
         }   
 
-        void active_undo () {
+        void active_undo_from_info (MoveInfo info) {
 
             /* Unmakes the last active move. works on single depth only. */
             
             // draw the last move securely from persitent object
-            string  origin = last_move_persistent[1],
-                    target = last_move_persistent[0];
+            string  origin = info.target,
+                    target = info.origin;
             
-            char symbol = get_symbol_from_coord(origin);
+            char symbol = info.symbol;
             int piece = pieces.from_symbol(symbol);
             
 
             // switch back active color
-            int enemy_color;
-            if (active_color == pieces.w) {
-                active_color = pieces.b;
-                enemy_color = pieces.w;
-                if (move_count > 1)
-                    move_count--;
-            } else {
-                active_color = pieces.w;
-                enemy_color = pieces.w;
-            }
+            active_color = info.color;
+            move_count = info.move_count;
+
+
+            // int enemy_color;
+            // if (active_color == pieces.w) {
+            //     active_color = pieces.b;
+            //     enemy_color = pieces.w;
+            //     if (move_count > 1)
+            //         move_count--;
+            // } else {
+            //     active_color = pieces.w;
+            //     enemy_color = pieces.w;
+            // }
+
+            castling_right_k_w = info.castling_right_k_w;
+            castling_right_k_b = info.castling_right_k_b;
+            castling_right_q_w = info.castling_right_q_w;
+            castling_right_q_b = info.castling_right_q_b;
             
             // bring back moves and targets for origin position
             if (active_color == pieces.w) {
-                targets_for_white = old_targets;
-                moves_for_white = old_moves;
+                targets_for_white = info.targets;
+                moves_for_white = info.moves;
             } else {
-                targets_for_black = old_targets;
-                moves_for_black = old_moves;
+                targets_for_black = info.targets;
+                moves_for_black = info.moves;
             }
             
             // remove the move from PGN notation
@@ -1067,31 +1117,31 @@ class Board {
                 move_history[move_count-1].pop_back();
             
             // reset castling rights
-            if (piece == pieces.King || piece == pieces.Rook) {
-                bool castling_right_k_w_before = castling_right_k_w;
-                bool castling_right_k_b_before = castling_right_k_b;
-                bool castling_right_q_w_before = castling_right_q_w;
-                bool castling_right_q_b_before = castling_right_q_b;
-            }
+            // if (piece == pieces.King || piece == pieces.Rook) {
+            //     bool castling_right_k_w_before = castling_right_k_w;
+            //     bool castling_right_k_b_before = castling_right_k_b;
+            //     bool castling_right_q_w_before = castling_right_q_w;
+            //     bool castling_right_q_b_before = castling_right_q_b;
+            // }
             
             // check if en-passant was allowed during last move
-            if (en_passant_was_on != "-") {
+            // if (en_passant_was_on != "-") {
 
-                en_passant_coord = en_passant_was_on;
-                char target_file_str = en_passant_coord[0]; 
-                string coord = target_file_str + "5";
+            //     en_passant_coord = en_passant_was_on;
+            //     char target_file_str = en_passant_coord[0]; 
+            //     string coord = target_file_str + "5";
                 
-                // depending on color 
-                if (active_color == pieces.w)
-                    // black pawn captured on 5th rank
-                    last_captured_symbol_coord = target_file_str + '5';
-                else if (active_color == pieces.b) 
-                    // white pawn captured on 4th rank
-                    last_captured_symbol_coord = target_file_str + '4';
+            //     // depending on color 
+            //     if (active_color == pieces.w)
+            //         // black pawn captured on 5th rank
+            //         last_captured_symbol_coord = target_file_str + '5';
+            //     else if (active_color == pieces.b) 
+            //         // white pawn captured on 4th rank
+            //         last_captured_symbol_coord = target_file_str + '4';
 
-                place_piece(pieces.Pawn, enemy_color, coord, 0);
+            //     place_piece(pieces.Pawn, enemy_color, coord, 0);
 
-            }
+            // }
             
             // check for appendix rook when castles and place it back to origin
             if (piece == pieces.King) {
@@ -1115,11 +1165,18 @@ class Board {
                     }
 
             } 
+
+            // reset the captured piece
+            if (info.capture_coord != "") 
+                place_symbol(info.capture_symbol, info.capture_coord);
+            
             
             // revert main move
-            remove_piece(origin, 0);
-            cout << "test 3 " << origin << " -> " << target << " " << piece << endl;
-            place_piece(piece, active_color, target, 0);
+            remove_piece(info.target, 0);
+            // cout << "test 3 " << origin << " -> " << target << " " << piece << endl;
+            place_symbol(info.symbol, info.origin);
+
+            show_board();
             
         };
 
@@ -2086,6 +2143,9 @@ class Engine {
 
     public:
 
+        Board board_main;
+        Board board_test;
+
         Engine(void) {
             cout << "load engine ..." << endl;
         };
@@ -2120,8 +2180,8 @@ class Engine {
     private:
 
         // instantiate board
-        Board board_main;
-        Board board_test;
+        // Board board_main;
+        // Board board_test;
 
         int sequence_count_simulation (int depth) {
 
@@ -2144,17 +2204,19 @@ class Engine {
             
             string origin;
             vector<string> targets;
+            MoveInfo info;
 
             for (auto const& x : moves) {
                 origin = x.first;
                 targets = x.second;
                 for (int i = 0; i < targets.size(); i++) {
-                    board_test.active_move(origin, targets[i], 0);
-                    board_test.show_active_color();
+                    info = board_test.active_move(origin, targets[i], 0);
+                    board_test.show_board();
                     cout << "depth: " << depth << endl;
                     // repeat iteratively
                     counts += sequence_count_simulation(depth-1);
-                    board_test.active_undo();
+                    board_test.active_undo_from_info(info);
+                    board_test.show_board();
                 }
             }
             
@@ -2167,34 +2229,38 @@ class Engine {
 int main (void) {
 
     // initialize a new board and pieces objects
-    //Piece pieces;
-    Board boardObject;
-    boardObject.load_starting_position();
-    boardObject.refresh_position();
-    boardObject.show_board();
+    // Piece pieces;
+    // Board boardObject;
+    // boardObject.load_starting_position();
+    // boardObject.refresh_position();
+    // boardObject.show_board();
 
-    boardObject.show_active_color();
-    boardObject.active_move("E2", "E4", 1);
+    // boardObject.show_active_color();
+    // boardObject.active_move("A2", "A4", 1);
+    // boardObject.active_move("E7", "E5", 1);
+    // boardObject.show_move_count();
+    // boardObject.show_moves_for_active_color();
+    // boardObject.active_move("E7", "E5", 1);
+    // boardObject.show_board();
 
-    boardObject.show_board();
+    // boardObject.active_undo();
 
-    boardObject.active_undo();
+    // boardObject.show_board();
 
-    boardObject.show_board();
-
-    boardObject.show_move_count();
-    boardObject.show_active_color();
-    boardObject.active_undo();
-    boardObject.show_active_color();
+    // boardObject.show_move_count();
+    // boardObject.show_active_color();
+    // boardObject.active_undo();
+    // boardObject.show_active_color();
     
-    //Engine engine;
+    Engine engine;
 
     //boardObject.load_starting_position();
     //boardObject.refresh_position();
 
     //boardObject.show_board();
-    //int depth = 5;
-    //engine.sequence_count_simulation_test(depth);
+    int depth = 2;
+    engine.sequence_count_simulation_test(depth);
+    engine.board_test.show_board();
     // boardObject.show_moves_for_active_color();
     // boardObject.show_move_count_for_active_color();
 
