@@ -962,7 +962,7 @@ class Board {
             // apriori denote the symbol which is captured, including en-passant
             if (square_is_occupied_by_enemy(color, target_coord_str)) {
                 info.capture_symbol = get_symbol_from_coord(target_coord_str); 
-                info.capture_coord = get_symbol_from_coord(target_coord_str); 
+                info.capture_coord = target_coord_str; 
             } else if (target_coord_str == en_passant_coord) {
                 string pawn_coord;
                 if (color == pieces.w)
@@ -2127,10 +2127,20 @@ class Engine {
             cout << "load engine ..." << endl;
         };
 
-        /* test suites */
-        void sequence_count_simulation_test (int depth, bool visual=false) {
+        /* test suites and simulations */
+        void shannon_benchmark (int depth, bool visual=false) {
+            
+            /* An alias for shannon_number_simulation.
+            Performs a time performance benchmark by stopping the time for each depth. */
+            
+            shannon_number_simulation (depth, visual);
+            
+        };
+
+        void shannon_number_simulation (int depth, bool visual=false) {
             
             /*
+            Counts all possible move sequences i.e. the shannon number up to a specific depth.
             Sequence Count Table from start position:
             depth   lines
             1       20
@@ -2162,7 +2172,7 @@ class Engine {
         int sequence_count_simulation (int depth, bool visual=false) {
 
             /* 
-            An iterative sim approach to find all move sequences for any specific depth. 
+            An iterative sim approach to find the  for any specific depth. 
             The number of possible positions deviate because of transpositions.
             The sim will start from current position.
             */
@@ -2240,8 +2250,8 @@ int main (void) {
     //boardObject.refresh_position();
 
     //boardObject.show_board();
-    int depth = 3;
-    engine.sequence_count_simulation_test(depth, 1);
+    int depth = 4;
+    engine.shannon_number_simulation(depth, 1);
     // engine.board_test.show_board();
     // boardObject.show_moves_for_active_color();
     // boardObject.show_move_count_for_active_color();
