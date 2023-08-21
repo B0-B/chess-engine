@@ -279,6 +279,8 @@ class Piece {
 };
 
 class MoveInfo {
+    
+    /* Constructor class for storing move information. */
     public:
         bool legal = 0;
         int color = 0;
@@ -295,6 +297,7 @@ class MoveInfo {
         bool castling_right_q_b = 1;
         map<string, vector<string>> moves;
         map<string, vector<string>> targets;
+        
 };
 
 /*  Chess Board Implementation */
@@ -658,6 +661,9 @@ class Board {
         };
 
         bool legal_move (string origin_coord_str, string target_coord_str, bool verbose) {
+
+            /* Makes an ignorant move (without chaning gaming parameters) 
+            only if legal, and returns a boolean. */
             
             if (!move_is_legal(origin_coord_str, target_coord_str)) {
                 cout << "move " << origin_coord_str << " -> " << target_coord_str << " is not legal." << endl;
@@ -950,6 +956,7 @@ class Board {
         MoveInfo active_move (string origin_coord_str, string target_coord_str, bool verbose=0) {
 
             /* Active moves manipulate the board and game parameters. */
+
             MoveInfo info;
             char symbol = get_symbol_from_coord(origin_coord_str);
             int color = get_color_from_symbol(symbol);
@@ -2116,6 +2123,7 @@ class Board {
 
 };
 
+/*  Chess Engine Implementation */
 class Engine {
 
     public:
@@ -2156,9 +2164,12 @@ class Engine {
             int s;
 
             for (int d = 1; d <= depth; d++) {
-                auto ts = std::chrono::system_clock::now();
+
+                std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
                 s = sequence_count_simulation(d, visual);
-                cout << "Sequences for depth " << d << " (" << std::chrono::duration_cast<std::chrono::seconds>(ts.time_since_epoch()).count() << "s): " << s << endl;
+                std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+                cout << "Sequences for depth " << d << " (" << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() / 1e6 << "s): " << s << endl;
+            
             }
                 
         }
@@ -2172,8 +2183,8 @@ class Engine {
         int sequence_count_simulation (int depth, bool visual=false) {
 
             /* 
-            An iterative sim approach to find the  for any specific depth. 
-            The number of possible positions deviate because of transpositions.
+            An iterative sim approach to find the Shannon number for any specific depth. 
+            This number of all possible positions does not account for transpositions of same pieces.
             The sim will start from current position.
             */
 
@@ -2251,7 +2262,8 @@ int main (void) {
 
     //boardObject.show_board();
     int depth = 4;
-    engine.shannon_number_simulation(depth, 1);
+    engine.shannon_number_simulation(depth, 0);
+    // engine.shannon_benchmark(depth)
     // engine.board_test.show_board();
     // boardObject.show_moves_for_active_color();
     // boardObject.show_move_count_for_active_color();
