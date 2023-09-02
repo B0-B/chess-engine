@@ -383,6 +383,7 @@ class Board {
                 cout << "move " << origin_coord_str << " -> " << target_coord_str << " is not legal." << endl;
                 // test for debugging
                 show_board();
+                show_pgn();
                 return false;
             } 
             
@@ -869,13 +870,13 @@ class Board {
 
             } 
 
-            // reset the captured piece
-            if (info.capture_coord != "") 
-                place_symbol(info.capture_symbol, info.capture_coord);
-            
             // revert main move
             remove_piece(info.target, 0);
             place_symbol(info.symbol, info.origin);
+
+            // reset the captured piece
+            if (info.capture_coord != "") 
+                place_symbol(info.capture_symbol, info.capture_coord);
             
         };
 
@@ -1314,22 +1315,13 @@ class Board {
                     }
 
                     /* captures */
-                    int s = -1;
                     for (int i = 0; i < 2; i++) {
-                        s *= -1;
-                        if (square_is_valid(file+s, rank+sign)) {
-                            target_coord = get_coord_from_file_and_rank(file+s, rank+sign);
+                        if (square_is_valid(file+pow(-1.,i), rank+sign)) {
+                            target_coord = get_coord_from_file_and_rank(file+pow(-1.,i), rank+sign);
                             if (square_is_occupied_by_enemy(color, target_coord))
                                 out.push_back(target_coord);
                         }
                     }
-                    // for (int i = 0; i < 2; i++) {
-                    //     if (square_is_valid(file+pow(-1.,i), rank+sign)) {
-                    //         target_coord = get_coord_from_file_and_rank(file+pow(-1.,i), rank+sign);
-                    //         if (square_is_occupied_by_enemy(color, target_coord))
-                    //             out.push_back(target_coord);
-                    //     }
-                    // }
                     
                     /* en-passant */
                     if (en_passant_coord != "-") {

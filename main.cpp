@@ -58,16 +58,36 @@ int main (void) {
 
     // initialize a new board and pieces objects
     // Piece pieces;
-    Board boardObject;
-    boardObject.load_starting_position();
-    boardObject.refresh_position();
-    boardObject.show_board();
+    // Board boardObject;
+    // boardObject.load_starting_position();
+    // boardObject.refresh_position();
+    // boardObject.show_board();
+
+    // // test bug which breaks shannon simulation
+    // MoveInfo move_1 = boardObject.active_move("A2", "A3");
+    // boardObject.show_board();
+    // MoveInfo move_2 = boardObject.active_move("E7", "E6");
+    // boardObject.show_board();
+    // MoveInfo move_3 = boardObject.active_move("A1", "A2");
+    // boardObject.show_board();
+    // MoveInfo move_4 = boardObject.active_move("H7", "H5");
+    // boardObject.show_board();
+
+    // // undo all moves
+    // boardObject.active_undo_from_info(move_4);
+    // boardObject.show_board();
+    // boardObject.active_undo_from_info(move_3);
+    // boardObject.show_board();
+    // boardObject.active_undo_from_info(move_2);
+    // boardObject.show_board();
+    // boardObject.active_undo_from_info(move_1);
+    // boardObject.show_board();
     
-    // Engine engine;
+    Engine engine;
 
     // shannon number test (number of positions for diven depth)
-    // int depth = 4;
-    // engine.shannon_number_simulation(depth, 1, 0);
+    int depth = 5;
+    engine.shannon_number_simulation(depth, 0, 0);
     // engine.shannon_benchmark(depth);
     // engine.board_test.show_board();
     // boardObject.show_moves_for_active_color();
@@ -79,15 +99,7 @@ int main (void) {
     // boardObject.active_move("E4", "D5");
     
 
-    // test bug which breaks shannon simulation
-    // MoveInfo move_1 = boardObject.active_move("A2", "A4");
-    // boardObject.show_board();
-    // MoveInfo move_2 = boardObject.active_move("E7", "E6");
-    // boardObject.show_board();
-    // boardObject.active_undo_from_info(move_1);
-    // boardObject.show_board();
-    // boardObject.active_undo_from_info(move_2);
-    // boardObject.show_board();
+    
 
 
     // output
