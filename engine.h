@@ -44,10 +44,8 @@ class Engine {
             */
 
             
-            // cout << "Start sequence count simulation test:" << endl;
             print("Start sequence count simulation test:", "Engine");
             // setup test board from start
-            print("test", "test");
             board_test.load_starting_position(0);
             board_test.refresh_position();
             int s;

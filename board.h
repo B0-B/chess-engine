@@ -103,7 +103,6 @@ class Board {
             return get_square_from_coord(coord_str)["symbol"][0];
 
         };
-
         
         /* output methods */
         void show_active_color () {
@@ -226,10 +225,12 @@ class Board {
         void show_reachable_squares (string coord_str) {
             
             /* Prints the reachable targets delimited into console */
+
             vector<string> targets = reachable_target_coords(coord_str);
             for (int i = 0; i < targets.size(); i++) {
                 cout << get_symbol_from_coord(coord_str) << " (" << coord_str << "): " << targets[i] << " " << endl;
             }
+
         };
 
         void show_reachable_squares_for_active_color () {
@@ -333,6 +334,7 @@ class Board {
             /* ---- Appendix Moves ---- */
             // check for castling, if so do another move with the rook
             if (piece == pieces.King) {
+
                 int r = pieces.Rook;
                 if (origin_coord_str == "E1" && target_coord_str == "G1") {
                     remove_piece("H1", verbose);
@@ -347,6 +349,13 @@ class Board {
                     remove_piece("A8", verbose);
                     place_piece(r, color, "D8", verbose);
                 }
+
+                // denote King's position
+                if (color == pieces.w) 
+                    white_king_coord = target_coord_str;
+                else
+                    black_king_coord = target_coord_str;
+
             }
             
             // check if en-passant is captured to remove the captured pawn, as it's misplaced
@@ -547,6 +556,10 @@ class Board {
                 cout << "successfully loaded starting position." << endl;
         };
 
+        bool mate (int color) {
+            return is_mate(color);
+        }
+
         void place_piece (int piece, int color, string coord_str, bool verbose=1) {
 
             /* Places a piece on the board */
@@ -653,6 +666,12 @@ class Board {
                         place_piece(pieces.Rook, color, "D8", 0);
                     }
 
+                // revert to old King's position
+                if (color == pieces.w) 
+                    white_king_coord = target;
+                else
+                    black_king_coord = target;
+
             } 
             
             // en-passant rank is corrected already in ignorant move.
@@ -728,12 +747,10 @@ class Board {
                 info.castling_right_q_b = castling_right_q_b;
                 info.castling_right_k_w = castling_right_k_w;
                 info.castling_right_q_w = castling_right_q_w;
-                // if (piece == pieces.King || piece == pieces.Rook) {
-                //     bool castling_right_k_w_before = castling_right_k_w;
-                //     bool castling_right_k_b_before = castling_right_k_b;
-                //     bool castling_right_q_w_before = castling_right_q_w;
-                //     bool castling_right_q_b_before = castling_right_q_b;
-                // }
+
+                // denotte if colors are checked
+                info.white_is_checked = white_is_checked;
+                info.black_is_checked = black_is_checked;
                 
                 // denote if a new en-passant possibility arises from this move
                 if (piece == pieces.Pawn) {
@@ -796,7 +813,9 @@ class Board {
 
                 // override move count only if black has played and alternate active color
                 info.move_count = move_count;
+                string col_str = "white";
                 if (color == pieces.b) {
+                    string col_str = "black";
                     move_count++;
                     active_color = pieces.w;
                 } else {
@@ -805,6 +824,7 @@ class Board {
 
                 // refresh the board
                 refresh_position();
+                show_moves_for_active_color();
 
             }
 
@@ -831,6 +851,10 @@ class Board {
             castling_right_k_b = info.castling_right_k_b;
             castling_right_q_w = info.castling_right_q_w;
             castling_right_q_b = info.castling_right_q_b;
+
+            // checks
+            white_is_checked = info.white_is_checked;
+            black_is_checked = info.black_is_checked;
             
             // bring back moves and targets for origin position
             if (active_color == pieces.w) {
@@ -874,16 +898,22 @@ class Board {
             remove_piece(info.target, 0);
             place_symbol(info.symbol, info.origin);
 
-            // reset the captured piece
+            // revert the captured piece
             if (info.capture_coord != "") 
                 place_symbol(info.capture_symbol, info.capture_coord);
+            
+            
             
         };
 
         map<string, vector<string>> get_possible_moves_for_active_color () {
+            
+            /* Returns a map of active color piece coordinates and the corresponding legal moves. */
+
             if (active_color == pieces.w)
                 return moves_for_white;
             return moves_for_black;
+        
         }
 
         void refresh_position () {
@@ -898,15 +928,25 @@ class Board {
             if (active_color == pieces.w) {
                 old_moves = moves_for_white;
                 old_targets = targets_for_white;
+                black_is_checked = is_checked(pieces.b);
+                if (is_mate(pieces.b))
+                    print("Black got checkmated!", "board");
                 update_moves_from_targets(update_reachable_target_map(pieces.w), pieces.w);
             } else {
                 old_moves = moves_for_black;
                 old_targets = targets_for_black;
+                white_is_checked = is_checked(pieces.w);
+                if (is_mate(pieces.w))
+                    print("White got checkmated!", "board");
                 update_moves_from_targets(update_reachable_target_map(pieces.b), pieces.b);
             }
 
+            
+
             // map all symbols to their current coordinate
             update_symbol_map();
+
+            
 
         }
 
@@ -942,6 +982,10 @@ class Board {
         bool castling_right_k_b_before;
         bool castling_right_q_w_before;
         bool castling_right_q_b_before;
+
+        // remember check after every active move
+        bool white_is_checked = false;
+        bool black_is_checked = false;
 
         
         /* Denote everything for the next move i.e. from current position 
@@ -987,6 +1031,9 @@ class Board {
         string en_passant_was_on = "-";
         int half_clock = 0;
         int move_count = 1;
+
+        // track king coordinates
+        string white_king_coord, black_king_coord;  
 
         /*   init methods   */
         void build_grid () {
@@ -1181,6 +1228,8 @@ class Board {
                 cout << "it is " << col_str << "'s turn!" << endl;
                 return false;
             }
+
+            
            
             // first check if move is a castling move and if it is valid, otherwise continue
             if (piece == pieces.King) {
@@ -1459,7 +1508,7 @@ class Board {
             return out;
 
         };
-
+    
         vector<string> square_is_attacked_by_coords (string coord_str, map<string, vector<string>> enemy_targets) {
 
             /* Returns all enemy (attacker) coordinates which are hitting the square. 
@@ -1488,6 +1537,43 @@ class Board {
 
             return out;
             
+        };
+
+        bool square_is_attacked (string coord_str) {
+
+            /* A faster version of square_is_attacked_by_coords, which only
+            returns truth value at first found instance i.e. if the enemy's
+            targets yield the coord_str. */
+
+            string attacker_coord;
+            vector<string> attacking_coords;
+            map<string, vector<string>> attacker_targets;
+            
+            char symbol = get_symbol_from_coord(coord_str);
+            int color = get_color_from_symbol(symbol);
+
+            // select attacker targets
+            attacker_targets = targets_for_black;
+            if (color == pieces.w) 
+                attacker_targets = targets_for_white;
+
+            for (auto const& x : attacker_targets) {
+
+                // coordinate of attacker
+                attacker_coord = x.first;
+
+                // coordinates being attacked
+                attacking_coords = x.second;
+
+                for (int i = 0; i < attacking_coords.size(); i++) {
+                    if (attacking_coords[i] == coord_str)
+                        return true;
+                }
+                
+            }
+
+            return false;
+
         };
 
         bool is_checked (int color) {
@@ -1533,17 +1619,21 @@ class Board {
 
             }
 
-            // check if king's coordinate is being attakcked
-            vector<string> attacker_coords;
-            if (color == pieces.w)
-                attacker_coords = square_is_attacked_by_coords(coord, targets_for_black);
-            else
-                attacker_coords = square_is_attacked_by_coords(coord, targets_for_white);
-
-            if (attacker_coords.size() == 0)
-                return false;
-            else
+            // check if king's coordinate is being attacked
+            if (square_is_attacked(coord))
                 return true;
+            else
+                return false;
+        }
+
+        bool is_mate (int color) {
+
+            /* Returns truth value based on if a color is being mated in current position. */
+
+            if (color == pieces.w)
+                return white_is_checked && moves_for_white.empty();
+            return black_is_checked && moves_for_black.empty();
+        
         }
 
         bool square_is_attacked (string coord_str, int color) {
@@ -1703,7 +1793,8 @@ class Board {
 
         map<string, vector<string>> update_moves_from_targets (map<string, vector<string>> target_map, int color) {
             
-            /* Filters the legal moves from target map and overrides the moves object. */
+            /* Filters the legal moves from target map and overrides the moves object. 
+            Only moves which leave no open checks. */
             
             string origin_coord;
             vector<string> targets;

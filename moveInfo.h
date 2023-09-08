@@ -23,6 +23,9 @@ class MoveInfo {
         string target = "";
         string capture_coord = "";
 
+        bool white_is_checked = false;
+        bool black_is_checked = false;
+
         char capture_symbol = '_';
         bool castling_right_k_w = 1;
         bool castling_right_q_w = 1;
