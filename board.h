@@ -363,7 +363,9 @@ class Board {
             else if (piece == pieces.Pawn) {
                 // print("2.9.2.2.1.1.8", "test");
                 if (target_coord_str == en_passant_coord) {
-                    // print("2.9.2.2.1.1.9", "test");
+                    print(en_passant_coord, "test");
+                    show_board();
+                    print("2.9.2.2.1.1.9", "test");
                     char target_file_str = en_passant_coord[0]; 
                 
                     // depending on color 
@@ -373,8 +375,9 @@ class Board {
                     else if (color == pieces.b) 
                         // white pawn captured on 4th rank
                         last_captured_symbol_coord = target_file_str + '4';
-                    remove_piece(last_captured_symbol_coord, verbose); // bug 
-                    // print("2.9.2.2.1.1.10", "test");
+                    
+                    remove_piece(last_captured_symbol_coord, 1); // bug 
+                    print("2.9.2.2.1.1.10", "test");
                 }
                 // print("2.9.2.2.1.1.11", "test");
             }
@@ -756,11 +759,6 @@ class Board {
                     info.targets = targets_for_black;
                     info.moves = moves_for_black;
                 }
-                
-                // if (en_passant_coord != "-")
-                //     en_passant_was_on = en_passant_coord;
-                // else 
-                //     en_passant_was_on = "-";  
 
                 // denote the castling rights if king or rook move (for undo)
                 info.castling_right_k_b = castling_right_k_b;
@@ -785,28 +783,47 @@ class Board {
                 if (piece == pieces.Pawn) {
                     // print("2.7.0", "test");
                     int rank_origin = stoi(get_square_from_coord(origin_coord_str)["rank"]);
-                    map<string, string> square = get_square_from_coord(target_coord_str);
-                    int file = stoi(square["file"]),
-                        rank = stoi(square["rank"]);
-                    string coord;
-                    char symbol;
+                    map<string, string> target_square = get_square_from_coord(target_coord_str);
+                    int target_file = stoi(target_square["file"]),
+                        target_rank = stoi(target_square["rank"]);
+
+                    
 
                     // finally check if the pawn is moved from origin square for two ranks at once
-                    if ((active_color == pieces.w && rank_origin == 1 && rank == 3) || (active_color == pieces.b && rank_origin == 6 && rank == 4)) {
+                    if ((active_color == pieces.w && rank_origin == 1 && target_rank == 3) || (active_color == pieces.b && rank_origin == 6 && target_rank == 4)) {
                         
+                        char symbol;
+
                         // check if a new en-passant possibility pops up for enemy
-                        int sign = 1, en_passant_target_rank;
+                        int sign = 1, 
+                            neighbour_file,
+                            en_passant_target_rank;
+                        string neighbour_coord;
+                        
+                        // iterate through left and right neighbouring squares
                         for (int x = 0; x < 2; x++) {
+                            
                             sign *= -1;
-                            if (square_is_inside_bounds(rank, file+sign)) {
-                                coord = get_coord_from_file_and_rank(file+sign, rank);
-                                symbol = get_symbol_from_coord(coord);
-                                if (square_is_occupied_by_enemy(active_color, coord) && pieces.from_symbol(symbol) == pieces.Pawn) {
-                                    string en_passant_target_rank_str = "3";
+                            neighbour_file = target_file+sign;
+                            
+                            if (square_is_inside_bounds(target_rank, neighbour_file)) {
+                                
+                                neighbour_coord = get_coord_from_file_and_rank(neighbour_file, target_rank);
+                                symbol = get_symbol_from_coord(neighbour_coord);
+                                
+                                if (square_is_occupied_by_enemy(active_color, neighbour_coord) && pieces.from_symbol(symbol) == pieces.Pawn) {
+                                    
+                                    // print(target_coord_str, "test en-passant");
+                                    // find the correct en-passant rank based on color 
+                                    // (rank is 1 behind the played pawn i.e. where the en-passant target will be captured)
+                                    string en_passant_target_rank_str;
                                     if (color == pieces.b)
-                                        en_passant_target_rank_str = "5";
+                                        en_passant_target_rank_str = "6";
+                                    else
+                                        en_passant_target_rank_str = "3";
+
                                     // finally merge and override en passant coord
-                                    en_passant_coord = square["file"] + en_passant_target_rank_str;
+                                    en_passant_coord = target_square["file"] + en_passant_target_rank_str;
 
                                     break;
                                 }
@@ -814,6 +831,7 @@ class Board {
                         }
 
                     } else
+
                         en_passant_coord = '-';
                     // print("2.7.1", "test");
                 } 
@@ -829,8 +847,6 @@ class Board {
                         castling_right_k_b = 0, castling_right_q_b = 0;
                 }
                     
-                    
-
                 // check if a rook moved to remove castling right
                 else if (piece == pieces.Rook) {
                     // print("2.7.3", "test");

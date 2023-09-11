@@ -86,7 +86,7 @@ int main (void) {
 
     // shannon number test (number of positions for diven depth)
     int depth = 5;
-    engine.shannon_number_simulation(depth, 1, 0);
+    engine.shannon_number_simulation(depth, 0, 0);
     // engine.sequence_count_simulation(5, 1, 0);
     // engine.shannon_benchmark(depth);
     // engine.board_test.show_board();
