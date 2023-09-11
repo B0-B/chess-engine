@@ -61,12 +61,6 @@ class Engine {
                 
         }
 
-    private:
-
-        // instantiate board
-        // Board board_main;
-        // Board board_test;
-
         int sequence_count_simulation (int depth, bool visual=false, bool clear=true) {
 
             /* 
@@ -95,18 +89,21 @@ class Engine {
             vector<string> targets;
             MoveInfo move;
 
+            // print("0", "test");
             for (auto const& x : moves) {
                 
                 // extract keys and values i.e. origin coordinates 
                 // and their corresponding target coordinates
                 origin = x.first;
                 targets = x.second;
-
+                // print("1", "test");
                 for (int i = 0; i < targets.size(); i++) {
+
+                    // print("2", "test");
                     
                     // make an active move from origin to i-th target
                     move = board_test.active_move(origin, targets[i], 0);
-                    
+                    // print("3", "test");
                     if (visual) {
                         if (clear)
                             clear_console();
@@ -115,8 +112,9 @@ class Engine {
                     
                     // repeat iteratively
                     counts += sequence_count_simulation(depth-1, visual);
+                    // print("4", "test");
                     board_test.active_undo_from_info(move);
-
+                    // print("5", "test");
                     // show board in console
                     if (visual) {
                         if (clear)
@@ -126,9 +124,12 @@ class Engine {
                         
                 }
             }
-            
+            // print("6", "test");
             return counts;
 
         }
+    
+
+        
     
 };

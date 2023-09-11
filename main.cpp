@@ -87,6 +87,7 @@ int main (void) {
     // shannon number test (number of positions for diven depth)
     int depth = 5;
     engine.shannon_number_simulation(depth, 1, 0);
+    // engine.sequence_count_simulation(5, 1, 0);
     // engine.shannon_benchmark(depth);
     // engine.board_test.show_board();
     // boardObject.show_moves_for_active_color();
@@ -97,10 +98,6 @@ int main (void) {
     // boardObject.active_move("D7", "D5");
     // boardObject.active_move("E4", "D5");
     
-
-    
-
-
     // output
     //boardObject.show_pgn();
 
