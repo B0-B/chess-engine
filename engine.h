@@ -61,6 +61,8 @@ class Engine {
                 
         }
 
+    private:
+
         int sequence_count_simulation (int depth, bool visual=false, bool clear=true) {
 
             /* 
@@ -89,6 +91,8 @@ class Engine {
             vector<string> targets;
             MoveInfo move;
 
+            // start
+            std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now(); 
             // print("0", "test");
             for (auto const& x : moves) {
                 
@@ -125,11 +129,9 @@ class Engine {
                 }
             }
             // print("6", "test");
+
             return counts;
 
         }
-    
-
-        
     
 };

@@ -51,25 +51,26 @@ int main (void) {
 
     // initialize a new board and pieces objects
     // Piece pieces;
-    // Board boardObject;
-    // boardObject.load_starting_position();
-    // boardObject.refresh_position();
-    // boardObject.show_board();
+    Board boardObject;
+    boardObject.load_starting_position();
+    boardObject.show_board();
 
     // // // test bug which breaks shannon simulation
-    // MoveInfo move_1 = boardObject.active_move("E2", "E4");
-    // boardObject.show_board();
-    // MoveInfo move_2 = boardObject.active_move("G7", "G5");
-    // boardObject.show_board();
-    // MoveInfo move_3 = boardObject.active_move("D2", "D3");
-    // boardObject.show_board();
-    // MoveInfo move_4 = boardObject.active_move("F7", "F6");
-    // boardObject.show_board();
-    // MoveInfo move_5 = boardObject.active_move("D1", "H5");
-    // boardObject.show_board();
+    boardObject.show_active_color();
+    MoveInfo move_1 = boardObject.active_move("E2", "E4");
+    boardObject.show_board();
+    MoveInfo move_2 = boardObject.active_move("G7", "G5");
+    boardObject.show_board();
+    MoveInfo move_3 = boardObject.active_move("D2", "D3");
+    boardObject.show_board();
+    MoveInfo move_4 = boardObject.active_move("F7", "F6");
+    boardObject.show_board();
+    MoveInfo move_5 = boardObject.active_move("D1", "H5");
+    boardObject.show_board();
+    MoveInfo move_6 = boardObject.active_move("A7", "A6");
+    boardObject.show_board();
 
-    // cout << "test " << boardObject.mate(16) << endl;
-    // cout << "test " << boardObject.mate(8) << endl;
+   boardObject.show_moves_for_active_color();
 
     // cout << "test " << boardObject.show_moves_for_active_color() << endl;
     // // undo all moves
@@ -82,12 +83,12 @@ int main (void) {
     // boardObject.active_undo_from_info(move_1);
     // boardObject.show_board();
     
-    Engine engine;
+    // Engine engine;
 
     // shannon number test (number of positions for diven depth)
-    int depth = 5;
-    engine.shannon_number_simulation(depth, 0, 0);
-    // engine.sequence_count_simulation(5, 1, 0);
+    // int depth = 5;
+    // engine.shannon_number_simulation(depth, 0, 0);
+    // engine.sequence_count_simulation(5, 0, 0);
     // engine.shannon_benchmark(depth);
     // engine.board_test.show_board();
     // boardObject.show_moves_for_active_color();
