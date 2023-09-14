@@ -67,6 +67,7 @@ int main (void) {
     boardObject.show_board();
     MoveInfo move_5 = boardObject.active_move("D1", "H5");
     boardObject.show_board();
+    boardObject.show_moves_for_active_color();
     MoveInfo move_6 = boardObject.active_move("A7", "A6");
     boardObject.show_board();
 
