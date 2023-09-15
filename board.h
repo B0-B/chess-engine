@@ -710,9 +710,8 @@ class Board {
             MoveInfo info;
             char symbol = get_symbol_from_coord(origin_coord_str);
             int color = get_color_from_symbol(symbol);
+            string move_notation = move_to_pgn(origin_coord_str, target_coord_str, symbol, color);
             char captured_symbol;
-            string move_notation = move_to_pgn(origin_coord_str, target_coord_str);
-
 
             // save info to moveinfo object
             info.legal = 0;
@@ -848,6 +847,8 @@ class Board {
                 }
 
                 // denote the legal move
+                
+                cout << "move notation: " << move_notation << endl;
                 if (color == pieces.w)
                     move_history[move_count] = {};
                 move_history[move_count].push_back(move_notation);
@@ -893,13 +894,13 @@ class Board {
                 targets_for_black = info.targets;
                 moves_for_black = info.moves;
             }
-            
+            cout << "moves: " << move_history[move_count].size() << " " << move_history.empty() << endl;
             // remove the move from PGN notation
             if (move_history.count(move_count))
                 move_history[move_count].pop_back();
             else
                 move_history[move_count-1].pop_back();
-            
+            cout << "TEST 2" << endl;
             // check for appendix rook when castles and place it back to origin
             if (piece == pieces.King) {
 
@@ -1068,6 +1069,7 @@ class Board {
 
         // Init game parameters
         int active_color = pieces.w;
+
         /* while the last_move object is for quick iteration this  
         will be empty after position refresh
         while the persistent object remains. */ 
@@ -1183,7 +1185,7 @@ class Board {
 
         };
 
-        string move_to_pgn (string origin_coord_str, string target_coord_str) {
+        string move_to_pgn (string origin_coord_str, string target_coord_str, char origin_symbol, int color) {
             
             /*
             Converts a move to portable game notation string, depending on board postion etc.
@@ -1191,10 +1193,11 @@ class Board {
             as this would alter the board position.
             */
 
-            map<string, string> origin_square = get_square_from_coord(origin_coord_str);
-            char origin_symbol = origin_square["symbol"][0];
+            // map<string, string> origin_square = get_square_from_coord(origin_coord_str);
+            // char origin_symbol = origin_square["symbol"][0];
             char symbol_cap = toupper(origin_symbol);
-            int color = get_color_from_symbol(origin_symbol);
+            // int color = get_color_from_symbol(origin_symbol);
+            map<string, string> origin_square = get_square_from_coord(origin_coord_str);
             int origin_piece = pieces.from_symbol(origin_symbol);
             char origin_file_str = origin_coord_str[0];
             string attacker_coord;
@@ -1645,18 +1648,13 @@ class Board {
             vector<string> attacking_coords;
             map<string, vector<string>> attacker_targets;
 
-            
-
             // select attacker targets from enemy color
             if (attacker_color == pieces.w) 
                 attacker_targets = targets_for_white;
             else
                 attacker_targets = targets_for_black;
 
-            
-
             for (auto const& x : attacker_targets) {
-
 
                 // origin coordinate of attacker piece
                 attacker_coord = x.first;
@@ -1666,9 +1664,6 @@ class Board {
                 attacking_coords = x.second;
 
                 for (int i = 0; i < attacking_coords.size(); i++) {
-                    // cout << "attacker targets: " << attacking_coords[i] << endl;
-                    // cout << attacking_coords[i] << ", ";
-                    // cout << "TEST " << attacker_sym << ": " << attacking_coords[i] << " " << coord_str << endl;
                     if (attacking_coords[i] == coord_str)
                         return true;
                 }

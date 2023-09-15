@@ -55,23 +55,23 @@ int main (void) {
     boardObject.load_starting_position();
     boardObject.show_board();
 
-    // // // test bug which breaks shannon simulation
+//     // test bug which breaks shannon simulation
     boardObject.show_active_color();
     MoveInfo move_1 = boardObject.active_move("E2", "E4");
-    boardObject.show_board();
-    MoveInfo move_2 = boardObject.active_move("G7", "G5");
-    boardObject.show_board();
-    MoveInfo move_3 = boardObject.active_move("D2", "D3");
-    boardObject.show_board();
-    MoveInfo move_4 = boardObject.active_move("F7", "F6");
-    boardObject.show_board();
-    MoveInfo move_5 = boardObject.active_move("D1", "H5");
-    boardObject.show_board();
-    boardObject.show_moves_for_active_color();
-    MoveInfo move_6 = boardObject.active_move("A7", "A6");
-    boardObject.show_board();
+//     boardObject.show_board();
+//     MoveInfo move_2 = boardObject.active_move("G7", "G5");
+//     boardObject.show_board();
+//     MoveInfo move_3 = boardObject.active_move("D2", "D3");
+//     boardObject.show_board();
+//     MoveInfo move_4 = boardObject.active_move("F7", "F6");
+//     boardObject.show_board();
+//     MoveInfo move_5 = boardObject.active_move("D1", "H5");
+//     boardObject.show_board();
+//     boardObject.show_moves_for_active_color();
+//     MoveInfo move_6 = boardObject.active_move("A7", "A6");
+//     boardObject.show_board();
 
-   boardObject.show_moves_for_active_color();
+//    boardObject.show_moves_for_active_color();
 
     // cout << "test " << boardObject.show_moves_for_active_color() << endl;
     // // undo all moves
@@ -80,9 +80,9 @@ int main (void) {
     // boardObject.active_undo_from_info(move_3);
     // boardObject.show_board();
     // boardObject.active_undo_from_info(move_2);
-    // boardObject.show_board();
-    // boardObject.active_undo_from_info(move_1);
-    // boardObject.show_board();
+    boardObject.show_board();
+    boardObject.active_undo_from_info(move_1);
+    boardObject.show_board();
     
     // Engine engine;
 
