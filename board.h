@@ -72,7 +72,7 @@ class Board {
             e.g. (0,0) -> A1 or (0,1) -> A2 etc.*/
 
             return get_coord_from_id(file + 8 * rank);
-            
+
         };
 
         int get_id_from_coord (string coord_str) {
@@ -887,7 +887,7 @@ class Board {
             
             // switch back active color
             active_color = info.color;
-            move_count = info.move_count;
+            // move_count = info.move_count;
 
             // reset castling rights
             castling_right_k_w = info.castling_right_k_w;
@@ -1044,10 +1044,10 @@ class Board {
         bool castling_right_k_b = 1;
         bool castling_right_q_w = 1;
         bool castling_right_q_b = 1;
-        bool castling_right_k_w_before;
-        bool castling_right_k_b_before;
-        bool castling_right_q_w_before;
-        bool castling_right_q_b_before;
+        // bool castling_right_k_w_before;
+        // bool castling_right_k_b_before;
+        // bool castling_right_q_w_before;
+        // bool castling_right_q_b_before;
 
         // remember check after every active move
         bool white_is_checked = false;

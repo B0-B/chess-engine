@@ -47,7 +47,7 @@ class Engine {
             print("Start sequence count simulation test:", "Engine");
             // setup test board from start
             board_test.load_starting_position(0);
-            board_test.refresh_position();
+            
             int s;
 
             for (int d = 1; d <= depth; d++) {
@@ -93,21 +93,21 @@ class Engine {
 
             // start
             std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now(); 
-            print("0", "test");
+            // print("0", "test");
             for (auto const& x : moves) {
                 
                 // extract keys and values i.e. origin coordinates 
                 // and their corresponding target coordinates
                 origin = x.first;
                 targets = x.second;
-                print("1", "test");
+                // print("1", "test");
                 for (int i = 0; i < targets.size(); i++) {
 
-                    print("2", "test");
+                    // print("2", "test");
                     
                     // make an active move from origin to i-th target
                     move = board_test.active_move(origin, targets[i], 0);
-                    print("3", "test");
+                    // print("3", "test");
                     if (visual) {
                         if (clear)
                             clear_console();
@@ -116,9 +116,9 @@ class Engine {
                     
                     // repeat iteratively
                     counts += sequence_count_simulation(depth-1, visual);
-                    print("4", "test");
+                    // print("4", "test");
                     board_test.active_undo_from_info(move);
-                    print("5", "test");
+                    // print("5", "test");
                     // show board in console
                     if (visual) {
                         if (clear)
@@ -128,7 +128,7 @@ class Engine {
                         
                 }
             }
-            print("6", "test");
+            // print("6", "test");
 
             return counts;
 
