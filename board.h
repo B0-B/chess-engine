@@ -46,6 +46,10 @@ class Board {
 
         /* get methods */
         int get_color_from_symbol (char symbol) {
+
+            /* Returns the piece color int from symbol char e.g. k -> 16, Q -> 8
+            where 16 is black and 8 white. If the symbol is None '_' the return will be 0. */
+
             if (pieces.is_white(symbol))
                 return 8;
             else if (symbol == '_')
@@ -55,11 +59,20 @@ class Board {
         };
 
         string get_coord_from_id (int id) {
+
+            /* Returns the string coordinate for grid id (0-63). */
+
             return grid[id]["coordinate"];
+
         };
 
         string get_coord_from_file_and_rank (int file, int rank) {
+            
+            /* Returns the coordinate string for provided rank and file integers.
+            e.g. (0,0) -> A1 or (0,1) -> A2 etc.*/
+
             return get_coord_from_id(file + 8 * rank);
+            
         };
 
         int get_id_from_coord (string coord_str) {
@@ -979,7 +992,7 @@ class Board {
 
                 // if no moves are left it's a mate
                 if (moves_for_white.empty() && white_is_checked) {
-                    cout << active_color << " got checkmated!" << endl;
+                    cout << pieces.color_string(active_color) << " got checkmated!" << endl;
                 }
 
             } else {
@@ -992,7 +1005,7 @@ class Board {
 
                 // if no moves are left it's a mate
                 if (moves_for_black.empty() && black_is_checked) {
-                    cout << active_color << " got checkmated!" << endl;
+                    cout << pieces.color_string(active_color) << " got checkmated!" << endl;
                 }
 
             }
@@ -1285,12 +1298,7 @@ class Board {
             if (origin_color == 0) {
                 return false;
             } else if (origin_color != active_color) {
-                string col_str;
-                if (active_color == pieces.w) 
-                    col_str = "white";
-                else 
-                    col_str = "black";
-                cout << "it is " << col_str << "'s turn!" << endl;
+                cout << "it is " << pieces.color_string(active_color) << "'s turn!" << endl;
                 return false;
             }
            
