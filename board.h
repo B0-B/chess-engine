@@ -710,7 +710,7 @@ class Board {
             MoveInfo info;
             char symbol = get_symbol_from_coord(origin_coord_str);
             int color = get_color_from_symbol(symbol);
-            string move_notation = move_to_pgn(origin_coord_str, target_coord_str, symbol, color);
+            
             char captured_symbol;
 
             // save info to moveinfo object
@@ -846,12 +846,13 @@ class Board {
                         castling_right_k_b = 0;
                 }
 
-                // denote the legal move
-                
+                // denote the half-move and append to history
+                string move_notation = move_to_pgn(origin_coord_str, target_coord_str, symbol, color);
                 cout << "move notation: " << move_notation << endl;
                 if (color == pieces.w)
                     move_history[move_count] = {};
                 move_history[move_count].push_back(move_notation);
+                cout << "move notation: " << move_history[move_count][0] << endl;
 
                 // refresh the board position
                 refresh_position();
@@ -894,13 +895,33 @@ class Board {
                 targets_for_black = info.targets;
                 moves_for_black = info.moves;
             }
-            cout << "moves: " << move_history[move_count].size() << " " << move_history.empty() << endl;
+
             // remove the move from PGN notation
-            if (move_history.count(move_count))
-                move_history[move_count].pop_back();
-            else
+            // cout << "moves: " << move_history[move_count].size() << " " << move_history.empty() << endl;
+            if (move_history.count(move_count)) {
+                if (move_history[move_count].size())
+                    move_history[move_count].pop_back();
+            } else {
                 move_history[move_count-1].pop_back();
-            cout << "TEST 2" << endl;
+                move_count = move_count - 1;
+            }
+            // cout << "TEST 2" << endl;
+            // cout << "moves: " << move_history[move_count].size() << " " << move_history.empty() << endl;
+            // if (move_history.count(move_count)) {
+            //     cout << "moves 1 " << endl;
+            //     if (move_history[move_count].size() == 1) {
+            //         cout << "moves 2 " << endl;
+            //         move_history.erase(move_count);
+            //         cout << "moves 3 " << endl;
+            //         move_count = move_count - 1;
+            //     } else {
+            //         cout << "moves 4 " << endl;
+            //         move_history[move_count].pop_back();
+            //     } 
+            // } else
+            //     move_history[move_count-1].pop_back();
+            // cout << "TEST 2" << endl;
+            
             // check for appendix rook when castles and place it back to origin
             if (piece == pieces.King) {
 
@@ -965,13 +986,12 @@ class Board {
             // update target map and move object depending on color
             if (active_color == pieces.w) {
 
+                // update targets and moves for recent color after it played a move
                 update_moves_from_targets(update_reachable_target_map(pieces.b), pieces.b);
                 
-                old_moves = moves_for_white;        // ?
-                old_targets = targets_for_white;    // ?
                 white_is_checked = is_checked(pieces.w);
                 
-                // updates moves
+                // update moves for new active color
                 update_moves_from_targets(update_reachable_target_map(pieces.w), pieces.w);
 
                 // if no moves are left it's a mate
@@ -983,8 +1003,6 @@ class Board {
 
                 update_moves_from_targets(update_reachable_target_map(pieces.w), pieces.w);
 
-                old_moves = moves_for_black;
-                old_targets = targets_for_black;
                 black_is_checked = is_checked(pieces.b);
                 
                 update_moves_from_targets(update_reachable_target_map(pieces.b), pieces.b);
@@ -1048,9 +1066,7 @@ class Board {
         map<string, vector<string>> targets_for_white,
                                     targets_for_black,
                                     moves_for_white,
-                                    moves_for_black,
-                                    old_targets,
-                                    old_moves;
+                                    moves_for_black;
 
         // define relative decrementation coordinates, which persist
         vector<vector<int>> n_coords {{1,2}, {2,1}, {-1,2}, {-2,1}, {-1,-2}, {-2,-1}, {1,-2}, {2,-1}}; // knight relative coordinates
