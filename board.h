@@ -848,11 +848,10 @@ class Board {
 
                 // denote the half-move and append to history
                 string move_notation = move_to_pgn(origin_coord_str, target_coord_str, symbol, color);
-                cout << "move notation: " << move_notation << endl;
                 if (color == pieces.w)
                     move_history[move_count] = {};
                 move_history[move_count].push_back(move_notation);
-                cout << "move notation: " << move_history[move_count][0] << endl;
+                // cout << "move notation: " << move_history[move_count][0] << endl;
 
                 // refresh the board position
                 refresh_position();
@@ -905,22 +904,6 @@ class Board {
                 move_history[move_count-1].pop_back();
                 move_count = move_count - 1;
             }
-            // cout << "TEST 2" << endl;
-            // cout << "moves: " << move_history[move_count].size() << " " << move_history.empty() << endl;
-            // if (move_history.count(move_count)) {
-            //     cout << "moves 1 " << endl;
-            //     if (move_history[move_count].size() == 1) {
-            //         cout << "moves 2 " << endl;
-            //         move_history.erase(move_count);
-            //         cout << "moves 3 " << endl;
-            //         move_count = move_count - 1;
-            //     } else {
-            //         cout << "moves 4 " << endl;
-            //         move_history[move_count].pop_back();
-            //     } 
-            // } else
-            //     move_history[move_count-1].pop_back();
-            // cout << "TEST 2" << endl;
             
             // check for appendix rook when castles and place it back to origin
             if (piece == pieces.King) {
@@ -1865,13 +1848,24 @@ class Board {
             map<string, vector<string>> moves;
 
             for (auto const& x : target_map) {
+
                 origin_coord = x.first;
                 targets = x.second;
-                moves[origin_coord] = {};
+                
                 for (int i = 0; i < targets.size(); i++) {
-                    if (!move_leaves_open_check(origin_coord, targets[i]))
+
+                    if (!move_leaves_open_check(origin_coord, targets[i])) {
+
+                        // only add the piece coord key to the moves 
+                        // object if there are moves at all
+                        if (!moves.count(origin_coord))
+                            moves[origin_coord] = {};
+                        
                         moves[origin_coord].push_back(targets[i]);
+                    }
+
                 }
+                
             }
             
             // override

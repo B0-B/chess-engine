@@ -189,4 +189,14 @@ class Piece {
             return value(from_symbol(symbol));
             
         }
+
+        string color_string (int color) {
+
+            /* Returns the string name of current color. */
+
+            if (color == 8)
+                return "white";
+            return "black";
+            
+        }
 };
