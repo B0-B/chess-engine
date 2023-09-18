@@ -99,7 +99,7 @@ class Piece {
         
 
         int is_white (char symbol) {
-            return symbol >= 'A' && symbol <= 'Z' && symbol != '_';
+            return symbol >= 'A' && symbol <= 'Z' && symbol != '_'; // ? the last condition is redundant
         };
 
         int from_symbol (char symbol) {
@@ -166,18 +166,20 @@ class Piece {
 
             /* Returns the historically known value of a piece. 
             The value is normalized by a pawn value i.e. 1. 
-            https://www.chess.com/terms/chess-piece-value*/
+            Relative valuations were derived from alpha zero.
+            https://en.wikipedia.org/wiki/Chess_piece_relative_value
+            */
 
             if (piece == 1)
                 return 1;
             else if (piece == 2)
-                return 3;
+                return 3.05;
             else if (piece == 3)
-                return 3;
+                return 3.33;
             else if (piece == 4)
-                return 5;
+                return 5.63;
             else if (piece == 5)
-                return 9;
+                return 9.5;
             return 0;
         };
 

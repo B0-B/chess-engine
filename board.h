@@ -56,6 +56,7 @@ class Board {
                 return 0;
             else
                 return 16; 
+
         };
 
         string get_coord_from_id (int id) {
@@ -101,10 +102,7 @@ class Board {
                     break;
             
             // return square with this id
-            int id = i + rank * 8;
-            //cout << "hit 1" << endl;
-            
-            return grid[id];
+            return grid[i + rank * 8];
 
         };
 
@@ -328,6 +326,7 @@ class Board {
             else 
                 color = 16;
             
+            
             // if captures then apriori denote the enemy symbol at target coord
             if (square_is_occupied_by_enemy(color, target_coord_str)) {
                 last_captured_symbol = get_symbol_from_coord(target_coord_str);
@@ -399,17 +398,21 @@ class Board {
             
         };
 
-        bool legal_move (string origin_coord_str, string target_coord_str, bool verbose) {
+        bool legal_move (string origin_coord_str, string target_coord_str, bool verbose, char symbol, int color) {
 
             /* Makes an ignorant move (without chaning gaming parameters) 
             only if legal, and returns a boolean. */
             
-            if (!move_is_legal(origin_coord_str, target_coord_str)) {
+            // abort if not legal
+            if (!move_is_legal(origin_coord_str, target_coord_str, symbol, color)) {
+
                 cout << "move " << origin_coord_str << " -> " << target_coord_str << " is not legal." << endl;
+            
                 // test for debugging
                 show_board();
                 show_pgn();
                 return false;
+            
             } 
             
             // now the main ignorant move is legal
@@ -562,6 +565,10 @@ class Board {
                 } 
 
             };
+
+            // initialize all possible moves for white
+            update_moves_from_targets(update_reachable_target_map(active_color), active_color);
+            
         };
         
         void load_starting_position (bool verbose=1) {
@@ -574,9 +581,6 @@ class Board {
 
             // load position from FEN code    
             load_position_from_fen(starting_position_fen, verbose);
-
-            // initialize all possible moves for white
-            update_moves_from_targets(update_reachable_target_map(pieces.w), pieces.w);
 
             if (verbose)
                 cout << "successfully loaded starting position." << endl;
@@ -620,13 +624,19 @@ class Board {
 
             /* Removes a piece from requested coordinate */
 
+            char piece_symbol = get_symbol_from_coord(coord_str);
             if (verbose) {
-                char piece_symbol = get_symbol_from_coord(coord_str);
                 cout << "remove " << pieces.name_from_symbol(piece_symbol) << " (" << piece_symbol << ")" << " at " << coord_str << endl;
             }
 
             // override square value with underscore
             set_symbol_at_coord('_', coord_str);
+
+            // addition (testing occupation map)
+            if (pieces.is_white(piece_symbol))
+                white_symbol_occupation_map.erase(coord_str);
+            else
+                black_symbol_occupation_map.erase(coord_str);
 
         };
 
@@ -646,8 +656,17 @@ class Board {
                 }
             }
             int id = i + rank * 8;
+            
             // override the symbol value
             grid[id]["symbol"] = symbol;
+
+            // addition (testing occupation map)
+            if (symbol != '_')
+                if (pieces.is_white(symbol))
+                    white_symbol_occupation_map[coord_str] = symbol;
+                else
+                    black_symbol_occupation_map[coord_str] = symbol;
+
 
         };
 
@@ -748,7 +767,7 @@ class Board {
             }
 
             // execute move if legal
-            if (legal_move(origin_coord_str, target_coord_str, verbose)) {
+            if (legal_move(origin_coord_str, target_coord_str, verbose, symbol, color)) {
                 
                 int piece = pieces.from_symbol(symbol);
 
@@ -982,8 +1001,10 @@ class Board {
             // update target map and move object depending on color
             if (active_color == pieces.w) {
 
-                // update targets and moves for recent color after it played a move
-                update_moves_from_targets(update_reachable_target_map(pieces.b), pieces.b);
+                // update targets for recent color after it played a move
+                // targets are sufficient for determine possible checks for the next half move.
+                update_reachable_target_map(pieces.b);
+                // update_moves_from_targets(update_reachable_target_map(pieces.b), pieces.b);
                 
                 white_is_checked = is_checked(pieces.w);
                 
@@ -991,20 +1012,21 @@ class Board {
                 update_moves_from_targets(update_reachable_target_map(pieces.w), pieces.w);
 
                 // if no moves are left it's a mate
-                if (moves_for_white.empty() && white_is_checked) {
+                if (white_is_checked && moves_for_white.empty()) {
                     cout << pieces.color_string(active_color) << " got checkmated!" << endl;
                 }
 
             } else {
 
-                update_moves_from_targets(update_reachable_target_map(pieces.w), pieces.w);
+                update_reachable_target_map(pieces.w);
+                // update_moves_from_targets(update_reachable_target_map(pieces.w), pieces.w);
 
                 black_is_checked = is_checked(pieces.b);
                 
                 update_moves_from_targets(update_reachable_target_map(pieces.b), pieces.b);
 
                 // if no moves are left it's a mate
-                if (moves_for_black.empty() && black_is_checked) {
+                if (black_is_checked && moves_for_black.empty()) {
                     cout << pieces.color_string(active_color) << " got checkmated!" << endl;
                 }
 
@@ -1044,10 +1066,6 @@ class Board {
         bool castling_right_k_b = 1;
         bool castling_right_q_w = 1;
         bool castling_right_q_b = 1;
-        // bool castling_right_k_w_before;
-        // bool castling_right_k_b_before;
-        // bool castling_right_q_w_before;
-        // bool castling_right_q_b_before;
 
         // remember check after every active move
         bool white_is_checked = false;
@@ -1075,6 +1093,8 @@ class Board {
 
         // also define a map symbol -> coord(symbol)
         map<char, vector<string>> coord_symbol_map;
+        map<string, char> white_symbol_occupation_map; // maps coord to symbol
+        map<string, char> black_symbol_occupation_map;
 
         // Load the pieces
         Piece pieces;
@@ -1284,15 +1304,15 @@ class Board {
 
         };
 
-        bool move_is_legal (string origin_coord_str, string target_coord_str) {
+        bool move_is_legal (string origin_coord_str, string target_coord_str, char symbol, int origin_color) {
             
             /* Checks if a move is legal by general chess rules.
             The playable moves from origin are drawn from the targets map. */
             
             vector<string> playable_moves;
-            char symbol = get_symbol_from_coord(origin_coord_str);
+            // char symbol = get_symbol_from_coord(origin_coord_str);
             int piece = pieces.from_symbol(symbol);
-            int origin_color = get_color_from_symbol(symbol);
+            // int origin_color = get_color_from_symbol(symbol);
 
             // check if active color is respected
             if (origin_color == 0) {
@@ -1338,6 +1358,7 @@ class Board {
             // not sure if this is actually needed since the moves object contains the moves which leave no open check.
             // if (move_leaves_open_check(origin_coord_str, target_coord_str))
             //     return false;
+
             // insted try to find the corresponding move in pre-computed move object
             playable_moves = moves_for_black[origin_coord_str];
             if (origin_color == pieces.w)
@@ -1825,15 +1846,38 @@ class Board {
 
             string coord;
             map<string, vector<string>> m;
+            map<string, char> occupation_map;
+
+            // pick occupation map for provided color
+            if (color == pieces.w)
+                occupation_map = white_symbol_occupation_map;
+            else
+                occupation_map = black_symbol_occupation_map;
             
             // iterate through field
-            for (int i = 0; i < 64; i++) {
-                coord = get_coord_from_id(i);
-                if (square_is_occupied_by_friendly_piece(color, coord)) {
-                    // override/create entry for coord with vector of all reachable targets from that square
-                    m[coord] = reachable_target_coords(coord);
-                } 
+            // for (int i = 0; i < 64; i++) {
+            //     coord = get_coord_from_id(i);
+            //     if (square_is_occupied_by_friendly_piece(color, coord)) {
+            //         // override/create entry for coord with vector of all reachable targets from that square
+            //         m[coord] = reachable_target_coords(coord);
+            //     } 
+            // }
+
+            // iterate only the valid piece coordinates from occupation map
+            // this is better than the dedicated approach by screening the whole 64-field grid
+            for (auto const& x : occupation_map) {
+
+                // extract friendly piece coord from occupation map
+                // coord = x.first; // coord
+                
+                // add the reachable targets map
+                m[x.first] = reachable_target_coords(x.first);
+
+                // cout << "target coord: " << x.first << " " << x.second << endl;
+
             }
+
+
             
             // override & return
             if (color == pieces.w) {
@@ -1919,6 +1963,43 @@ class Board {
             return coord_symbol_map;
 
         };
+        
+        void map_symbols_to_coords () {
+
+            /* Maps all symbols to coordinates, and writes the mapping for each color in white/black_symbol_occupation_map. 
+            key: coordinate, value: symbol.*/
+
+            char symbol;
+            string coord;
+            map<char, vector<string>> m;
+            vector<string> coord_array[8];
+            int ind, color;
+
+            for (int ind; ind < 2; ind++) {
+
+                // alter color integer
+                color = (ind + 1) * 8;
+
+                // iterate through grid
+                for (int i = 0; i < 64; i++) {
+                    
+                    // check if the symbol at the grid index is the correct color
+                    if (get_color_from_symbol(grid[i]["symbol"][0]) == color) {
+
+                        // add to the corresponding map 
+                        if (color == pieces.w)
+                            white_symbol_occupation_map[grid[i]["coordinate"]] = grid[i]["symbol"][0];
+                        else
+                            black_symbol_occupation_map[grid[i]["coordinate"]] = grid[i]["symbol"][0];
+
+                    }
+
+                }
+
+            }
+            
+
+        }
 
         /* Evaluation */
         int count_material (int color) {
