@@ -310,21 +310,14 @@ class Board {
             
         };
 
-        void ignorant_move (string origin_coord_str, string target_coord_str, bool verbose=1) {
+        void ignorant_move (string origin_coord_str, string target_coord_str, char origin_symbol, int color, bool verbose=1) {
 
             /* Moves a piece disregarding chess rules by a combination of remove and place methods. 
             Open checks are disregarded, however additional en-passant and castling moves are accounted. 
             Also the move information are saved in global last move and capture variables. */
 
-            // determine the piece color
-            int color;
-            char origin_symbol = get_square_from_coord(origin_coord_str)["symbol"][0];  // not proper
+            // determine the piece 
             int piece = pieces.from_symbol(origin_symbol);
-
-            if ( pieces.is_white(origin_symbol) ) 
-                color = 8;
-            else 
-                color = 16;
             
             
             // if captures then apriori denote the enemy symbol at target coord
@@ -340,6 +333,7 @@ class Board {
             remove_piece(origin_coord_str, verbose);
             
             // place the piece at new target
+            // place_symbol(origin_symbol, target_coord_str);
             place_piece(piece, color, target_coord_str, verbose);
             
             /* ---- Appendix Moves ---- */
@@ -416,7 +410,7 @@ class Board {
             } 
             
             // now the main ignorant move is legal
-            ignorant_move(origin_coord_str, target_coord_str, verbose);
+            ignorant_move(origin_coord_str, target_coord_str, symbol, color, verbose);
 
             return true;
         };
@@ -613,7 +607,7 @@ class Board {
 
         void reset () {
 
-            /* Resets the board by loading the starting position. */
+            /* Resets the board by re-loading the starting position. */
 
             clear();
             load_starting_position();
@@ -687,7 +681,6 @@ class Board {
             // use remove and place instead of ignorant move to keep the capture information persistent
             remove_piece(origin, 0);
             place_symbol(symbol, target);
-            //ignorant_move(origin, target, 0);
 
             // check for appendix rook when castles and place it back to origin
             if (piece == pieces.King) {
@@ -1033,7 +1026,7 @@ class Board {
             }
 
             // map all symbols to their current coordinate
-            update_symbol_map();
+            // update_symbol_map();
             
 
         }
@@ -1092,7 +1085,7 @@ class Board {
         map<string, string> grid[64];
 
         // also define a map symbol -> coord(symbol)
-        map<char, vector<string>> coord_symbol_map;
+        // map<char, vector<string>> coord_symbol_map;
         map<string, char> white_symbol_occupation_map; // maps coord to symbol
         map<string, char> black_symbol_occupation_map;
 
@@ -1310,9 +1303,7 @@ class Board {
             The playable moves from origin are drawn from the targets map. */
             
             vector<string> playable_moves;
-            // char symbol = get_symbol_from_coord(origin_coord_str);
             int piece = pieces.from_symbol(symbol);
-            // int origin_color = get_color_from_symbol(symbol);
 
             // check if active color is respected
             if (origin_color == 0) {
@@ -1373,16 +1364,17 @@ class Board {
             
             /* Checks by quick simulation if a move leaves an open check, otherwise move is not legal. */
 
+            char origin_symbol = get_symbol_from_coord(origin_coord_str);
             int target_color,
-                origin_color = get_color_from_symbol(get_symbol_from_coord(origin_coord_str));
+                origin_color = get_color_from_symbol(origin_symbol);
             if (origin_color == pieces.w)
                 target_color = pieces.b;
             else
                 target_color = pieces.w;
             
-            // simulate
+            // simulate the move
             bool result;
-            ignorant_move(origin_coord_str, target_coord_str, 0);
+            ignorant_move(origin_coord_str, target_coord_str, origin_symbol, origin_color, 0);
             if (is_checked(origin_color))
                 result = true;
             else
@@ -1672,8 +1664,8 @@ class Board {
             returns truth value at first found instance i.e. if the enemy's
             targets yield the coord_str. */
             
-            string attacker_coord;
-            vector<string> attacking_coords;
+            // string attacker_coord;
+            // vector<string> attacking_coords;
             map<string, vector<string>> attacker_targets;
 
             // select attacker targets from enemy color
@@ -1685,17 +1677,14 @@ class Board {
             for (auto const& x : attacker_targets) {
 
                 // origin coordinate of attacker piece
-                attacker_coord = x.first;
-                char attacker_sym = get_symbol_from_coord(attacker_coord);
-                // cout << attacker_sym << "("<< attacker_coord << "): ";
-                // coordinates being attacked by attacker piece at x.first coord
-                attacking_coords = x.second;
+                // attacker_coord = x.first;
+                // attacking_coords = x.second;
 
-                for (int i = 0; i < attacking_coords.size(); i++) {
-                    if (attacking_coords[i] == coord_str)
+                for (int i = 0; i < x.second.size(); i++) {
+                    if (x.second[i] == coord_str)
                         return true;
                 }
-                // cout << endl;
+
             }
 
             return false;
@@ -1844,7 +1833,7 @@ class Board {
             overrides the persistent global variable targets_for_white/black. 
             The overriden map will be returned at the end. */
 
-            string coord;
+            // string coord;
             map<string, vector<string>> m;
             map<string, char> occupation_map;
 
@@ -1931,75 +1920,75 @@ class Board {
             
         }
 
-        map<char, vector<string>> update_symbol_map () {
+        // map<char, vector<string>> update_symbol_map () {
 
-            /* Maps pieces to coordinates in current position. 
-            Overrides global variable coord_symbol_map */
+        //     /* 
+        //     [Deprecated] - actions are performed already in place_piece and remove_pice functions.
+        //     Maps pieces to coordinates in current position. 
+        //     Overrides global variable coord_symbol_map */
 
-            char symbol;
-            string coord;
-            map<char, vector<string>> m;
-            vector<string> coord_array[8];
+        //     char symbol;
+        //     string coord;
+        //     map<char, vector<string>> m;
+        //     vector<string> coord_array[8];
 
-            for (int i = 0; i < 64; i++) {
+        //     for (int i = 0; i < 64; i++) {
 
-                symbol = grid[i]["symbol"][0];
-                coord = grid[i]["coordinate"];
+        //         symbol = grid[i]["symbol"][0];
+        //         coord = grid[i]["coordinate"];
 
-                if (symbol != pieces.None) {
+        //         if (symbol != pieces.None) {
 
-                    if (m.find(symbol) == m.end())
-                        m[symbol] = {};
+        //             if (m.find(symbol) == m.end())
+        //                 m[symbol] = {};
 
-                    m[symbol].push_back(coord);
+        //             m[symbol].push_back(coord);
                         
-                }
+        //         }
 
-            }
+        //     }
 
-            // override
-            coord_symbol_map = m;
+        //     // override
+        //     return m;
 
-            return coord_symbol_map;
-
-        };
+        // };
         
-        void map_symbols_to_coords () {
+        // void map_symbols_to_coords () {
 
-            /* Maps all symbols to coordinates, and writes the mapping for each color in white/black_symbol_occupation_map. 
-            key: coordinate, value: symbol.*/
+        //     /* Maps all symbols to coordinates, and writes the mapping for each color in white/black_symbol_occupation_map. 
+        //     key: coordinate, value: symbol.*/
 
-            char symbol;
-            string coord;
-            map<char, vector<string>> m;
-            vector<string> coord_array[8];
-            int ind, color;
+        //     char symbol;
+        //     string coord;
+        //     map<char, vector<string>> m;
+        //     vector<string> coord_array[8];
+        //     int ind, color;
 
-            for (int ind; ind < 2; ind++) {
+        //     for (int ind; ind < 2; ind++) {
 
-                // alter color integer
-                color = (ind + 1) * 8;
+        //         // alter color integer
+        //         color = (ind + 1) * 8;
 
-                // iterate through grid
-                for (int i = 0; i < 64; i++) {
+        //         // iterate through grid
+        //         for (int i = 0; i < 64; i++) {
                     
-                    // check if the symbol at the grid index is the correct color
-                    if (get_color_from_symbol(grid[i]["symbol"][0]) == color) {
+        //             // check if the symbol at the grid index is the correct color
+        //             if (get_color_from_symbol(grid[i]["symbol"][0]) == color) {
 
-                        // add to the corresponding map 
-                        if (color == pieces.w)
-                            white_symbol_occupation_map[grid[i]["coordinate"]] = grid[i]["symbol"][0];
-                        else
-                            black_symbol_occupation_map[grid[i]["coordinate"]] = grid[i]["symbol"][0];
+        //                 // add to the corresponding map 
+        //                 if (color == pieces.w)
+        //                     white_symbol_occupation_map[grid[i]["coordinate"]] = grid[i]["symbol"][0];
+        //                 else
+        //                     black_symbol_occupation_map[grid[i]["coordinate"]] = grid[i]["symbol"][0];
 
-                    }
+        //             }
 
-                }
+        //         }
 
-            }
+        //     }
             
 
-        }
+        // }
 
         /* Evaluation */
         int count_material (int color) {
