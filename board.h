@@ -33,6 +33,22 @@ class Board {
         /* ---- General Parameters ---- */
         // Verbose mode which prints every operation
         bool __verbose__ = true; 
+        bool __testing__ = true;
+
+        map<string, int> method_calls;
+
+        void method_call (string method_name) {
+
+            /* Counts the calls of methods and saves them to method_name. */
+
+            if (__testing__) {
+                if (method_calls.count(method_name))
+                    method_calls[method_name] = method_calls[method_name] + 1;
+                else
+                    method_calls[method_name] = 1;
+            }
+
+        }
 
 
         // constructor sequence
@@ -228,9 +244,14 @@ class Board {
 
             /* Outputs the PGN code to console. */
             
-            for (auto const& x : move_history) 
-                cout << x.first << ". " << x.second[0] << " " << x.second[1] << endl;
-        
+            for (auto const& x : move_history) {
+                cout << x.first << ". " << x.second[0];
+                if (x.second.size() > 1)
+                    cout << " " << x.second[1] << endl; 
+                else
+                    cout << endl; 
+            }
+                
         }
 
         void show_reachable_squares (string coord_str) {
@@ -322,11 +343,19 @@ class Board {
             
             // if captures then apriori denote the enemy symbol at target coord
             if (square_is_occupied_by_enemy(color, target_coord_str)) {
+
+                // make sure to remove the captured piece from grid
+                // and corresponding occupation map 
+                // remove_piece(target_coord_str, verbose);
+
                 last_captured_symbol = get_symbol_from_coord(target_coord_str);
                 last_captured_symbol_coord = target_coord_str;
+
             } else {
+
                 last_captured_symbol = '_';
                 last_captured_symbol_coord = "";
+
             }
             
             // remove the piece from origin
@@ -912,6 +941,7 @@ class Board {
             black_is_checked = info.black_is_checked;
             
             // bring back moves and targets for origin position
+            
             if (active_color == pieces.w) {
                 targets_for_white = info.targets;
                 moves_for_white = info.moves;
@@ -919,16 +949,52 @@ class Board {
                 targets_for_black = info.targets;
                 moves_for_black = info.moves;
             }
-
+            
             // remove the move from PGN notation
             // cout << "moves: " << move_history[move_count].size() << " " << move_history.empty() << endl;
-            if (move_history.count(move_count)) {
-                if (move_history[move_count].size())
-                    move_history[move_count].pop_back();
-            } else {
-                move_history[move_count-1].pop_back();
-                move_count = move_count - 1;
-            }
+            // if (move_history.count(move_count) && move_history[move_count].size()) {
+            //     move_history[move_count].pop_back();
+            // } else {
+            //     move_history[move_count-1].pop_back();
+            //     move_count = move_count - 1;
+            // }
+
+            // remove last move from history
+            // if (!move_history.empty()) {
+                
+            // }
+
+            // if (move_history[move_count].size() <= 1) {
+            //     move_history.erase(move_count);
+            // } else {
+            //     move_history[move_count].pop_back();
+            //     move_count--;
+            // }
+            
+            // the most efficient way to remove the count
+            // cout << "TEST ";
+            // if (move_history.count(move_count)) {
+            //     if (move_history[move_count].size() > 1)
+            //         move_history[move_count].pop_back();
+            //     else {
+            //         move_history.erase(move_count);
+            //         move_count--;
+            //     }
+                    
+            // } else {
+            //     move_history[move_count-1].pop_back();
+            //     move_count--;
+            // }
+
+            // note: the move history vector 'move_history[move_count]' is never empty, but contains at least 1 element
+            if (!move_history.count(move_count)) {
+                move_count--;
+                move_history[move_count].pop_back();
+            } else if (move_history[move_count].size() == 1)
+                move_history.erase(move_count);
+            else
+                move_history[move_count].pop_back();
+            cout << "finished." << endl;
             
             // check for appendix rook when castles and place it back to origin
             if (piece == pieces.King) {
@@ -1354,8 +1420,14 @@ class Board {
             playable_moves = moves_for_black[origin_coord_str];
             if (origin_color == pieces.w)
                 playable_moves = moves_for_white[origin_coord_str];
-            if (contains_string(playable_moves, target_coord_str))
-                return true;
+            
+            for (int i = 0; i < playable_moves.size(); i++)
+                if (target_coord_str == playable_moves[i])
+                    return 1;
+            
+            
+            // if (contains_string(playable_moves, target_coord_str))
+            //     return true;
             return false;
             
         };
@@ -1680,10 +1752,14 @@ class Board {
                 // attacker_coord = x.first;
                 // attacking_coords = x.second;
 
-                for (int i = 0; i < x.second.size(); i++) {
+                for (int i = 0; i < x.second.size(); i++)
                     if (x.second[i] == coord_str)
                         return true;
-                }
+
+                // as soon as the attacking coordinates contain the coord_str
+                // the provided coordinate is considered attacked
+                // if (contains_string(x.second, coord_str))
+                //     return true;
 
             }
 

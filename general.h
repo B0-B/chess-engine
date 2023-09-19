@@ -21,9 +21,10 @@ bool contains_string (vector<string> v, string s) {
     
     /* Checks if a string-type vector contains a specific string. */
     
-    if (find(v.begin(), v.end(), s) == v.end())
-        return 0;
-    return 1;
+    for (int i = 0; i < v.size(); i++)
+        if (s == v[i])
+            return 1;
+    return 0;
 
 };
 
