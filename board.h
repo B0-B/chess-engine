@@ -765,7 +765,7 @@ class Board {
             char symbol = get_symbol_from_coord(origin_coord_str);
             int color = get_color_from_symbol(symbol);
             
-            char captured_symbol;
+            // char captured_symbol;
 
             // save info to moveinfo object
             info.legal = 0;
@@ -832,7 +832,8 @@ class Board {
                         target_rank = stoi(target_square["rank"]);
 
                     // finally check if the pawn is moved from origin square for two ranks at once
-                    if ((active_color == pieces.w && rank_origin == 1 && target_rank == 3) || (active_color == pieces.b && rank_origin == 6 && target_rank == 4)) {
+                    if ((active_color == pieces.w && rank_origin == 1 && target_rank == 3) || 
+                        (active_color == pieces.b && rank_origin == 6 && target_rank == 4)) {
                         
                         char symbol;
 
@@ -868,7 +869,9 @@ class Board {
 
                                     break;
                                 }
+                            
                             }
+
                         }
 
                     } else
@@ -901,7 +904,7 @@ class Board {
                 }
 
                 // denote the half-move and append to history
-                string move_notation = move_to_pgn(origin_coord_str, target_coord_str, symbol, color);
+                string move_notation = move_to_pgn(origin_coord_str, target_coord_str, symbol, color, info.capture_symbol);
                 if (color == pieces.w)
                     move_history[move_count] = {};
                 move_history[move_count].push_back(move_notation);
@@ -994,7 +997,7 @@ class Board {
                 move_history.erase(move_count);
             else
                 move_history[move_count].pop_back();
-            cout << "finished." << endl;
+            // cout << "finished." << endl;
             
             // check for appendix rook when castles and place it back to origin
             if (piece == pieces.King) {
@@ -1276,12 +1279,16 @@ class Board {
 
         };
 
-        string move_to_pgn (string origin_coord_str, string target_coord_str, char origin_symbol, int color) {
+        string move_to_pgn (string origin_coord_str, string target_coord_str, char origin_symbol, int origin_color, char target_symbol) {
             
             /*
             Converts a move to portable game notation string, depending on board postion etc.
             This function should be called within the active move function but before the ignorant move within is played,
             as this would alter the board position.
+
+            target_symbol       Provided for enemy target symbols, otherwise '_'.
+                                Empty target is provided by taget_symbol='_', 
+                                otherwise the provided piece will be considered captured. 
             */
 
             // map<string, string> origin_square = get_square_from_coord(origin_coord_str);
@@ -1302,8 +1309,16 @@ class Board {
                 return "O-O-O"; // queen-side castle
 
             // check if move will capture
-            if (square_is_occupied_by_enemy(color, target_coord_str))
+            // if (square_is_occupied_by_enemy(color, target_coord_str))
+            //     formatted = 'x' + formatted;
+            // check if the target symbol is provided
+            // in this case it will certainly be an enemy symbol
+            if (target_symbol != '_') {
+
+                // target is not empty - target_symbol is captured
                 formatted = 'x' + formatted;
+
+            }
             
             /* ---- pawn ---- */
             // check if pawn captured
@@ -1318,7 +1333,7 @@ class Board {
             
             // get possible moves map
             map<string, vector<string>> m;
-            if (color == pieces.w)
+            if (origin_color == pieces.w)
                 m = moves_for_white;
             else
                 m = moves_for_black;

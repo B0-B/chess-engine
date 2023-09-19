@@ -52,17 +52,17 @@ int main (void) {
     boardObject.show_active_color();
     MoveInfo move_1 = boardObject.active_move("A2", "A4");
     boardObject.show_board();
-    // MoveInfo move_2 = boardObject.active_move("B7", "B5");
-    // boardObject.show_board();
-    // MoveInfo move_3 = boardObject.active_move("A4", "B5");
-    // boardObject.show_board();
+    MoveInfo move_2 = boardObject.active_move("B7", "B5");
+    boardObject.show_board();
+    MoveInfo move_3 = boardObject.active_move("A4", "B5");
+    boardObject.show_board();
     // MoveInfo move_4 = boardObject.active_move("F7", "F6");
     // boardObject.show_board();
     // MoveInfo move_5 = boardObject.active_move("D1", "H5");
     // boardObject.show_board();
-    boardObject.show_moves_for_active_color();
+    // boardObject.show_moves_for_active_color();
     boardObject.show_pgn();
-    cout << "pgn finished." <<endl;
+    // cout << "pgn finished." <<endl;
     // boardObject.show_moves_for_active_color();
 
     // cout << "test " << boardObject.show_moves_for_active_color() << endl;
@@ -75,15 +75,15 @@ int main (void) {
     // boardObject.show_board();
     // boardObject.active_undo_from_info(move_2);
     // boardObject.show_board();
-    boardObject.active_undo_from_info(move_1);
-    boardObject.show_board();
-    boardObject.show_pgn();
-    cout << "pgn finished." <<endl;
+    // boardObject.active_undo_from_info(move_1);
+    // boardObject.show_board();
+    // boardObject.show_pgn();
+    // cout << "pgn finished." <<endl;
 
-    boardObject.show_active_color();
-    move_1 = boardObject.active_move("E2", "E4");
-    boardObject.show_board();
-    boardObject.show_pgn();
+    // boardObject.show_active_color();
+    // move_1 = boardObject.active_move("E2", "E4");
+    // boardObject.show_board();
+    // boardObject.show_pgn();
     
     // Engine engine;
 
