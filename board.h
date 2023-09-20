@@ -12,6 +12,14 @@
 
 using namespace std;
 
+/* define method for call statistics
+this will trigger in any function if __TESTING__is enabled.*/ 
+bool __TESTING__ = true;
+std::map<const string, int> counts_;
+void __call__ (const string function_name) { if (__TESTING__) ++counts_[function_name]; } 
+
+
+
 
 /*  Chess Board Implementation */
 class Board {   
@@ -26,6 +34,39 @@ class Board {
       (PGN move reversibility will be handled by the engine)
     - denotes move information and clock
 
+    ==== Call Statistics ====
+    active_move: 3
+    can_castle_king_side: 7
+    can_castle_queen_side: 7
+    get_color_from_symbol: 540
+    get_coord_from_file_and_rank: 388
+    get_coord_from_id: 420
+    get_square_from_coord: 1106
+    get_symbol_from_coord: 985
+    ignorant_move: 86
+    is_checked: 100
+    legal_move: 3
+    load_position_from_fen: 1
+    load_starting_position: 1
+    move_is_legal: 3
+    move_leaves_open_check: 83
+    move_to_pgn: 3
+    place_piece: 118
+    place_symbol: 84
+    reachable_target_coords: 112
+    refresh_position: 3
+    remove_piece: 169
+    set_symbol_at_coord: 371
+    show_active_color: 1
+    show_board: 4
+    square_is_attacked: 100
+    square_is_inside_bounds: 1042
+    square_is_occupied: 299
+    square_is_occupied_by_enemy: 342
+    undo_ignorant_move: 83
+    update_moves_from_targets: 4
+    update_reachable_target_map: 7
+
     */
 
     public:
@@ -33,23 +74,6 @@ class Board {
         /* ---- General Parameters ---- */
         // Verbose mode which prints every operation
         bool __verbose__ = true; 
-        bool __testing__ = true;
-
-        map<string, int> method_calls;
-
-        void method_call (string method_name) {
-
-            /* Counts the calls of methods and saves them to method_name. */
-
-            if (__testing__) {
-                if (method_calls.count(method_name))
-                    method_calls[method_name] = method_calls[method_name] + 1;
-                else
-                    method_calls[method_name] = 1;
-            }
-
-        }
-
 
         // constructor sequence
         Board(void) {
@@ -66,6 +90,7 @@ class Board {
             /* Returns the piece color int from symbol char e.g. k -> 16, Q -> 8
             where 16 is black and 8 white. If the symbol is None '_' the return will be 0. */
 
+            __call__(__func__);
             if (pieces.is_white(symbol))
                 return 8;
             else if (symbol == '_')
@@ -79,6 +104,7 @@ class Board {
 
             /* Returns the string coordinate for grid id (0-63). */
 
+            __call__(__func__);
             return grid[id]["coordinate"];
 
         };
@@ -88,6 +114,7 @@ class Board {
             /* Returns the coordinate string for provided rank and file integers.
             e.g. (0,0) -> A1 or (0,1) -> A2 etc.*/
 
+            __call__(__func__);
             return get_coord_from_id(file + 8 * rank);
 
         };
@@ -96,6 +123,7 @@ class Board {
 
             /* Returns the id assigned to the square at req. coordinate */
             
+            __call__(__func__);
             return stoi(get_square_from_coord(coord_str)["id"]);
 
         };
@@ -103,6 +131,8 @@ class Board {
         map<string, string> get_square_from_coord (string coord_str) {
 
             /* Returns the square within the grid accociated with the coordinate */
+
+            __call__(__func__);
 
             // retrieve rank from mapping the 2nd char to 
             // an integer.
@@ -127,18 +157,23 @@ class Board {
             /* Returns the occupation symbol i.e. chess piece at the 
             desired coordinate. The return '_' indicates an empty square. */
             
+            __call__(__func__);
             return get_square_from_coord(coord_str)["symbol"][0];
 
         };
         
         /* output methods */
         void show_active_color () {
+            
+            /* Returns the color which has to move. */
+
             string col;
             if (active_color == pieces.w) 
                 col = "white";
             else
                 col = "black";
             cout << "It's " << col << "'s move." << endl;
+
         };
 
         void show_board (int unicode = 0) {
@@ -164,29 +199,57 @@ class Board {
         };
 
         void show_castling_rights () {
+            
             cout << "castling rights:" << 
             castling_right_k_w << " " <<
             castling_right_k_b << " " <<
             castling_right_q_w << " " <<
             castling_right_q_b << " " << endl;
+
         };
         
         void show_en_passant () {
+            
             cout << "En passant coordinate: " << en_passant_coord << endl;
+
         };
 
         void show_half_clock () {
+
             cout << "half clock: " << half_clock << endl;
+
         };
 
         void show_material () {
+            
             cout << "white's material count: " << count_material(pieces.w) << endl;
             cout << "black's material count: " << count_material(pieces.b) << endl;
+
         };
 
         void show_move_count () {
+            
             cout << "move count: " << move_count << endl;
+
         };
+
+        void show_call_stats () {
+
+            string func_name;
+            int calls;
+            
+            cout << "==== Call Statistics ====" << endl;
+
+            for (auto const& x : counts_) {
+
+                func_name = x.first;
+                calls = x.second;
+                
+                cout << func_name << ": " << calls << endl;
+
+            }
+
+        }
 
         void show_position_activity () {
             cout << "white's position activity: " << count_position_activity(8) << endl;
@@ -337,6 +400,7 @@ class Board {
             Open checks are disregarded, however additional en-passant and castling moves are accounted. 
             Also the move information are saved in global last move and capture variables. */
 
+            __call__(__func__);
             // determine the piece 
             int piece = pieces.from_symbol(origin_symbol);
             
@@ -426,6 +490,7 @@ class Board {
             /* Makes an ignorant move (without chaning gaming parameters) 
             only if legal, and returns a boolean. */
             
+            __call__(__func__);
             // abort if not legal
             if (!move_is_legal(origin_coord_str, target_coord_str, symbol, color)) {
 
@@ -450,6 +515,8 @@ class Board {
             The reading starts from upper left corner i.e. rank is decremented while the files
             are iterated from left to right. */
             
+            __call__(__func__);
+
             int id;
             int piece;
             int color;
@@ -599,6 +666,8 @@ class Board {
             /* Loads all pieces to the board grid by using their 
             symbol values. Start position fen is loaded via fen parser.*/
 
+            __call__(__func__);
+
             if (verbose)
                 cout << "load starting position ..." << endl;
 
@@ -611,12 +680,15 @@ class Board {
         };
 
         bool mate (int color) {
+            __call__(__func__);
             return is_mate(color);
         }
 
         void place_piece (int piece, int color, string coord_str, bool verbose=1) {
 
             /* Places a piece on the board */
+
+            __call__(__func__);
             char piece_symbol = pieces.to_symbol(piece, color);
 
             if (verbose)
@@ -630,6 +702,7 @@ class Board {
 
             /* Just an alias for symbol placement. */
 
+            __call__(__func__);
             set_symbol_at_coord(symbol, coord_str);
 
         };
@@ -647,6 +720,7 @@ class Board {
 
             /* Removes a piece from requested coordinate */
 
+            __call__(__func__);
             char piece_symbol = get_symbol_from_coord(coord_str);
             if (verbose) {
                 cout << "remove " << pieces.name_from_symbol(piece_symbol) << " (" << piece_symbol << ")" << " at " << coord_str << endl;
@@ -666,6 +740,8 @@ class Board {
         void set_symbol_at_coord (char symbol, string coord_str) {
 
             /* Overrides the symbol at square with respecting coordinate */
+
+            __call__(__func__);
 
             // retrieve rank from mapping the 2nd char to an integer
             int rank  = coord_str[1] - '0' - 1;
@@ -697,6 +773,9 @@ class Board {
 
             /* Undos the last ignorant move. */
             // skip if there is no previous move defined
+
+            __call__(__func__);
+
             if (last_move[0] == "" || last_move[1] == "") {
                 return;
             }
@@ -760,6 +839,8 @@ class Board {
 
             /* Active moves manipulate the board and game parameters. */
             
+            __call__(__func__);
+
             // variables
             MoveInfo info;
             char symbol = get_symbol_from_coord(origin_coord_str);
@@ -922,6 +1003,8 @@ class Board {
 
             /* Unmakes the last active move. works on single depth only. */
             
+            __call__(__func__);
+
             // draw the last move securely from persitent object
             string  origin = info.target,
                     target = info.origin;
@@ -1038,6 +1121,8 @@ class Board {
             
             /* Returns a map of active color piece coordinates and the corresponding legal moves. */
 
+            __call__(__func__);
+
             if (active_color == pieces.w)
                 return moves_for_white;
             return moves_for_black;
@@ -1051,6 +1136,8 @@ class Board {
             The method works color-wise for efficiency reasons, and will gather
             all targets, moves and symbol mappings, for global access. */
             
+            __call__(__func__);
+
             // flip the active color and raise move count
             if (active_color == pieces.b) {
                 move_count++;
@@ -1229,6 +1316,7 @@ class Board {
             
             /* Checks if a color can castle king side. */
 
+            __call__(__func__);
             if (!is_checked(color)) {
                 if (color == pieces.w && castling_right_k_w) {
                     if (!square_is_occupied("F1") && 
@@ -1254,6 +1342,7 @@ class Board {
 
             /* Checks if a color can castle queen side. */
 
+            __call__(__func__);
             if (!is_checked(color)) {
 
                 if (color == pieces.w && castling_right_q_w) {
@@ -1290,6 +1379,8 @@ class Board {
                                 Empty target is provided by taget_symbol='_', 
                                 otherwise the provided piece will be considered captured. 
             */
+
+            __call__(__func__);
 
             // map<string, string> origin_square = get_square_from_coord(origin_coord_str);
             // char origin_symbol = origin_square["symbol"][0];
@@ -1383,6 +1474,8 @@ class Board {
             /* Checks if a move is legal by general chess rules.
             The playable moves from origin are drawn from the targets map. */
             
+            __call__(__func__);
+
             vector<string> playable_moves;
             int piece = pieces.from_symbol(symbol);
 
@@ -1451,6 +1544,8 @@ class Board {
             
             /* Checks by quick simulation if a move leaves an open check, otherwise move is not legal. */
 
+            __call__(__func__);
+
             char origin_symbol = get_symbol_from_coord(origin_coord_str);
             int target_color,
                 origin_color = get_color_from_symbol(origin_symbol);
@@ -1482,6 +1577,7 @@ class Board {
             If the coord_str is empty ('_') the output vector will be empty as well.
             */
 
+            __call__(__func__);
             vector<string> out = {};
             map <string, string> square = get_square_from_coord(coord_str);
             char symbol = square["symbol"][0];
@@ -1659,6 +1755,8 @@ class Board {
             /* A function which returns all enemy squares whose direction points to a demanded square. 
             Regardless of wether a piece is blocking it. */
 
+            __call__(__func__);
+
             vector<string> out = {};
             map <string, string> square = get_square_from_coord(coord_str);
             char symbol = square["symbol"][0];
@@ -1720,6 +1818,8 @@ class Board {
             /* Returns all enemy (attacker) coordinates which are hitting the square. 
             The coordinates are determined from the provided enemy target map.*/
 
+            __call__(__func__);
+
             string attacker_coord;
             vector<string> attacking_coords;
             vector<string> out = {};
@@ -1751,6 +1851,8 @@ class Board {
             returns truth value at first found instance i.e. if the enemy's
             targets yield the coord_str. */
             
+            __call__(__func__);
+
             // string attacker_coord;
             // vector<string> attacking_coords;
             map<string, vector<string>> attacker_targets;
@@ -1786,6 +1888,8 @@ class Board {
 
             /* Returns true if the color is in check. */
             
+            __call__(__func__);
+
             string coord;
             int attacker_color;
 
@@ -1807,6 +1911,8 @@ class Board {
 
             /* Returns truth value based on if a color is being mated in current position. */
 
+            __call__(__func__);
+
             if (color == pieces.w)
                 return white_is_checked && moves_for_white.empty();
             return black_is_checked && moves_for_black.empty();
@@ -1818,6 +1924,8 @@ class Board {
             /* Checks quickly if a probing coordinate lies within the aligned line (vert.,hor.,diag.) 
             spanned by the first two coordinates. If the first two coordinates are not mutually aligned 
             or they are not aligned with the probing coordinate, the return will be 0. */
+
+            __call__(__func__);
 
             int r1 = stoi(get_square_from_coord(coord1)["rank"]),
                 r2 = stoi(get_square_from_coord(coord2)["rank"]),
@@ -1848,12 +1956,15 @@ class Board {
         };
 
         bool square_is_occupied (string coord_str) {
+            __call__(__func__);
             return get_symbol_from_coord(coord_str) != '_';
         }
 
         bool square_is_occupied_by_enemy (int friendly_color, string coord_str) {
 
             /* Returns boolean-like integer. The return is 1 if the square is occupied by enemy piece otherwise 0 */
+
+            __call__(__func__);
 
             char target_symbol = get_symbol_from_coord(coord_str);
             int target_color = get_color_from_symbol(target_symbol); 
@@ -1866,6 +1977,8 @@ class Board {
             
             /* Returns bool dep. on wether a friendly piece persists on this coordinate. */
 
+            __call__(__func__);
+
             char target_symbol = get_symbol_from_coord(coord_str);
             int target_color = get_color_from_symbol(target_symbol);
 
@@ -1877,6 +1990,8 @@ class Board {
 
             /* Checks if the rank and file integer provided map to a valid chess square. */
 
+            __call__(__func__);
+
             // simply check if the indices lie within the boundaries
             if (rank >= 0 && rank < 8 && file >= 0 && file < 8)
                 return 1;
@@ -1886,7 +2001,11 @@ class Board {
         };
 
         bool squares_are_aligned (string coord1, string coord2) {
+
             /* Check if the squares are aligned in any way. */
+
+            __call__(__func__);
+
             if (squares_are_aligned_diagonally(coord1, coord2) || squares_are_aligned_horizontally(coord1, coord2) || squares_are_aligned_vertically(coord1, coord2))
                 return 1;
             return 0;
@@ -1923,6 +2042,8 @@ class Board {
             /* Updates reachable target map for provided color and 
             overrides the persistent global variable targets_for_white/black. 
             The overriden map will be returned at the end. */
+
+            __call__(__func__);
 
             // string coord;
             map<string, vector<string>> m;
@@ -1975,6 +2096,8 @@ class Board {
             /* Filters the legal moves from target map and overrides the moves object. 
             Only moves which leave no open checks. */
             
+            __call__(__func__);
+
             string origin_coord;
             vector<string> targets;
             map<string, vector<string>> moves;

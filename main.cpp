@@ -62,6 +62,7 @@ int main (void) {
     // boardObject.show_board();
     // boardObject.show_moves_for_active_color();
     boardObject.show_pgn();
+    boardObject.show_call_stats();
     // cout << "pgn finished." <<endl;
     // boardObject.show_moves_for_active_color();
 
