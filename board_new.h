@@ -9,6 +9,7 @@
 #include "moveInfo.h"
 #include "piece.h"
 #include "general.h"
+#include "snapshot.h"
 
 using namespace std;
 
@@ -80,61 +81,15 @@ class Board {
 
         /* ---- declare global variables ---- */
 
-        // prepare letters for the board files
-        const char letter_coordinates[8] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'};
-        const char number_coordinates[8] = {'1', '2', '3', '4', '5', '6', '7', '8'};
-        const string starting_position_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-
-        // castling rights
-        bool all_castling_rights_lost = 0;
-        bool castling_right_k_w = 1;
-        bool castling_right_k_b = 1;
-        bool castling_right_q_w = 1;
-        bool castling_right_q_b = 1;
-
-        // king scope
-        bool white_is_checked = false;              // remember check after every active move
-        bool black_is_checked = false;
-        vector<string> check_coords = {};           // attacker coords, symbols can be derived from occ. map
-        vector<string>  black_scopers,              // scopers target the king with or without a pinned piece in-between
-                        white_scopers;
-        map<string, vector<string>>  white_pins,    // pin to spaces mapping for pinned pieces
-                                     black_pins;
-        map<string, vector<string>>  white_spaces,  // spaces between attacker and king when in scoped check (no night nor pawn)
-                                     black_spaces; 
-
-        // track king coordinates
-        string  white_king_coord = "E1", 
-                black_king_coord = "E8";
+        
 
         
-        /* Denote everything for the next move i.e. from current position 
-            map ->  attacker_coord: [attacking_coord_1, 2, ...]
-                    attacker_coord: [attacking_coord_1, 2, ...]
-                    ...
-        */
-        map<string, vector<string>> targets_for_white,
-                                    targets_for_black,
-                                    moves_for_white,
-                                    moves_for_black;
-
-        /* define relative decrementation coordinates, which persist
-        static declaration makes sure all board instances use the same value. */ 
-        const vector<vector<int>> n_offset {{1,2}, {2,1}, {-1,2}, {-2,1}, {-1,-2}, {-2,-1}, {1,-2}, {2,-1}}; // knight relative coordinates
-        const vector<vector<int>> d_offset {{1,1}, {1,-1}, {-1,-1}, {-1,1}};
-        const vector<vector<int>> v_offset {{1,0}, {-1,0}};
-        const vector<vector<int>> h_offset {{0,1}, {0,-1}};  
+         
 
         // The board grid maps the square IDs (0 ... 63) => square info.*/
         map<string, string> grid[64];
 
-        // also define a map symbol -> coord(symbol)
-        // map<char, vector<string>> coord_symbol_map;
-        map<string, char> white_symbol_occupation_map; // maps coord to symbol
-        map<string, char> black_symbol_occupation_map;
-
-        // Load the pieces
-        Piece pieces;
+        
 
         // Init game parameters
         int active_color = pieces.w;
@@ -146,156 +101,97 @@ class Board {
         string last_move_persistent[2] = {"", ""};
         char last_captured_symbol = '_';
         string last_captured_symbol_coord = "";
-        map<int, vector<string>> move_history;
+        
 
         // fen parameters
         string en_passant_coord = "-";
         string en_passant_was_on = "-";
         int half_clock = 0;
-        int move_count = 1;
-
-
-        // constructor sequence
-        Board(void) {
-
-            // initialize grid
-            build_grid();
-            
-        };
-
-        void build_grid () {
-
-            /* We will numerate each square by an array index 0-63 
-            always starting from white's side i.e. A1 coordinate.
-            Each array element maps to the corr. square information.  
-            
-            id      0   1   2   ... 62  63
-            coord   A1  A2  A3  ... H7  H8    
-            rank    0   1   2   ... 6   7
-            file    0   0   0   ... 7   7
-            object  map map map ... map map
-                     |
-                   symbol
-                square color
-                    rank
-                    file
-                    etc.                                            */
-            
-            
-            int rank, file;
-            string coord;
-            
-            for (int i = 0; i < 64; i++) {
-                
-                // track rank and file
-                rank = (int)( i * 0.125 + 1 );
-                file = i % 8;
-
-                // construct the coordinate by concatenating rank number and fileumn letter
-                coord = letter_coordinates[file] + to_string(rank);
-
-                // fill the info to the map at id "i"
-                grid[i]["id"] = to_string(i);
-                grid[i]["coordinate"] = coord;
-                grid[i]["rank"] = to_string(rank-1);
-                grid[i]["file"] = to_string(file);  
-                grid[i]["symbol"] = "_";
-                grid[i]["is_light_square"] = (file + rank) % 2 != 0; 
-            }
-
-        };
         
+
+
+
 
         /* ---- get methods ---- */
 
-        int get_color_from_symbol (char symbol) {
+        // int get_color_from_symbol (char symbol) {
 
-            /* Returns the piece color int from symbol char e.g. k -> 16, Q -> 8
-            where 16 is black and 8 white. If the symbol is None '_' the return will be 0. */
+        //     /* Returns the piece color int from symbol char e.g. k -> 16, Q -> 8
+        //     where 16 is black and 8 white. If the symbol is None '_' the return will be 0. */
 
-            __call__(__func__);
-            if (pieces.is_white(symbol))
-                return 8;
-            else if (symbol == '_')
-                return 0;
-            else
-                return 16; 
+        //     __call__(__func__);
+        //     if (pieces.is_white(symbol))
+        //         return 8;
+        //     else if (symbol == '_')
+        //         return 0;
+        //     else
+        //         return 16; 
 
-        };
+        // };
 
-        string get_coord_from_id (int id) {
+        // string get_coord_from_id (int id) {
 
-            /* Returns the string coordinate for grid id (0-63). */
+        //     /* Returns the string coordinate for grid id (0-63). */
 
-            __call__(__func__);
-            return grid[id]["coordinate"];
+        //     __call__(__func__);
+        //     return grid[id]["coordinate"];
 
-        };
+        // };
 
-        string get_coord_from_file_and_rank (int file, int rank) {
+        // string get_coord_from_file_and_rank (int file, int rank) {
             
-            /* Returns the coordinate string for provided rank and file integers.
-            e.g. (0,0) -> A1 or (0,1) -> A2 etc.*/
+        //     /* Returns the coordinate string for provided rank and file integers.
+        //     e.g. (0,0) -> A1 or (0,1) -> A2 etc.*/
 
-            __call__(__func__);
-            // return get_coord_from_id(file + 8 * rank);
-            return letter_coordinates[file] + to_string(rank+1); // faster method
+        //     __call__(__func__);
+        //     // return get_coord_from_id(file + 8 * rank);
+        //     return letter_coordinates[file] + to_string(rank+1); // faster method
 
-        };
+        // };
 
-        int get_id_from_coord (string coord_str) {
+        // int get_id_from_coord (string coord_str) {
 
-            /* Returns the id assigned to the square at req. coordinate */
+        //     /* Returns the id assigned to the square at req. coordinate */
             
-            __call__(__func__);
-            return stoi(get_square_from_coord(coord_str)["id"]);
+        //     __call__(__func__);
+        //     return stoi(get_square_from_coord(coord_str)["id"]);
 
-        };
+        // };
 
-        map<string, char> get_occupation_map (int color) {
 
-            /* Returns the occupation map for provided color. */
+        // map<string, string> get_square_from_coord (string coord_str) {
 
-            if (color == pieces.w)
-                return white_symbol_occupation_map;
-            else
-                return black_symbol_occupation_map;
+        //     /* Returns the square within the grid accociated with the coordinate */
 
-        }
+        //     __call__(__func__);
 
-        map<string, string> get_square_from_coord (string coord_str) {
-
-            /* Returns the square within the grid accociated with the coordinate */
-
-            __call__(__func__);
-
-            // retrieve rank from mapping the 2nd char to 
-            // an integer.
-            int rank  = coord_str[1] - '0' - 1;
+        //     // retrieve rank from mapping the 2nd char to 
+        //     // an integer.
+        //     int rank  = coord_str[1] - '0' - 1;
             
-            // letter from first char
-            char letter = coord_str[0];
+        //     // letter from first char
+        //     char letter = coord_str[0];
             
-            // find the correct fileumn index from letter
-            int i;
-            for (i = 0; i < 8; i++) 
-                if (letter == letter_coordinates[i])
-                    break;
+        //     // find the correct fileumn index from letter
+        //     int i;
+        //     for (i = 0; i < 8; i++) 
+        //         if (letter == letter_coordinates[i])
+        //             break;
             
-            // return square with this id
-            return grid[i + rank * 8];
+        //     // return square with this id
+        //     return grid[i + rank * 8];
 
-        };
+        // };
 
-        char get_symbol_from_coord (string coord_str) {
+        // char get_symbol_from_coord (string coord_str) {
 
-            /* Returns the occupation symbol i.e. chess piece at the 
-            desired coordinate. The return '_' indicates an empty square. */
+        //     /* Returns the occupation symbol i.e. chess piece at the 
+        //     desired coordinate. The return '_' indicates an empty square. */
             
-            __call__(__func__);
-            return get_square_from_coord(coord_str)["symbol"][0];
+        //     __call__(__func__);
+        //     return get_square_from_coord(coord_str)["symbol"][0];
 
-        };
+        // };
         
 
         /* ---- output methods ---- */
@@ -391,9 +287,9 @@ class Board {
 
             if (active_color == pieces.w) {
                 col_str = "white";
-                m = moves_for_white;
+                m = white_moves;
             } else {
-                m = moves_for_black;
+                m = black_moves;
                 col_str = "black";
             }
 
@@ -419,7 +315,7 @@ class Board {
 
             /* Outputs the PGN code to console. */
             
-            for (auto const& x : move_history) {
+            for (auto const& x : pgn_history) {
                 cout << x.first << ". " << x.second[0];
                 if (x.second.size() > 1)
                     cout << " " << x.second[1] << endl; 
@@ -452,9 +348,9 @@ class Board {
 
             if (active_color == pieces.w) {
                 col_str = "white";
-                m = targets_for_white;
+                m = white_targets;
             } else {
-                m = targets_for_black;
+                m = black_targets;
                 col_str = "black";
             }
 
@@ -939,11 +835,11 @@ class Board {
                 info.target = target_coord_str;
                 info.en_passant_coord = en_passant_coord;
                 if (color == pieces.w) {
-                    info.targets = targets_for_white;
-                    info.moves = moves_for_white;
+                    info.targets = white_targets;
+                    info.moves = white_moves;
                 } else {
-                    info.targets = targets_for_black;
-                    info.moves = moves_for_black;
+                    info.targets = black_targets;
+                    info.moves = black_moves;
                 }
 
                 // denote the castling rights if king or rook move (for undo)
@@ -1046,9 +942,9 @@ class Board {
                 // denote the half-move and append to history
                 string move_notation = move_to_pgn(origin_coord_str, target_coord_str, symbol, color, info.capture_symbol);
                 if (color == pieces.w)
-                    move_history[move_count] = {};
-                move_history[move_count].push_back(move_notation);
-                // cout << "move notation: " << move_history[move_count][0] << endl;
+                    pgn_history[move_count] = {};
+                pgn_history[move_count].push_back(move_notation);
+                // cout << "move notation: " << pgn_history[move_count][0] << endl;
 
                 // refresh the board position
                 refresh_position();
@@ -1151,21 +1047,21 @@ class Board {
             
             // bring back moves and targets for origin position
             if (active_color == pieces.w) {
-                targets_for_white = info.targets;
-                moves_for_white = info.moves;
+                white_targets = info.targets;
+                white_moves = info.moves;
             } else {
-                targets_for_black = info.targets;
-                moves_for_black = info.moves;
+                black_targets = info.targets;
+                black_moves = info.moves;
             }
             
-            // note: the move history vector 'move_history[move_count]' is never empty, but contains at least 1 element
-            if (!move_history.count(move_count)) {
+            // note: the move history vector 'pgn_history[move_count]' is never empty, but contains at least 1 element
+            if (!pgn_history.count(move_count)) {
                 move_count--;
-                move_history[move_count].pop_back();
-            } else if (move_history[move_count].size() == 1)
-                move_history.erase(move_count);
+                pgn_history[move_count].pop_back();
+            } else if (pgn_history[move_count].size() == 1)
+                pgn_history.erase(move_count);
             else
-                move_history[move_count].pop_back();
+                pgn_history[move_count].pop_back();
             
             // check for appendix rook when castles and place it back to origin
             if (piece == pieces.King) {
@@ -1209,8 +1105,8 @@ class Board {
             __call__(__func__);
 
             if (active_color == pieces.w)
-                return moves_for_white;
-            return moves_for_black;
+                return white_moves;
+            return black_moves;
         
         }
 
@@ -1246,7 +1142,7 @@ class Board {
                 update_moves_from_targets(update_reachable_target_map(pieces.w), pieces.w);
 
                 // if no moves are left it's a mate
-                if (white_is_checked && moves_for_white.empty()) {
+                if (white_is_checked && white_moves.empty()) {
                     cout << pieces.color_string(active_color) << " got checkmated!" << endl;
                 }
 
@@ -1260,7 +1156,7 @@ class Board {
                 update_moves_from_targets(update_reachable_target_map(pieces.b), pieces.b);
 
                 // if no moves are left it's a mate
-                if (black_is_checked && moves_for_black.empty()) {
+                if (black_is_checked && black_moves.empty()) {
                     cout << pieces.color_string(active_color) << " got checkmated!" << endl;
                 }
 
@@ -1272,62 +1168,862 @@ class Board {
 
         }
             
-  
-        /* ---- low-level board methods ---- */
-        
-        bool can_castle_king_side (int color) {
-            
-            /* Checks if a color can castle king side. */
+        void build_grid () {
 
-            __call__(__func__);
-            if (!is_checked(color)) {
-                if (color == pieces.w && castling_right_k_w) {
-                    if (!square_is_occupied("F1") && 
-                        !square_is_occupied("G1") && 
-                        !square_is_attacked("F1", pieces.b) && 
-                        !square_is_attacked("G1", pieces.b))
-                        return 1;
-                    
-                } else if (color == pieces.b && castling_right_k_b) {
-                    if (!square_is_occupied("F8") && 
-                        !square_is_occupied("G8") && 
-                        !square_is_attacked("F8", pieces.w) && 
-                        !square_is_attacked("G8", pieces.w))
-                        return 1;
-                }
+            /* We will numerate each square by an array index 0-63 
+            always starting from white's side i.e. A1 coordinate.
+            Each array element maps to the corr. square information.  
+            
+            id      0   1   2   ... 62  63
+            coord   A1  A2  A3  ... H7  H8    
+            rank    0   1   2   ... 6   7
+            file    0   0   0   ... 7   7
+            object  map map map ... map map
+                     |
+                   symbol
+                square color
+                    rank
+                    file
+                    etc.                                            */
+            
+            
+            int rank, file;
+            string coord;
+            
+            for (int i = 0; i < 64; i++) {
+                
+                // track rank and file
+                rank = (int)( i * 0.125 + 1 );
+                file = i % 8;
+
+                // construct the coordinate by concatenating rank number and fileumn letter
+                coord = letter_coordinates[file] + to_string(rank);
+
+                // fill the info to the map at id "i"
+                grid[i]["id"] = to_string(i);
+                grid[i]["coordinate"] = coord;
+                grid[i]["rank"] = to_string(rank-1);
+                grid[i]["file"] = to_string(file);  
+                grid[i]["symbol"] = "_";
+                grid[i]["is_light_square"] = (file + rank) % 2 != 0; 
             }
 
-            return 0;
+        };
+        /* ---- low-level board methods ---- */
+        
+        // bool can_castle_king_side (int color) {
+            
+        //     /* Checks if a color can castle king side. */
+
+        //     __call__(__func__);
+        //     if (!is_checked(color)) {
+        //         if (color == pieces.w && castling_right_k_w) {
+        //             if (!square_is_occupied("F1") && 
+        //                 !square_is_occupied("G1") && 
+        //                 !square_is_attacked("F1", pieces.b) && 
+        //                 !square_is_attacked("G1", pieces.b))
+        //                 return 1;
+                    
+        //         } else if (color == pieces.b && castling_right_k_b) {
+        //             if (!square_is_occupied("F8") && 
+        //                 !square_is_occupied("G8") && 
+        //                 !square_is_attacked("F8", pieces.w) && 
+        //                 !square_is_attacked("G8", pieces.w))
+        //                 return 1;
+        //         }
+        //     }
+
+        //     return 0;
+
+        // };
+
+        // bool can_castle_queen_side (int color) {
+
+        //     /* Checks if a color can castle queen side. */
+
+        //     __call__(__func__);
+        //     if (!is_checked(color)) {
+
+        //         if (color == pieces.w && castling_right_q_w) {
+
+        //             if (!square_is_occupied("C1") && 
+        //                 !square_is_occupied("D1") && 
+        //                 !square_is_attacked("C1", pieces.b) && 
+        //                 !square_is_attacked("D1", pieces.b))
+        //                 return 1;
+                    
+        //         } else if (color == pieces.b && castling_right_q_b) {
+
+        //             if (!square_is_occupied("C8") && 
+        //                 !square_is_occupied("D8") && 
+        //                 !square_is_attacked("C8", pieces.w) && 
+        //                 !square_is_attacked("D8", pieces.w))
+        //                 return 1;
+
+        //         }
+        //     }
+
+        //     return 0;
+
+        // };
+
+        // 
+        // bool move_is_legal (string origin_coord_str, string target_coord_str, char symbol, int origin_color) {
+            
+        //     /* Checks if a move is legal by general chess rules.
+        //     The playable moves from origin are drawn from the targets map. */
+            
+        //     __call__(__func__);
+
+        //     vector<string> playable_moves;
+        //     int piece = pieces.from_symbol(symbol);
+
+        //     // check if active color is respected
+        //     if (origin_color == 0) {
+        //         return false;
+        //     } else if (origin_color != active_color) {
+        //         cout << "it is " << pieces.color_string(active_color) << "'s turn!" << endl;
+        //         return false;
+        //     }
+           
+        //     // first check if move is a castling move and if it is valid, otherwise continue
+        //     if (piece == pieces.King) {
+        //         if (origin_color == pieces.w && origin_coord_str == "E1" && target_coord_str == "G1") {
+        //             if (can_castle_king_side(origin_color))
+        //                 return true;
+        //             else
+        //                 return false;
+        //         }
+        //         if (origin_color == pieces.b && origin_coord_str == "E8" && target_coord_str == "G8") {
+        //             if (can_castle_king_side(origin_color))
+        //                 return true;
+        //             else
+        //                 return false;
+        //         }
+        //         if (origin_color == pieces.w && origin_coord_str == "E1" && target_coord_str == "C1") {
+        //             if (can_castle_queen_side(origin_color))
+        //                 return true;
+        //             else
+        //                 return false;
+        //         } 
+        //         if (origin_color == pieces.b && origin_coord_str == "E8" && target_coord_str == "C8") {
+        //             if (can_castle_queen_side(origin_color))
+        //                 return true;
+        //             else
+        //                 return false;
+        //         } 
+        //     }
+            
+        //     // en-passant
+        //     // was checked already in reachable_targets object, it only needs to be checked if the en-passant
+        //     // move leaves an open check which will be done by default in the following.
+
+        //     // make sure there is no check after move (possible bottleneck)
+        //     // not sure if this is actually needed since the moves object contains the moves which leave no open check.
+        //     // if (move_leaves_open_check(origin_coord_str, target_coord_str))
+        //     //     return false;
+
+        //     // insted try to find the corresponding move in pre-computed move object
+        //     playable_moves = black_moves[origin_coord_str];
+        //     if (origin_color == pieces.w)
+        //         playable_moves = white_moves[origin_coord_str];
+            
+        //     for (int i = 0; i < playable_moves.size(); i++)
+        //         if (target_coord_str == playable_moves[i])
+        //             return 1;
+            
+            
+        //     // if (contains_string(playable_moves, target_coord_str))
+        //     //     return true;
+        //     return false;
+            
+        // };
+
+        // bool move_leaves_open_check (string origin_coord_str, string target_coord_str) {
+            
+        //     /* Checks by quick simulation if a move leaves an open check, otherwise move is not legal. */
+
+        //     __call__(__func__);
+
+        //     char origin_symbol = get_symbol_from_coord(origin_coord_str);
+        //     int target_color,
+        //         origin_color = get_color_from_symbol(origin_symbol);
+        //     if (origin_color == pieces.w)
+        //         target_color = pieces.b;
+        //     else
+        //         target_color = pieces.w;
+            
+        //     // simulate the move
+        //     bool result;
+        //     ignorant_move(origin_coord_str, target_coord_str, origin_symbol, origin_color, 0);
+        //     if (is_checked(origin_color))
+        //         result = true;
+        //     else
+        //         result = false;
+            
+        //     // revert position, the undo function will take care about castling and en-passant appendix moves
+        //     // to do this quickly it uses the last move and capture information.
+        //     undo_ignorant_move();
+              
+        //     return result;
+            
+        // };
+
+        
+        // vector<string> scoping_enemy_squares (string coord_str) {
+            
+        //     /* A function which returns all enemy squares whose direction points to a demanded square. 
+        //     Regardless of wether a piece is blocking it. */
+
+        //     __call__(__func__);
+
+        //     vector<string> out = {};
+        //     map <string, string> square = get_square_from_coord(coord_str);
+        //     char symbol = square["symbol"][0];
+            
+        //     int color = get_color_from_symbol(symbol);
+
+        //     string target_coord;
+        //     char target_symbol;
+        //     int piece,
+        //         rank = stoi(square["rank"]),
+        //         file = stoi(square["file"]); 
+
+        //     // check diagonals for enemy queen or bishop 
+        //     for (int i = -7; i < 8; i++) {
+        //         if (inside_bounds(rank+i, file+i)) {
+        //             target_coord = get_coord_from_file_and_rank(rank+i, file+i);
+        //             target_symbol = get_symbol_from_coord(target_coord);
+        //             piece = pieces.from_symbol(target_symbol);
+        //             if (square_is_occupied_by_enemy(color, target_coord) && ( piece == pieces.Queen || piece == pieces.Bishop) ) {
+        //                 out.push_back(target_coord);
+        //             }
+        //         }
+        //         if (inside_bounds(rank-i, file+i)) {
+        //             target_coord = get_coord_from_file_and_rank(rank-i, file+i);
+        //             target_symbol = get_symbol_from_coord(target_coord);
+        //             piece = pieces.from_symbol(target_symbol);
+        //             if (square_is_occupied_by_enemy(color, target_coord) && ( piece == pieces.Queen || piece == pieces.Bishop) ) {
+        //                 out.push_back(target_coord);
+        //             }
+        //         }
+        //     }
+
+        //     // check straight lines for enemy rook or queen 
+        //     for (int i = -7; i < 8; i++) {
+        //         if (inside_bounds(rank+i, file)) {
+        //             target_coord = get_coord_from_file_and_rank(rank+i, file+i);
+        //             target_symbol = get_symbol_from_coord(target_coord);
+        //             piece = pieces.from_symbol(target_symbol);
+        //             if (square_is_occupied_by_enemy(color, target_coord) && ( piece == pieces.Queen || piece == pieces.Bishop) ) {
+        //                 out.push_back(target_coord);
+        //             }
+        //         }
+        //         if (inside_bounds(rank, file+i)) {
+        //             target_coord = get_coord_from_file_and_rank(rank-i, file+i);
+        //             target_symbol = get_symbol_from_coord(target_coord);
+        //             piece = pieces.from_symbol(target_symbol);
+        //             if (square_is_occupied_by_enemy(color, target_coord) && ( piece == pieces.Queen || piece == pieces.Rook) ) {
+        //                 out.push_back(target_coord);
+        //             }
+        //         }
+        //     }
+            
+        //     return out;
+
+        // };
+    
+        // vector<string> square_is_attacked_by_coords (string coord_str, map<string, vector<string>> enemy_targets) {
+
+        //     /* Returns all enemy (attacker) coordinates which are hitting the square. 
+        //     The coordinates are determined from the provided enemy target map.*/
+
+        //     __call__(__func__);
+
+        //     string attacker_coord;
+        //     vector<string> attacking_coords;
+        //     vector<string> out = {};
+
+        //     for (auto const& x : enemy_targets) {
+
+        //         // coordinate of attacker
+        //         attacker_coord = x.first;
+
+        //         // coordinates being attacked
+        //         attacking_coords = x.second;
+
+        //         for (int i = 0; i < attacking_coords.size(); i++) {
+        //             if (attacking_coords[i] == coord_str) {
+        //                 out.push_back(attacker_coord);
+        //                 break;
+        //             }
+        //         }
+                
+        //     }
+
+        //     return out;
+            
+        // };
+
+        // bool square_is_attacked (string coord_str, int attacker_color) {
+
+        //     /* A faster version of square_is_attacked_by_coords, which only
+        //     returns truth value at first found instance i.e. if the enemy's
+        //     targets yield the coord_str. */
+            
+        //     __call__(__func__);
+
+        //     // string attacker_coord;
+        //     // vector<string> attacking_coords;
+        //     map<string, vector<string>> attacker_targets;
+
+        //     // select attacker targets from enemy color
+        //     if (attacker_color == pieces.w) 
+        //         attacker_targets = white_targets;
+        //     else
+        //         attacker_targets = black_targets;
+
+        //     for (auto const& x : attacker_targets) {
+
+        //         // origin coordinate of attacker piece
+        //         // attacker_coord = x.first;
+        //         // attacking_coords = x.second;
+
+        //         for (int i = 0; i < x.second.size(); i++)
+        //             if (x.second[i] == coord_str)
+        //                 return true;
+
+        //         // as soon as the attacking coordinates contain the coord_str
+        //         // the provided coordinate is considered attacked
+        //         // if (contains_string(x.second, coord_str))
+        //         //     return true;
+
+        //     }
+
+        //     return false;
+
+        // };
+
+        // bool is_checked (int color) {
+
+        //     /* Returns true if the color is in check. */
+            
+        //     __call__(__func__);
+
+        //     string coord;
+        //     int attacker_color;
+
+        //     // iterate through board to find the king's position
+        //     if (color == pieces.w) {
+        //         coord = white_king_coord;   
+        //         attacker_color = pieces.b;
+        //     } else {
+        //         coord = black_king_coord;
+        //         attacker_color = pieces.w;
+        //     }
+
+        //     // check if king's coordinate is being attacked
+        //     return square_is_attacked(coord, attacker_color);
+
+        // }
+
+        // bool is_mate (int color) {
+
+        //     /* Returns truth value based on if a color is being mated in current position. */
+
+        //     __call__(__func__);
+
+        //     if (color == pieces.w)
+        //         return white_is_checked && white_moves.empty();
+        //     return black_is_checked && black_moves.empty();
+        
+        // }
+
+        // bool square_is_in_line (string coord1, string coord2, string probe_coord) {
+
+        //     /* Checks quickly if a probing coordinate lies within the aligned line (vert.,hor.,diag.) 
+        //     spanned by the first two coordinates. If the first two coordinates are not mutually aligned 
+        //     or they are not aligned with the probing coordinate, the return will be 0. */
+
+        //     __call__(__func__);
+
+        //     int r1 = stoi(get_square_from_coord(coord1)["rank"]),
+        //         r2 = stoi(get_square_from_coord(coord2)["rank"]),
+        //         r3 = stoi(get_square_from_coord(probe_coord)["rank"]),
+        //         f1 = stoi(get_square_from_coord(coord1)["file"]),
+        //         f2 = stoi(get_square_from_coord(coord2)["file"]),
+        //         f3 = stoi(get_square_from_coord(probe_coord)["file"]);
+            
+        //     // all pieces are aligned horizontally
+        //     if (r1 == r2 && r3 == r1) {
+        //         if (f1 > f2 && f1 > f3 && f3 > f2 || f2 > f1 && f3 > f1 && f2 > f3)
+        //             return 1;
+        //     } 
+        //     // all pieces are aligned vertically
+        //     else if (f1 == f2 && f3 == f1) {
+        //         if ( (r1 > r2 && r1 > r3 && r3 > r2) || (r2 > r1 && r2 > r3 && r3 > r1)) 
+        //             return 1;
+        //     } 
+        //     // all pieces are aligned diagonally
+        //     else if (abs(f1-f2) == abs(r1-r2) && abs(r1-r3) == abs(f1-f3) && (r1-r2)/abs(r1-r2) == abs(r1-r3)/abs(r1-r3) && (f1-f2)/abs(f1-f2) == abs(f1-f3)/abs(f1-f3)) {
+        //         if ( !(f1 > f2 && f1 > f3 && f3 > f2) || !(f2 > f1 && f2 > f3 && f3 > f1) ) 
+        //             return 0;
+        //         if ((r1 > r2 && r1 > r3 && r3 > r2) || (r2 > r1 && r2 > r3 && r3 > r1) ) 
+        //             return 1;
+        //     }
+
+        //     return 0;
+        // };
+
+        
+
+        // bool square_is_occupied_by_enemy (int friendly_color, string coord_str) {
+
+        //     /* Returns boolean-like integer. The return is 1 if the square is occupied by enemy piece otherwise 0 */
+
+        //     __call__(__func__);
+
+        //     char target_symbol = get_symbol_from_coord(coord_str);
+        //     int target_color = get_color_from_symbol(target_symbol); 
+
+        //     return target_color != friendly_color && target_color != 0;
+
+        // }
+
+        // bool square_is_occupied_by_friendly_piece (int friendly_color, string coord_str) {
+            
+        //     /* Returns bool dep. on wether a friendly piece persists on this coordinate. */
+
+        //     __call__(__func__);
+
+        //     char target_symbol = get_symbol_from_coord(coord_str);
+        //     int target_color = get_color_from_symbol(target_symbol);
+
+        //     return target_color == friendly_color;
+
+        // }
+
+
+        
+        /*  update moves and target methods ---- */
+
+        
+        // map<string, vector<string>> update_reachable_target_map (int color) {
+
+        //     /* Updates reachable target map for provided color and 
+        //     overrides the persistent global variable white_targets/black. 
+        //     The overriden map will be returned at the end. */
+
+        //     __call__(__func__);
+
+        //     // string coord;
+        //     map<string, vector<string>> m;
+        //     map<string, char> occupation_map;
+
+        //     // pick occupation map for provided color
+        //     if (color == pieces.w)
+        //         occupation_map = white_symbol_occupation_map;
+        //     else
+        //         occupation_map = black_symbol_occupation_map;
+            
+        //     // iterate through field (deprecated since too inefficient)
+        //     // for (int i = 0; i < 64; i++) {
+        //     //     coord = get_coord_from_id(i);
+        //     //     if (square_is_occupied_by_friendly_piece(color, coord)) {
+        //     //         // override/create entry for coord with vector of all reachable targets from that square
+        //     //         m[coord] = reachable_target_coords(coord);
+        //     //     } 
+        //     // }
+
+        //     // iterate only the valid piece coordinates from occupation map
+        //     // this is better than the dedicated approach by screening the whole 64-field grid
+        //     for (auto const& x : occupation_map) {
+
+        //         // extract friendly piece coord from occupation map
+        //         // coord = x.first; // coord
+                
+        //         // add the reachable targets map
+        //         m[x.first] = reachable_target_coords(x.first, x.second, color);
+
+        //         // cout << "target coord: " << x.first << " " << x.second << endl;
+
+        //     }
+
+
+            
+        //     // override & return
+        //     if (color == pieces.w) {
+        //         white_targets = m;
+        //     } else {
+        //         black_targets = m;
+        //     }
+
+        //     return m;
+            
+        // }
+
+        // map<string, vector<string>> update_moves_from_targets (map<string, vector<string>> target_map, int color) {
+            
+        //     /* Filters the legal moves from target map and overrides the moves object. 
+        //     Only moves which leave no open checks. */
+            
+        //     __call__(__func__);
+
+        //     string origin_coord;
+        //     vector<string> targets;
+        //     map<string, vector<string>> moves;
+
+        //     for (auto const& x : target_map) {
+
+        //         origin_coord = x.first;
+        //         targets = x.second;
+                
+        //         for (int i = 0; i < targets.size(); i++) {
+
+        //             if (!move_leaves_open_check(origin_coord, targets[i])) {
+
+        //                 // only add the piece coord key to the moves 
+        //                 // object if there are moves at all
+        //                 if (!moves.count(origin_coord))
+        //                     moves[origin_coord] = {};
+                        
+        //                 moves[origin_coord].push_back(targets[i]);
+        //             }
+
+        //         }
+                
+        //     }
+            
+        //     // override
+        //     if (color == pieces.w) {
+        //         white_moves = moves;
+        //         return white_moves;
+        //     } else {
+        //         black_moves = moves;
+        //         return black_moves;
+        //     }
+            
+        // }
+
+
+
+        // ---- new method set ----
+
+        int active_color = pieces.w;
+
+        // prepare letters for the board files
+        const char letter_coordinates[8] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'};
+        const char number_coordinates[8] = {'1', '2', '3', '4', '5', '6', '7', '8'};
+        const string starting_position_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
+        // also define a map symbol -> coord(symbol)
+        // map<char, vector<string>> coord_symbol_map;
+        map<string, char> white_symbol_occupation_map; // maps coord to symbol
+        map<string, char> black_symbol_occupation_map;
+
+        // Load the pieces
+        Piece pieces;
+        map<int, vector<string>> pgn_history;
+        int move_count = 1;
+
+        // castling rights
+        bool all_castling_rights_lost = 0;
+        bool castling_right_k_w = 1;
+        bool castling_right_k_b = 1;
+        bool castling_right_q_w = 1;
+        bool castling_right_q_b = 1;
+
+        // king scope
+        bool white_is_checked = false;              // remember check after every active move
+        bool black_is_checked = false;
+        vector<string> check_coords = {};           // attacker coords, symbols can be derived from occ. map
+        vector<string>  black_scopers,              // scopers target the king with or without a pinned piece in-between
+                        white_scopers;
+        map<string, vector<string>> white_pins,     // pin to spaces mapping for pinned pieces
+                                    black_pins;
+        map<string, vector<string>> white_spaces,   // spaces between attacker and king when in scoped check (no night nor pawn)
+                                    black_spaces; 
+
+        // track king coordinates
+        string  white_king_coord = "E1", 
+                black_king_coord = "E8";
+
+         /* Denote everything for the next move i.e. from current position 
+            map ->  attacker_coord: [attacking_coord_1, 2, ...]
+                    attacker_coord: [attacking_coord_1, 2, ...]
+                    ...
+        */
+        map<string, vector<string>> white_targets,
+                                    black_targets,
+                                    white_moves,
+                                    black_moves;
+
+        /* define relative decrementation coordinates, which persist
+        static declaration makes sure all board instances use the same value. */ 
+        const vector<vector<int>> n_offset {{1,2}, {2,1}, {-1,2}, {-2,1}, {-1,-2}, {-2,-1}, {1,-2}, {2,-1}}; // knight relative coordinates
+        const vector<vector<int>> d_offset {{1,1}, {1,-1}, {-1,-1}, {-1,1}};
+        const vector<vector<int>> v_offset {{1,0}, {-1,0}};
+        const vector<vector<int>> h_offset {{0,1}, {0,-1}};  
+
+        // coordinate and symbol methods
+        int get_color_from_symbol (char symbol) {
+
+            /* Returns the piece color int from symbol char e.g. k -> 16, Q -> 8
+            where 16 is black and 8 white. If the symbol is None '_' the return will be 0. */
+
+            __call__(__func__);
+            if (pieces.is_white(symbol))
+                return 8;
+            else if (symbol == '_')
+                return 0;
+            else
+                return 16; 
+
+        };
+        
+        string get_coord_from_file_and_rank (int file, int rank) {
+            
+            /* Returns the coordinate string for provided rank and file integers.
+            e.g. (0,0) -> A1 or (0,1) -> A2 etc.*/
+
+            // return get_coord_from_id(file + 8 * rank);
+            return letter_coordinates[file] + to_string(rank+1); // faster method
 
         };
 
-        bool can_castle_queen_side (int color) {
-
-            /* Checks if a color can castle queen side. */
-
-            __call__(__func__);
-            if (!is_checked(color)) {
-
-                if (color == pieces.w && castling_right_q_w) {
-
-                    if (!square_is_occupied("C1") && 
-                        !square_is_occupied("D1") && 
-                        !square_is_attacked("C1", pieces.b) && 
-                        !square_is_attacked("D1", pieces.b))
-                        return 1;
-                    
-                } else if (color == pieces.b && castling_right_q_b) {
-
-                    if (!square_is_occupied("C8") && 
-                        !square_is_occupied("D8") && 
-                        !square_is_attacked("C8", pieces.w) && 
-                        !square_is_attacked("D8", pieces.w))
-                        return 1;
-
+        vector<int> get_file_and_rank_from_coord (string coord_str) {
+            /* Returns a 2d vector with file and rank (between 0 and 7). */
+            vector<int> out;
+            for (int i = 0; i < 7; i++) {
+                if (letter_coordinates[i] == coord_str[0]) {
+                    out.push_back(0);
+                    break;
                 }
             }
+            out.push_back(coord_str[1] - '0');
+            return out;
+        };
 
-            return 0;
+        map<string, vector<string>> get_moves (int color) {
+            /* Returns the target map for provided color. */
+            if (color == pieces.w)
+                return white_moves;
+            else
+                return black_moves;
+        }
+
+        map<string, char> get_occupation_map (int color) {
+
+            /* Returns the occupation map for provided color. */
+
+            if (color == pieces.w)
+                return white_symbol_occupation_map;
+            else
+                return black_symbol_occupation_map;
+
+        }
+
+        map<string, vector<string>> get_targets (int color) {
+            /* Returns the target map for provided color. */
+            if (color == pieces.w)
+                return white_targets;
+            else
+                return black_targets;
+        }
+
+        char get_symbol_from_coord (string coord_str) {
+            /* A fast method integration to find symbol from coordinate via occupation lookup. */
+            if (white_symbol_occupation_map.count(coord_str))
+                return white_symbol_occupation_map[coord_str];
+            else if (black_symbol_occupation_map.count(coord_str))
+                return black_symbol_occupation_map[coord_str];
+            else
+                return pieces.None;
+        };
+        
+        // board operations
+        void flip_active_color () {
+            if (active_color == pieces.w)
+                active_color = pieces.b;
+            else
+                active_color = pieces.w;
+        }
+
+        void clear () {
+
+            /* Removes all pieces from the board. */
+
+            for (int i = 0; i < 64; i++)
+                grid[i]["symbol"] = '_';
+            
+        };
+
+        void load_position_from_fen (string fen, bool verbose=1) {
+
+            /* A fen parsing implementation which generates a position from compact string.
+            The reading starts from upper left corner i.e. rank is decremented while the files
+            are iterated from left to right. */
+
+            int piece, 
+                color, 
+                file = 1, 
+                rank = 8, 
+                pieces_completely_parsed = 0,
+                active_color_parsed = 0,
+                castling_parsed = 0,
+                en_passant_parsed = 0,
+                half_clock_parsed = 0,
+                delimiter_index,
+                move_count_parsed = 0;
+            char _char;
+            char delimiter = '/';
+            string coord;
+            string moves = "";
+            string castling_options = "KkQq-";
+
+            
+            // first exchange all slashes for unique symbols to avoid escapes
+            while (delimiter_index != string::npos) {
+                delimiter_index = fen.find(delimiter);
+                fen[delimiter_index] = '&';
+            }
+            
+            // delete global variables 
+            en_passant_coord = "";
+            moves = "";
+            castling_right_k_w = 0;
+            castling_right_k_b = 0;
+            castling_right_q_w = 0;
+            castling_right_q_b = 0;
+            
+            // parse ...
+            for (int i = 0; i < fen.size(); i++) {
+                
+                _char = fen[i];
+
+                // parse piece locations
+                if (!pieces_completely_parsed) {
+
+                    // determine piece and color from symbol char
+                    piece = pieces.from_symbol(_char);
+                    
+                    // if line break is parsed decrement rank
+                    if (_char == '&') {
+                        // decrement rank
+                        rank--;
+                        // reset pointer to A file
+                        file = 1;
+                        continue;
+                    // if integer is parsed shift file
+                    } else if (isdigit(_char)) {
+                        // integers account for file shifts
+                        file += _char - '0';
+                        continue;
+                    // finish parsing pieces on space
+                    } else if (_char == ' ') {
+                        pieces_completely_parsed = 1;
+                        continue;
+                    }
+                    
+                    // otherwise _char is definitely a piece symbol
+                    if (pieces.is_white(_char)) {
+                        color = 8;
+                    } else {
+                        color = 16;
+                    }
+                    
+                    // determine the id from current rank and file pointer
+                    coord = get_coord_from_file_and_rank(file, rank);
+                    // coord = get_coord_from_file_and_rank(file, rank);
+
+                    // place the piece
+                    place_symbol_at_coord(_char, coord);
+
+                    // override king position
+                    if (_char == 'k')
+                        black_king_coord = coord;
+                    else if (_char == 'K')
+                        white_king_coord = coord;
+
+                    // increment file
+                    file++;
+                
+                // check for active color & override
+                } else if (pieces_completely_parsed && !active_color_parsed && (_char == 'b' || _char == 'w')) {
+                    if (_char == 'w')
+                        active_color = pieces.w;
+                    else
+                        active_color = pieces.b;
+                    active_color_parsed = 1;
+                    i++;
+
+                // check for castling rights 
+                } else if (pieces_completely_parsed && active_color_parsed && !castling_parsed ) {
+
+                    if (_char == ' ') {
+                        castling_parsed = 1;
+                    } else if (_char == '-') {
+                        castling_parsed = 1;
+                        i++;
+                    } else if (_char == 'K') {
+                        castling_right_k_w = 1;
+                    } else if (_char == 'Q') {
+                        castling_right_q_w = 1;
+                    } else if (_char == 'k') {
+                        castling_right_k_b = 1;
+                    } else if (_char == 'q') {
+                        castling_right_q_b = 1;
+                    }
+                
+                // check for en-passant availability
+                } else if (castling_parsed && !en_passant_parsed) {
+                    en_passant_coord += _char;
+                    if (_char == '-' || en_passant_coord.size() >= 2) {
+                        en_passant_parsed = 1;
+                        i++;
+                    }
+                // parse and denote half clock count
+                } else if (en_passant_parsed && !half_clock_parsed) {
+                    if (_char == ' ') {
+                        half_clock_parsed = 1;
+                    } else {
+                        half_clock += _char;
+                    }
+                    i++;
+                // parse and denote the move count
+                } else if (half_clock_parsed && !move_count_parsed) {
+                    moves += _char;
+                    if (i == fen.size()-1) {
+                        move_count = stoi(moves);
+                        if (verbose)
+                            print("Successfully loaded position from FEN.", "Board");
+                        // finished   
+                    }
+                } 
+
+            };
+
+            // initialize all possible moves for white
+            update_targets_and_moves(active_color);
+            // update_moves_from_targets(update_reachable_target_map(active_color), active_color);
+            
+        };
+        
+        void load_starting_position (bool verbose=1) {
+            
+            /* Loads all pieces to the board grid by using their 
+            symbol values. Start position fen is loaded via fen parser.*/
+
+            __call__(__func__);
+
+            if (verbose)
+                cout << "load starting position ..." << endl;
+
+            // load position from FEN code    
+            load_position_from_fen(starting_position_fen, verbose);
+
+            if (verbose)
+                cout << "successfully loaded starting position." << endl;
 
         };
 
@@ -1343,13 +2039,11 @@ class Board {
                                 otherwise the provided piece will be considered captured. 
             */
 
-            __call__(__func__);
-
             // map<string, string> origin_square = get_square_from_coord(origin_coord_str);
             // char origin_symbol = origin_square["symbol"][0];
             char symbol_cap = toupper(origin_symbol);
             // int color = get_color_from_symbol(origin_symbol);
-            map<string, string> origin_square = get_square_from_coord(origin_coord_str);
+            vector<int> fr_origin = get_file_and_rank_from_coord(origin_coord_str);
             int origin_piece = pieces.from_symbol(origin_symbol);
             char origin_file_str = origin_coord_str[0];
             string attacker_coord;
@@ -1388,14 +2082,20 @@ class Board {
             // get possible moves map
             map<string, vector<string>> m;
             if (origin_color == pieces.w)
-                m = moves_for_white;
+                m = white_moves;
             else
-                m = moves_for_black;
+                m = black_moves;
 
             // iterate through all other attackers of origin color, if another attacker
             // is the same piece as the origin piece, we need to distinguish either the file or rank
-            map<string, string> attacker_square;
             int attacker_rank, attacker_file, attacker_piece;
+            vector<int> fr_target; // file and rank buffer
+            map<string, char> attacker_occupation_map;
+            if (origin_color == pieces.w)
+                attacker_occupation_map = get_occupation_map(pieces.b);
+            else
+                attacker_occupation_map = get_occupation_map(pieces.w);
+
             for (auto const& x : m) {
                 // if attacker square is different from origin proceed
                 if (x.first != origin_coord_str) {
@@ -1404,18 +2104,15 @@ class Board {
                     if (contains_string(x.second, target_coord_str)) {
 
                         attacker_coord = x.first;
-                        attacker_square = get_square_from_coord(attacker_coord);
-                        attacker_rank = stoi(attacker_square["rank"]);
-                        attacker_file = stoi(attacker_square["file"]);
-                        attacker_piece = pieces.from_symbol(attacker_square["symbol"][0]);
+                        fr_target = get_file_and_rank_from_coord(origin_coord_str);
+                        attacker_file = fr_target[0], attacker_rank = fr_target[1];
+                        attacker_piece = pieces.from_symbol(attacker_occupation_map[attacker_coord]);
                         
                         // if the attacking piece is no pawn and is one of two pieces of same kind which attack add the file
                         if (attacker_piece == origin_piece) {
-
-                            int origin_file = stoi(origin_square["file"]);
                             
                             // if on same file denote the rank
-                            if (attacker_file == origin_file) 
+                            if (attacker_file == fr_origin[0]) 
                                 return symbol_cap + lower_case(origin_coord_str[1] + formatted);
 
                             // otherwise denote file
@@ -1432,488 +2129,219 @@ class Board {
 
         };
 
-        bool move_is_legal (string origin_coord_str, string target_coord_str, char symbol, int origin_color) {
-            
-            /* Checks if a move is legal by general chess rules.
-            The playable moves from origin are drawn from the targets map. */
-            
-            __call__(__func__);
+        void place_symbol_at_coord (char symbol, string coord) {
+            /* Ignorantly places a symbol at a specific coordinate by overriding
+            the value in the occupation map for this coordinate. Note that
+            the overrided value will be lost. 
+            No tracking other tracking of game variables. */
+            int color = get_color_from_symbol(symbol);
+            if (color == pieces.w) {
+                white_symbol_occupation_map[coord] = symbol;
+            } else {
+                black_symbol_occupation_map[coord] = symbol;
+            }
+        }
 
-            vector<string> playable_moves;
+        void remove_symbol_at_coord (char symbol, string coord) {
+            /* Ignorantly removes a symbol from corresponding occupation map. 
+            No tracking other tracking of game variables.*/
+            int color = get_color_from_symbol(symbol);
+            if (color == pieces.w)
+                white_symbol_occupation_map.erase(coord);
+            else
+                black_symbol_occupation_map.erase(coord);
+        }
+
+        snapshot move (string origin_coord_str, string target_coord_str, bool force=false) {
+
+            /* Active move that tracks game variables like PGN history, king coordinate, en-passant etc.
+            At every call the current state is recorded and returned for reversion to former state. 
+            Will remove an empty object if the move is illegal. */
+
+            // variables
+            char symbol = get_symbol_from_coord(origin_coord_str);
+            int color = get_color_from_symbol(symbol);
+            map<string, char> occupation_map = get_occupation_map(color);
+            snapshot snap;
+            map<string, vector<string>> targets = get_targets(color);
+            map<string, vector<string>> moves = get_targets(color); 
+            char captured_symbol = get_symbol_from_coord(target_coord_str); // denote captured symbol for later notation
+
+            // check if the move is legal by probing all illegal conditions, 
+            // except when it's forced, then skip
+            if (!force) {
+                // wrong color is playing
+                if (color != active_color) {
+                    print("It's not " + pieces.color_string(color) + "'s turn.", "board");
+                    return snap;
+                }
+                // origin coordinate does not 
+                if (occupation_map.count(origin_coord_str) == 0) {
+                    print(origin_coord_str + "holds no " + pieces.color_string(color) + " pieces.", "board");
+                    return snap;
+                }
+                // target
+                if (!contains_string(moves[origin_coord_str], target_coord_str)) {
+                    print(pieces.color_string(color) + "'s move " + origin_coord_str + "->" + target_coord_str + " is not legal.", "board");
+                    return snap;
+                }
+                if (color == get_color_from_symbol(captured_symbol)) {
+                    print(target_coord_str + " is occupied by friendly piece.", "board");
+                    return snap;
+                }
+            }
+
+            // save info to snapshot object
+            snap = record_snapshot();
+
+            // take action on board
+            remove_symbol_at_coord(symbol, origin_coord_str);
+            place_symbol_at_coord(symbol, target_coord_str);
+
+            // piece specific cases
             int piece = pieces.from_symbol(symbol);
 
-            // check if active color is respected
-            if (origin_color == 0) {
-                return false;
-            } else if (origin_color != active_color) {
-                cout << "it is " << pieces.color_string(active_color) << "'s turn!" << endl;
-                return false;
-            }
-           
-            // first check if move is a castling move and if it is valid, otherwise continue
-            if (piece == pieces.King) {
-                if (origin_color == pieces.w && origin_coord_str == "E1" && target_coord_str == "G1") {
-                    if (can_castle_king_side(origin_color))
-                        return true;
-                    else
-                        return false;
-                }
-                if (origin_color == pieces.b && origin_coord_str == "E8" && target_coord_str == "G8") {
-                    if (can_castle_king_side(origin_color))
-                        return true;
-                    else
-                        return false;
-                }
-                if (origin_color == pieces.w && origin_coord_str == "E1" && target_coord_str == "C1") {
-                    if (can_castle_queen_side(origin_color))
-                        return true;
-                    else
-                        return false;
-                } 
-                if (origin_color == pieces.b && origin_coord_str == "E8" && target_coord_str == "C8") {
-                    if (can_castle_queen_side(origin_color))
-                        return true;
-                    else
-                        return false;
-                } 
-            }
-            
-            // en-passant
-            // was checked already in reachable_targets object, it only needs to be checked if the en-passant
-            // move leaves an open check which will be done by default in the following.
+            // check if pawn move leaves an en-passant possibility
+            if (piece == pieces.Pawn) {
 
-            // make sure there is no check after move (possible bottleneck)
-            // not sure if this is actually needed since the moves object contains the moves which leave no open check.
-            // if (move_leaves_open_check(origin_coord_str, target_coord_str))
-            //     return false;
-
-            // insted try to find the corresponding move in pre-computed move object
-            playable_moves = moves_for_black[origin_coord_str];
-            if (origin_color == pieces.w)
-                playable_moves = moves_for_white[origin_coord_str];
-            
-            for (int i = 0; i < playable_moves.size(); i++)
-                if (target_coord_str == playable_moves[i])
-                    return 1;
-            
-            
-            // if (contains_string(playable_moves, target_coord_str))
-            //     return true;
-            return false;
-            
-        };
-
-        bool move_leaves_open_check (string origin_coord_str, string target_coord_str) {
-            
-            /* Checks by quick simulation if a move leaves an open check, otherwise move is not legal. */
-
-            __call__(__func__);
-
-            char origin_symbol = get_symbol_from_coord(origin_coord_str);
-            int target_color,
-                origin_color = get_color_from_symbol(origin_symbol);
-            if (origin_color == pieces.w)
-                target_color = pieces.b;
-            else
-                target_color = pieces.w;
-            
-            // simulate the move
-            bool result;
-            ignorant_move(origin_coord_str, target_coord_str, origin_symbol, origin_color, 0);
-            if (is_checked(origin_color))
-                result = true;
-            else
-                result = false;
-            
-            // revert position, the undo function will take care about castling and en-passant appendix moves
-            // to do this quickly it uses the last move and capture information.
-            undo_ignorant_move();
-              
-            return result;
-            
-        };
-
-        
-        vector<string> scoping_enemy_squares (string coord_str) {
-            
-            /* A function which returns all enemy squares whose direction points to a demanded square. 
-            Regardless of wether a piece is blocking it. */
-
-            __call__(__func__);
-
-            vector<string> out = {};
-            map <string, string> square = get_square_from_coord(coord_str);
-            char symbol = square["symbol"][0];
-            
-            int color = get_color_from_symbol(symbol);
-
-            string target_coord;
-            char target_symbol;
-            int piece,
-                rank = stoi(square["rank"]),
-                file = stoi(square["file"]); 
-
-            // check diagonals for enemy queen or bishop 
-            for (int i = -7; i < 8; i++) {
-                if (inside_bounds(rank+i, file+i)) {
-                    target_coord = get_coord_from_file_and_rank(rank+i, file+i);
-                    target_symbol = get_symbol_from_coord(target_coord);
-                    piece = pieces.from_symbol(target_symbol);
-                    if (square_is_occupied_by_enemy(color, target_coord) && ( piece == pieces.Queen || piece == pieces.Bishop) ) {
-                        out.push_back(target_coord);
-                    }
-                }
-                if (inside_bounds(rank-i, file+i)) {
-                    target_coord = get_coord_from_file_and_rank(rank-i, file+i);
-                    target_symbol = get_symbol_from_coord(target_coord);
-                    piece = pieces.from_symbol(target_symbol);
-                    if (square_is_occupied_by_enemy(color, target_coord) && ( piece == pieces.Queen || piece == pieces.Bishop) ) {
-                        out.push_back(target_coord);
-                    }
-                }
-            }
-
-            // check straight lines for enemy rook or queen 
-            for (int i = -7; i < 8; i++) {
-                if (inside_bounds(rank+i, file)) {
-                    target_coord = get_coord_from_file_and_rank(rank+i, file+i);
-                    target_symbol = get_symbol_from_coord(target_coord);
-                    piece = pieces.from_symbol(target_symbol);
-                    if (square_is_occupied_by_enemy(color, target_coord) && ( piece == pieces.Queen || piece == pieces.Bishop) ) {
-                        out.push_back(target_coord);
-                    }
-                }
-                if (inside_bounds(rank, file+i)) {
-                    target_coord = get_coord_from_file_and_rank(rank-i, file+i);
-                    target_symbol = get_symbol_from_coord(target_coord);
-                    piece = pieces.from_symbol(target_symbol);
-                    if (square_is_occupied_by_enemy(color, target_coord) && ( piece == pieces.Queen || piece == pieces.Rook) ) {
-                        out.push_back(target_coord);
-                    }
-                }
-            }
-            
-            return out;
-
-        };
-    
-        vector<string> square_is_attacked_by_coords (string coord_str, map<string, vector<string>> enemy_targets) {
-
-            /* Returns all enemy (attacker) coordinates which are hitting the square. 
-            The coordinates are determined from the provided enemy target map.*/
-
-            __call__(__func__);
-
-            string attacker_coord;
-            vector<string> attacking_coords;
-            vector<string> out = {};
-
-            for (auto const& x : enemy_targets) {
-
-                // coordinate of attacker
-                attacker_coord = x.first;
-
-                // coordinates being attacked
-                attacking_coords = x.second;
-
-                for (int i = 0; i < attacking_coords.size(); i++) {
-                    if (attacking_coords[i] == coord_str) {
-                        out.push_back(attacker_coord);
-                        break;
-                    }
-                }
+                // int rank_origin = stoi(get_square_from_coord(origin_coord_str)["rank"]);
+                // map<string, string> target_square = get_square_from_coord(target_coord_str);
+                // int target_file = stoi(target_square["file"]),
+                //     target_rank = stoi(target_square["rank"]);
+                int rank_origin = get_file_and_rank_from_coord(origin_coord_str)[1];
+                vector<int> fr = get_file_and_rank_from_coord(target_coord_str);
+                int target_file = fr[0], target_rank = fr[1];
                 
-            }
-
-            return out;
-            
-        };
-
-        bool square_is_attacked (string coord_str, int attacker_color) {
-
-            /* A faster version of square_is_attacked_by_coords, which only
-            returns truth value at first found instance i.e. if the enemy's
-            targets yield the coord_str. */
-            
-            __call__(__func__);
-
-            // string attacker_coord;
-            // vector<string> attacking_coords;
-            map<string, vector<string>> attacker_targets;
-
-            // select attacker targets from enemy color
-            if (attacker_color == pieces.w) 
-                attacker_targets = targets_for_white;
-            else
-                attacker_targets = targets_for_black;
-
-            for (auto const& x : attacker_targets) {
-
-                // origin coordinate of attacker piece
-                // attacker_coord = x.first;
-                // attacking_coords = x.second;
-
-                for (int i = 0; i < x.second.size(); i++)
-                    if (x.second[i] == coord_str)
-                        return true;
-
-                // as soon as the attacking coordinates contain the coord_str
-                // the provided coordinate is considered attacked
-                // if (contains_string(x.second, coord_str))
-                //     return true;
-
-            }
-
-            return false;
-
-        };
-
-        bool is_checked (int color) {
-
-            /* Returns true if the color is in check. */
-            
-            __call__(__func__);
-
-            string coord;
-            int attacker_color;
-
-            // iterate through board to find the king's position
-            if (color == pieces.w) {
-                coord = white_king_coord;   
-                attacker_color = pieces.b;
-            } else {
-                coord = black_king_coord;
-                attacker_color = pieces.w;
-            }
-
-            // check if king's coordinate is being attacked
-            return square_is_attacked(coord, attacker_color);
-
-        }
-
-        bool is_mate (int color) {
-
-            /* Returns truth value based on if a color is being mated in current position. */
-
-            __call__(__func__);
-
-            if (color == pieces.w)
-                return white_is_checked && moves_for_white.empty();
-            return black_is_checked && moves_for_black.empty();
-        
-        }
-
-        bool square_is_in_line (string coord1, string coord2, string probe_coord) {
-
-            /* Checks quickly if a probing coordinate lies within the aligned line (vert.,hor.,diag.) 
-            spanned by the first two coordinates. If the first two coordinates are not mutually aligned 
-            or they are not aligned with the probing coordinate, the return will be 0. */
-
-            __call__(__func__);
-
-            int r1 = stoi(get_square_from_coord(coord1)["rank"]),
-                r2 = stoi(get_square_from_coord(coord2)["rank"]),
-                r3 = stoi(get_square_from_coord(probe_coord)["rank"]),
-                f1 = stoi(get_square_from_coord(coord1)["file"]),
-                f2 = stoi(get_square_from_coord(coord2)["file"]),
-                f3 = stoi(get_square_from_coord(probe_coord)["file"]);
-            
-            // all pieces are aligned horizontally
-            if (r1 == r2 && r3 == r1) {
-                if (f1 > f2 && f1 > f3 && f3 > f2 || f2 > f1 && f3 > f1 && f2 > f3)
-                    return 1;
-            } 
-            // all pieces are aligned vertically
-            else if (f1 == f2 && f3 == f1) {
-                if ( (r1 > r2 && r1 > r3 && r3 > r2) || (r2 > r1 && r2 > r3 && r3 > r1)) 
-                    return 1;
-            } 
-            // all pieces are aligned diagonally
-            else if (abs(f1-f2) == abs(r1-r2) && abs(r1-r3) == abs(f1-f3) && (r1-r2)/abs(r1-r2) == abs(r1-r3)/abs(r1-r3) && (f1-f2)/abs(f1-f2) == abs(f1-f3)/abs(f1-f3)) {
-                if ( !(f1 > f2 && f1 > f3 && f3 > f2) || !(f2 > f1 && f2 > f3 && f3 > f1) ) 
-                    return 0;
-                if ((r1 > r2 && r1 > r3 && r3 > r2) || (r2 > r1 && r2 > r3 && r3 > r1) ) 
-                    return 1;
-            }
-
-            return 0;
-        };
-
-        bool square_is_occupied (string coord_str) {
-            __call__(__func__);
-            return get_symbol_from_coord(coord_str) != '_';
-        }
-
-        bool square_is_occupied_by_enemy (int friendly_color, string coord_str) {
-
-            /* Returns boolean-like integer. The return is 1 if the square is occupied by enemy piece otherwise 0 */
-
-            __call__(__func__);
-
-            char target_symbol = get_symbol_from_coord(coord_str);
-            int target_color = get_color_from_symbol(target_symbol); 
-
-            return target_color != friendly_color && target_color != 0;
-
-        }
-
-        bool square_is_occupied_by_friendly_piece (int friendly_color, string coord_str) {
-            
-            /* Returns bool dep. on wether a friendly piece persists on this coordinate. */
-
-            __call__(__func__);
-
-            char target_symbol = get_symbol_from_coord(coord_str);
-            int target_color = get_color_from_symbol(target_symbol);
-
-            return target_color == friendly_color;
-
-        }
-
-
-        bool squares_are_aligned (string coord1, string coord2) {
-
-            /* Check if the squares are aligned in any way. */
-
-            __call__(__func__);
-
-            if (squares_are_aligned_diagonally(coord1, coord2) || 
-                squares_are_aligned_horizontally(coord1, coord2) || 
-                squares_are_aligned_vertically(coord1, coord2))
-                return 1;
-            return 0;
-        }
-
-        bool squares_are_aligned_diagonally (string coord1, string coord2) {
-            int r1 = stoi(get_square_from_coord(coord1)["rank"]);
-            int r2 = stoi(get_square_from_coord(coord2)["rank"]);
-            int f1 = stoi(get_square_from_coord(coord1)["file"]);
-            int f2 = stoi(get_square_from_coord(coord2)["file"]);
-            if (abs(r1-r2) == abs(f1-f2))
-                return 1;
-            return 0;
-        };
-
-        bool squares_are_aligned_horizontally (string coord1, string coord2) {
-            int r1 = stoi(get_square_from_coord(coord1)["rank"]);
-            int r2 = stoi(get_square_from_coord(coord2)["rank"]);
-            if (r1 == r2)
-                return 1;
-            return 0;
-        };
-
-        bool squares_are_aligned_vertically (string coord1, string coord2) {
-            int f1 = stoi(get_square_from_coord(coord1)["file"]);
-            int f2 = stoi(get_square_from_coord(coord2)["file"]);
-            if (f1 == f2)
-                return 1;
-            return 0;
-        }
-
-        // new sorting
-        
-        /* ---- update moves and target methods ---- */
-
-        
-        map<string, vector<string>> update_reachable_target_map (int color) {
-
-            /* Updates reachable target map for provided color and 
-            overrides the persistent global variable targets_for_white/black. 
-            The overriden map will be returned at the end. */
-
-            __call__(__func__);
-
-            // string coord;
-            map<string, vector<string>> m;
-            map<string, char> occupation_map;
-
-            // pick occupation map for provided color
-            if (color == pieces.w)
-                occupation_map = white_symbol_occupation_map;
-            else
-                occupation_map = black_symbol_occupation_map;
-            
-            // iterate through field (deprecated since too inefficient)
-            // for (int i = 0; i < 64; i++) {
-            //     coord = get_coord_from_id(i);
-            //     if (square_is_occupied_by_friendly_piece(color, coord)) {
-            //         // override/create entry for coord with vector of all reachable targets from that square
-            //         m[coord] = reachable_target_coords(coord);
-            //     } 
-            // }
-
-            // iterate only the valid piece coordinates from occupation map
-            // this is better than the dedicated approach by screening the whole 64-field grid
-            for (auto const& x : occupation_map) {
-
-                // extract friendly piece coord from occupation map
-                // coord = x.first; // coord
-                
-                // add the reachable targets map
-                m[x.first] = reachable_target_coords(x.first, x.second, color);
-
-                // cout << "target coord: " << x.first << " " << x.second << endl;
-
-            }
-
-
-            
-            // override & return
-            if (color == pieces.w) {
-                targets_for_white = m;
-            } else {
-                targets_for_black = m;
-            }
-
-            return m;
-            
-        }
-
-        map<string, vector<string>> update_moves_from_targets (map<string, vector<string>> target_map, int color) {
-            
-            /* Filters the legal moves from target map and overrides the moves object. 
-            Only moves which leave no open checks. */
-            
-            __call__(__func__);
-
-            string origin_coord;
-            vector<string> targets;
-            map<string, vector<string>> moves;
-
-            for (auto const& x : target_map) {
-
-                origin_coord = x.first;
-                targets = x.second;
-                
-                for (int i = 0; i < targets.size(); i++) {
-
-                    if (!move_leaves_open_check(origin_coord, targets[i])) {
-
-                        // only add the piece coord key to the moves 
-                        // object if there are moves at all
-                        if (!moves.count(origin_coord))
-                            moves[origin_coord] = {};
+                // finally check if the pawn is moved from origin square for two ranks at once
+                if ((active_color == pieces.w && rank_origin == 1 && target_rank == 3) || 
+                    (active_color == pieces.b && rank_origin == 6 && target_rank == 4)) {
+                    
+                    char symbol;
+
+                    // check if a new en-passant possibility pops up for enemy
+                    int sign = 1, 
+                        neighbour_file,
+                        en_passant_target_rank;
+                    string neighbour_coord;
+                    string en_passant_target_rank_str;
+                    
+                    // iterate through left and right neighbouring squares
+                    for (int x = 0; x < 2; x++) {
                         
-                        moves[origin_coord].push_back(targets[i]);
+                        sign *= -1;
+                        neighbour_file = target_file+sign;
+                        
+                        if (inside_bounds(target_rank, neighbour_file)) {
+                            
+                            neighbour_coord = get_coord_from_file_and_rank(neighbour_file, target_rank);
+                            symbol = get_symbol_from_coord(neighbour_coord);
+                            
+                            if (square_is_occupied_by_enemy(active_color, neighbour_coord) && pieces.from_symbol(symbol) == pieces.Pawn) {
+                                
+                                // find the correct en-passant rank based on color 
+                                // (rank is 1 behind the played pawn i.e. where the en-passant target will be captured)
+                                if (color == pieces.b)
+                                    en_passant_target_rank_str = "6";
+                                else
+                                    en_passant_target_rank_str = "3";
+
+                                // finally merge and override the en-passant coord
+                                en_passant_coord = letter_coordinates[target_file] + en_passant_target_rank_str;
+
+                                break;
+
+                            }
+                        
+                        }
+
                     }
 
-                }
-                
-            }
+                } else
+
+                    en_passant_coord = '-';
+
+            } 
             
-            // override
-            if (color == pieces.w) {
-                moves_for_white = moves;
-                return moves_for_white;
-            } else {
-                moves_for_black = moves;
-                return moves_for_black;
+            // check if King moved to remove castling rights
+            else if (piece == pieces.King) {
+
+                // looses castling rights when king is moved
+                if (color == pieces.w) 
+                    castling_right_k_w = 0, castling_right_q_w = 0;
+                else if (color == pieces.b) 
+                    castling_right_k_b = 0, castling_right_q_b = 0;
+
             }
-            
+                    
+            // check if a rook moved to remove castling right
+            else if (piece == pieces.Rook) {
+
+                if (origin_coord_str == "H1")
+                    castling_right_k_w = 0;
+                else if (origin_coord_str == "A1")
+                    castling_right_q_w = 0;
+                else if (origin_coord_str == "A8")
+                    castling_right_q_b = 0;
+                else if (origin_coord_str == "H8")
+                    castling_right_k_b = 0;
+
+            }
+
+            // denote the move and add to history
+            string move_notation = move_to_pgn(origin_coord_str, target_coord_str, symbol, color, captured_symbol);
+            if (color == pieces.w)
+                pgn_history[move_count] = {};
+            pgn_history[move_count].push_back(move_notation);
+
+            // update board
+            move_count++;
+            flip_active_color();
+            update_king_scopes(active_color);
+            update_targets_and_moves(active_color);
+
+        }
+
+        snapshot record_snapshot () {
+            /* Records and returns snapshot. */
+            snapshot snap;
+            snap.color = active_color;
+            snap.move_count = move_count;
+            snap.pgn_history = pgn_history;
+            snap.en_passant_coord = en_passant_coord;
+            snap.white_is_checked = white_is_checked;
+            snap.black_is_checked = black_is_checked;
+            snap.all_castling_rights_lost = all_castling_rights_lost;
+            snap.castling_right_k_w = castling_right_k_w;
+            snap.castling_right_q_w = castling_right_q_w;
+            snap.castling_right_k_b = castling_right_k_b;
+            snap.castling_right_q_b = castling_right_q_b;
+            snap.white_king_coord = white_king_coord;
+            snap.black_king_coord = black_king_coord;
+            snap.white_occupation_map = white_symbol_occupation_map;
+            snap.black_occupation_map = black_symbol_occupation_map;
+            snap.white_targets = white_targets;
+            snap.black_targets = black_targets;
+            snap.white_moves = white_moves;
+            snap.black_moves = black_moves;
+            snap.white_pins = white_pins;
+            snap.black_pins = black_pins;
+            snap.white_spaces = white_spaces;
+            snap.black_spaces = black_spaces;
+            return snap;
         }
 
 
-        // new method set
+        // chess logic
+        // constructor sequence
+        Board(void) {
+
+            // initialize grid
+            // build_grid();
+            
+        };
+
+        
+        
         bool inside_bounds (int rank, int file) {
 
             /* Checks if the rank and file integer provided map to a valid chess square. */
@@ -1934,7 +2362,7 @@ class Board {
 
             __call__(__func__);
             vector<string> out = {};
-            map <string, string> square = get_square_from_coord(coord_str);
+            // map <string, string> square = get_square_from_coord(coord_str);
             // char symbol = square["symbol"][0];
             
             // cut short in case the square is empty
@@ -1944,9 +2372,10 @@ class Board {
             // int color = get_color_from_symbol(symbol);
             int piece = pieces.from_symbol(symbol);
 
+            // extract file and rank from origin coord
             string target_coord;
-            int rank = stoi(square["rank"]),
-                file = stoi(square["file"]);
+            vector<int> fr = get_file_and_rank_from_coord(coord_str);
+            int file = fr[0], rank = fr[1];
             
             vector<char> screeningDirections;
 
@@ -2003,9 +2432,10 @@ class Board {
                     /* en-passant */
                     if (en_passant_coord != "-") {
                         // check if the selected pawn is next to en-passant coord
-                        map <string, string> ep_square = get_square_from_coord(en_passant_coord);
-                        int ep_file = stoi(ep_square["file"]);
-                        if (rank == stoi(ep_square["rank"])-sign && (file+1 == ep_file || file-1 == ep_file))
+                        vector<int> fr = get_file_and_rank_from_coord(coord_str);
+                        int ep_file = fr[0], ep_rank = fr[1];
+                        // int ep_fil = stoi(ep_square["file"]);
+                        if (rank == ep_rank-sign && (file+1 == ep_file || file-1 == ep_file))
                             out.push_back(en_passant_coord);
                     }
                     
@@ -2111,6 +2541,26 @@ class Board {
 
             return out;
 
+        }
+
+        bool square_is_occupied (string coord_str) {
+            /* Checks if provided square holds a piece. */
+            return white_symbol_occupation_map.count(coord_str) + black_symbol_occupation_map.count(coord_str) > 0;
+        }
+
+        bool square_is_occupied_by_color (int color, string coord_str) {
+            return get_occupation_map(color).count(coord_str) > 0;
+        }
+
+        bool square_is_occupied_by_enemy (int color, string coord_str) {
+            /* Checks if provided square holds a enemy piece. 
+            color: friendly color */
+            // flip the color to search for enemy occupation map
+            if (color == pieces.w)
+                color = pieces.b;
+            else
+                color = pieces.w;
+            return square_is_occupied_by_color (color, coord_str);
         }
 
         void update_king_scopes (int king_color) {
@@ -2356,7 +2806,7 @@ class Board {
             map<string, char> occupation_map = get_occupation_map(color);
             string coord;
             char symbol;
-            vector<string> intersection;
+            vector<string> intersection, targets, moves;
 
             // first determine the targets for active color anyway
             // as those will be crucial for the next move (i.e. enemy) 
@@ -2372,7 +2822,12 @@ class Board {
                 // first remove the non-legal pawn capture moves.
                 // check if the diagonal pawn targets really hold enemies
                 if (pieces.from_symbol(symbol) == pieces.Pawn) {
-                    const char pawn_file = coord[0];  
+                    const char pawn_file = coord[0];
+                    if (color == pieces.w)
+                        pins = white_pins;
+                    else
+                        pins = black_pins;
+                        
                     for (int i = 0; i < targets.size(); i++) {
                         // add target to moves if it is same file
                         if (pawn_file == targets[i][0]) {
@@ -2381,7 +2836,9 @@ class Board {
                             move_map[coord].push_back(targets[i]); 
                         }
                         // if pawn is on another file check for enemies to be a valid move
-                        else if (square_is_occupied_by_enemy(color, targets[i])) {
+                        // otherwise check if the target is an en-passant target
+                        else if (square_is_occupied_by_enemy(color, targets[i]) ||
+                                 en_passant_coord != "-" && targets[i] == en_passant_coord) {
                             move_map[coord].push_back(targets[i]);
                         }
                     }
@@ -2393,17 +2850,17 @@ class Board {
             if (color == pieces.w && white_is_checked || color == pieces.b && black_is_checked) {
 
                 // if in check reset the move map, which at this point holds all legal pawn moves
-                move_map.clear();
+                // move_map.clear();
 
                 // get king coord
                 string king_coord;
                 map<string, vector<string>> enemys_targets;
                 if (color == pieces.w) {
                     king_coord = white_king_coord;
-                    enemys_targets = targets_for_black;
+                    enemys_targets = black_targets;
                 } else {
                     king_coord = black_king_coord;
-                    enemys_targets = targets_for_white;
+                    enemys_targets = white_targets;
                 }
 
                 // and king symbol from occupation mapping
@@ -2431,12 +2888,15 @@ class Board {
                         escape_coords.push_back(king_target);
                 }
 
-                // add the escape squares to valid move map
-                move_map[king_coord] = escape_coords;
-
                 // then check the number of checkers, if greater than 1 the king has to move
                 // and we can neglect all other pieces for performance
                 if (check_coords.size() > 1) {
+
+                    // delete the move map as only the king will be able to move to escape 
+                    move_map.clear();
+
+                    // add the king escape coords only to valid move map
+                    move_map[king_coord] = escape_coords;
                     
                     // analyze the resulting escape coords
                     if (!escape_coords.size()) {
@@ -2456,7 +2916,31 @@ class Board {
                     } else {
                         pins = black_pins;
                         spaces = black_spaces;
-                    }                
+                    }
+
+                    // if there is a check we need to revert to the yet added pawn moves and restrict them
+                    for (auto const& x : move_map) {
+
+                        coord = x.first;
+                        moves = x.second;
+                        
+                        // skip if the pawn is pinned
+                        if (pins.count(coord))
+                            // this pawn has no moves, so erase from move_map
+                            move_map.erase(coord);
+                            continue;
+
+                        // otherwise check if it can block the check
+                        intersection = intersect(moves, spaces[0]);
+                        if (intersection.size())
+                            move_map[coord] = intersection;
+                        else
+                            // again this pawn has no moves, so erase from move_map
+                            move_map.erase(coord);
+                    }
+
+                    // only now add the king escape coords to valid move map
+                    move_map[king_coord] = escape_coords;
 
                     // iterate over all possible targets 
                     vector<string> targets;
@@ -2490,12 +2974,42 @@ class Board {
                         };
                         
                     }
+                
                 }
             
             } 
             
             // continue compute all moves
             else {
+
+                if (color == pieces.w)
+                    pins = white_pins;
+                else
+                    pins = black_pins;
+
+                // check if the yet added pawn moves aren't pinned and restrict their moves further
+                for (auto const& x : move_map) {
+
+                    coord = x.first;
+                    moves = x.second;
+                    
+                    // check if the pawn is pinned
+                    if (pins.count(coord))
+                        // select which moves are within the pins
+                        intersection = intersect(moves, pins[coord]);
+                        if (intersection.size())
+                            move_map[coord] = intersection;
+                        else
+                            move_map.erase(coord);
+
+                    // otherwise check if it can block the check
+                    intersection = intersect(moves, spaces[0]);
+                    if (intersection.size())
+                        move_map[coord] = intersection;
+                    else
+                        // again this pawn has no moves, so erase from move_map
+                        move_map.erase(coord);
+                }
 
                 vector<string> targets, space;
                 for (auto const& x : occupation_map) {
@@ -2506,8 +3020,6 @@ class Board {
                     // denote target coordinates
                     targets = target_map[coord];
                     intersection.clear();
-                    // vector<string> targets = reachable_target_coords(coord, symbol, color);
-                    // target_map[coord] = targets;
 
                     // if the coord/piece is pinned restrict targets vector
                     // as the pinned piece can only move along the pin space
@@ -2562,9 +3074,9 @@ class Board {
 
                 // reset the target map
                 if (color == pieces.w)
-                    targets_for_white = target_map;
+                    white_targets = target_map;
                 else
-                    targets_for_black = target_map;
+                    black_targets = target_map;
 
 
             }

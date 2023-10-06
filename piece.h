@@ -162,7 +162,7 @@ class Piece {
 
         }
 
-        int value (int piece) {
+        float value (int piece) {
 
             /* Returns the historically known value of a piece. 
             The value is normalized by a pawn value i.e. 1. 
@@ -183,7 +183,7 @@ class Piece {
             return 0;
         };
 
-        int value_from_symbol (char symbol) {
+        float value_from_symbol (char symbol) {
 
             /* Returns the historically known value of a piece. 
             The value is normalized by a pawn value i.e. 1. */

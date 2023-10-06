@@ -14,12 +14,40 @@ class Engine {
 
     public:
 
+        // init boards
         Board board_main;
         Board board_test;
+
+        // evaluation
+        float p;
+
 
         Engine(void) {
             cout << "load engine ..." << endl;
         };
+
+        // ---- evaluation methods ----
+        float count_material (int color) {
+
+            /* Returns the accounted material value as a single float. */
+
+            float cum;
+
+            // iterate through corresponding occupation map
+            for (auto const& x : board_main.get_occupation_map(color)) 
+                cum += board_main.pieces.value_from_symbol(x.second);
+
+            return cum;
+
+        }
+
+        float evaluate_individual_positions (int color) {
+
+            /* */
+
+        }
+
+
 
         /* test suites and simulations */
         void shannon_benchmark (int depth, bool visual=false) {
@@ -117,7 +145,7 @@ class Engine {
                     // repeat iteratively
                     counts += sequence_count_simulation(depth-1, visual);
                     // print("4", "test");
-                    board_test.active_undo_from_info(move);
+                    board_test.undo_active_move(move);
                     // print("5", "test");
                     // show board in console
                     if (visual) {

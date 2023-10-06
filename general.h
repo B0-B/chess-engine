@@ -36,6 +36,25 @@ bool contains_substring (string s, string ss) {
 
 };
 
+vector<string> intersect (vector<string> a, vector<string> b) {
+
+    /* Intersect two coordinate vectors or sets. */
+
+    vector<string> out;
+
+    if ( !a.size() || !b.size() )
+        return out;
+
+    for (int i = 0; i < a.size(); i++) {
+        if (contains_string(b, a[i]) && !contains_string(out, a[i])) {
+            out.push_back(a[i]);
+        }
+    }
+
+    return out
+    
+}
+
 void print (string message, string origin) {
     cout << "[" + origin + "]   " << message << endl;
 };
@@ -49,4 +68,13 @@ string lower_case (string s) {
     }
     return s;
 
+}
+
+template <typename Iter>
+size_t index_of(Iter first, Iter last, typename const std::iterator_traits<Iter>::value_type& x)
+{
+    size_t i = 0;
+    while (first != last && *first != x)
+      ++first, ++i;
+    return i;
 }

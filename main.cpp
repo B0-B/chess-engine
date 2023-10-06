@@ -68,15 +68,15 @@ int main (void) {
 
     // cout << "test " << boardObject.show_moves_for_active_color() << endl;
     // undo all moves
-//     boardObject.active_undo_from_info(move_5);
+//     boardObject.undo_active_move(move_5);
 //     boardObject.show_board();
-//     boardObject.active_undo_from_info(move_4);
+//     boardObject.undo_active_move(move_4);
 //     boardObject.show_board();
-    // boardObject.active_undo_from_info(move_3);
+    // boardObject.undo_active_move(move_3);
     // boardObject.show_board();
-    // boardObject.active_undo_from_info(move_2);
+    // boardObject.undo_active_move(move_2);
     // boardObject.show_board();
-    // boardObject.active_undo_from_info(move_1);
+    // boardObject.undo_active_move(move_1);
     // boardObject.show_board();
     // boardObject.show_pgn();
     // cout << "pgn finished." <<endl;
