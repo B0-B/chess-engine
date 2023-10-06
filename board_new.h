@@ -73,11 +73,10 @@ class Board {
 
     public:
 
-
-        // Init game parameters
-        int active_color = pieces.w;
-
         // ---- new method set ----
+
+        // Load the pieces
+        Piece pieces;
 
         int active_color = pieces.w;
 
@@ -91,12 +90,10 @@ class Board {
         map<string, char> white_symbol_occupation_map; // maps coord to symbol
         map<string, char> black_symbol_occupation_map;
 
-        // Load the pieces
-        Piece pieces;
+        // game tracking 
         map<int, vector<string>> pgn_history;
         int move_count = 1,
-            half_clock;
-        
+            half_clock = 0;
 
         // pawns
         string en_passant_coord = "-";
@@ -140,6 +137,33 @@ class Board {
         const vector<vector<int>> v_offset {{1,0}, {-1,0}};
         const vector<vector<int>> h_offset {{0,1}, {0,-1}};  
 
+        // constructor sequence
+        Board(void) {
+
+            print("Initialize ...", "board");
+            
+        }
+
+        void show_board () {
+            string coord;
+            string board_ascii;
+            string line = "▔▔";
+            cout << "test " << line << endl;
+            for (int f = 0; f < 8; f++)
+            {   
+                line ="|";
+                for (int r = 0; r < 8; r++)
+                {
+                    coord = get_coord_from_file_and_rank(f, r);
+                    if ((f + r) % 2 != 0) {
+                        // light square
+                    } else {
+
+                    }
+                }
+            }
+            
+        }
 
         // coordinate and symbol methods
         int get_color_from_symbol (char symbol) {
@@ -228,10 +252,21 @@ class Board {
 
         void clear () {
 
-            /* Removes all pieces from the board. */
+            /* Removes all pieces from the board and resets all parameters. */
 
-            for (int i = 0; i < 64; i++)
-                grid[i]["symbol"] = '_';
+            white_symbol_occupation_map.clear();
+            black_symbol_occupation_map.clear();
+            white_moves.clear();
+            black_moves.clear();
+            white_pins.clear();
+            black_pins.clear();
+            white_spaces.clear();
+            black_spaces.clear();
+            white_targets.clear();
+            black_targets.clear();
+            white_pins.clear();
+            pgn_history.clear();
+            move_count = 0;
             
         };
 
@@ -257,7 +292,6 @@ class Board {
             string coord;
             string moves = "";
             string castling_options = "KkQq-";
-
             
             // first exchange all slashes for unique symbols to avoid escapes
             while (delimiter_index != string::npos) {
@@ -379,9 +413,11 @@ class Board {
                 } 
 
             };
-
+            
             // initialize all possible moves for white
+            update_king_scopes(active_color);
             update_targets_and_moves(active_color);
+            
             // update_moves_from_targets(update_reachable_target_map(active_color), active_color);
             
         };
@@ -580,18 +616,32 @@ class Board {
             // piece specific cases
             int piece = pieces.from_symbol(symbol);
 
+            /* ---- appendix moves ---- */
+
             // check if pawn move leaves an en-passant possibility
             if (piece == pieces.Pawn) {
 
-                // int rank_origin = stoi(get_square_from_coord(origin_coord_str)["rank"]);
-                // map<string, string> target_square = get_square_from_coord(target_coord_str);
-                // int target_file = stoi(target_square["file"]),
-                //     target_rank = stoi(target_square["rank"]);
                 int rank_origin = get_file_and_rank_from_coord(origin_coord_str)[1];
                 vector<int> fr = get_file_and_rank_from_coord(target_coord_str);
                 int target_file = fr[0], target_rank = fr[1];
+
+                // 1) check if en-passant is captured and remove the captured pawn
+                if (target_coord_str == en_passant_coord) {
+                    vector<int> fr_en_passant = get_file_and_rank_from_coord(en_passant_coord);
+                    string capture_coord;
+                    char captured_pawn_symbol;
+                    if (color == pieces.w)
+                        captured_pawn_symbol = 'p';
+                    else
+                        captured_pawn_symbol = 'P';
+                    if (fr_en_passant[1] == 2) 
+                        capture_coord = get_coord_from_file_and_rank(fr_en_passant[0], fr_en_passant[1]+1);
+                    else
+                        capture_coord = get_coord_from_file_and_rank(fr_en_passant[0], fr_en_passant[1]-1);
+                    remove_symbol_at_coord(captured_pawn_symbol, capture_coord);
+                }
                 
-                // finally check if the pawn is moved from origin square for two ranks at once
+                // 2) finally check if the pawn is moved from origin square for two ranks at once
                 if ((active_color == pieces.w && rank_origin == 1 && target_rank == 3) || 
                     (active_color == pieces.b && rank_origin == 6 && target_rank == 4)) {
                     
@@ -635,7 +685,10 @@ class Board {
 
                     }
 
-                } else
+                } 
+                
+                // 3) otherwise erase the en-passant coordinate
+                else
 
                     en_passant_coord = '-';
 
@@ -689,8 +742,6 @@ class Board {
 
                 }
                 
-                
-
             }
                     
             // check if a rook moved to remove castling right
@@ -705,6 +756,13 @@ class Board {
                 else if (origin_coord_str == "H8")
                     castling_right_k_b = 0;
 
+            }
+            
+            // check if castling rights might be lost due to the move
+            if (!all_castling_rights_lost && (piece == pieces.King || piece == pieces.Rook)) {
+                if (castling_right_k_w + castling_right_q_w + castling_right_k_b + castling_right_q_b == 0) {
+                    all_castling_rights_lost = 1;
+                }
             }
 
             // denote the move and add to history
@@ -750,15 +808,34 @@ class Board {
             return snap;
         }
 
-
-        // chess rules and logic
-        // constructor sequence
-        Board(void) {
-
-            print("Initialize ...", "board");
-            
+        void revert (snapshot snap) {
+            /* Reverts board to snapshot. */
+            active_color = snap.color;
+            move_count = snap.move_count;
+            pgn_history = snap.pgn_history;
+            en_passant_coord = snap.en_passant_coord;
+            white_is_checked = snap.white_is_checked;
+            black_is_checked = snap.black_is_checked;
+            all_castling_rights_lost = snap.all_castling_rights_lost;
+            castling_right_k_w = snap.castling_right_k_w;
+            castling_right_q_w = snap.castling_right_q_w;
+            castling_right_k_b = snap.castling_right_k_b;
+            castling_right_q_b = snap.castling_right_q_b;
+            white_king_coord = snap.white_king_coord;
+            black_king_coord = snap.black_king_coord;
+            white_symbol_occupation_map = snap.white_occupation_map;
+            black_symbol_occupation_map = snap.black_occupation_map;
+            white_targets = snap.white_targets;
+            black_targets = snap.black_targets;
+            white_moves = snap.white_moves;
+            black_moves = snap.black_moves;
+            white_pins = snap.white_pins;
+            black_pins = snap.black_pins;
+            white_spaces = snap.white_spaces;
+            black_spaces = snap.black_spaces;
         }
 
+        // chess rules and logic
         bool can_castle_king_side (int color) {
             
             /* Checks if a color can castle king side. */
@@ -908,7 +985,7 @@ class Board {
                             //     out.push_back(target_coord);
 
                             // this makes more sense, only do not denote the target if it's a friendly piece
-                            if (!square_is_occupied_by_friendly_piece(color, target_coord))
+                            if (!square_is_occupied_by_color(color, target_coord))
                                 out.push_back(target_coord);
 
                         }
@@ -971,14 +1048,14 @@ class Board {
                                     if (piece == pieces.King) {
 
                                         // determine attacker color
-                                        int attacker_color;
-                                        if (color == pieces.w)
-                                            attacker_color = pieces.b;
-                                        else
-                                            attacker_color = pieces.w;
+                                        // int attacker_color;
+                                        // if (color == pieces.w)
+                                        //     attacker_color = pieces.b;
+                                        // else
+                                        //     attacker_color = pieces.w;
 
                                         // only consider the target square if its not protected
-                                        if (!square_is_attacked(target_coord, attacker_color)) {
+                                        if (!square_is_targeted(color, target_coord)) {
                                             out.push_back(target_coord);
                                         }
 
@@ -1082,8 +1159,7 @@ class Board {
                 pointer_piece,
                 pointer_color,
                 forward_rank,
-                curr_file, 
-                pawn_symbol;
+                curr_file;
             vector<int> fr;
             vector<string> spacing;
             string king_coord, 
@@ -1091,8 +1167,8 @@ class Board {
                    pointer;
             bool is_checked = 0,
                  was_checked_in_this_iteration = 0;
-            char pointer_symbol;
-            char pawn_symbol;
+            char pointer_symbol,
+                 pawn_symbol;
 
             // reset global vectors for direct insertion, and get color
             if (king_color == pieces.w) {
@@ -1314,7 +1390,7 @@ class Board {
             string coord;
             char symbol;
             vector<string> intersection, targets, moves;
-
+            
             // first determine the targets for active color anyway
             // as those will be crucial for the next move (i.e. enemy) 
             for (auto const& x : occupation_map) {
@@ -1352,10 +1428,10 @@ class Board {
                 }
 
             }
-
+            
             // check if provided color is in check
             if (color == pieces.w && white_is_checked || color == pieces.b && black_is_checked) {
-
+                
                 // get king coord
                 string king_coord;
                 map<string, vector<string>> enemys_targets;
@@ -1366,7 +1442,7 @@ class Board {
                     king_coord = black_king_coord;
                     enemys_targets = white_targets;
                 }
-
+                
                 // and king symbol from occupation mapping
                 char king_symbol = occupation_map[king_coord];
 
@@ -1494,16 +1570,17 @@ class Board {
                     pins = white_pins;
                 else
                     pins = black_pins;
-
+                
                 // check if the yet added pawn moves are allowed 
-                // if the pawn is pinned restrict it's moves further
-                for (auto const& x : move_map) {
-
-                    coord = x.first;
-                    moves = x.second;
-                    
+                // if the pawn is pinned restrict it's moves further [bug: alloc error]
+                for (auto const& y : move_map) {
+                    print("0", "test");
+                    print(y.first, "test");
+                    coord = y.first;
+                    moves = y.second;
+                    print("1", "test");
                     // check if the pawn is pinned
-                    if (pins.count(coord))
+                    if (pins.count(coord)) {
                         // select which moves are within the pins
                         intersection = intersect(moves, pins[coord]);
                         if (intersection.size())
@@ -1511,18 +1588,21 @@ class Board {
                         else
                             move_map.erase(coord);
                         continue;
-
-                    // otherwise check if it can block the check
-                    intersection = intersect(moves, spaces[0]);
-                    if (intersection.size())
-                        move_map[coord] = intersection;
-                    else
-                        // again this pawn has no moves, so erase from move_map
-                        move_map.erase(coord);
-
+                    }
+                        
+                    // print("2", "test");
+                    // // otherwise check if it can block the check
+                    // intersection = intersect(moves, spaces[0]);
+                    // print("3", "test");
+                    // if (intersection.size())
+                    //     move_map[coord] = intersection;
+                    // else
+                    //     // again this pawn has no moves, so erase from move_map
+                    //     move_map.erase(coord);
+                    // print("4", "test");
                 }
-
-                vector<string> targets, space;
+                
+                vector<string> space;
                 for (auto const& x : occupation_map) {
 
                     coord = x.first;
@@ -1607,7 +1687,7 @@ class Board {
 
 
             }
-
+            
         }
 
 };

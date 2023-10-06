@@ -96,7 +96,7 @@ class Piece {
         };
 
         const string symbols = "_PNBRQKpnbrqk";
-        
+        const string unicode[13] = {" ", "♟", "♞", "♝", "♜", "♛", "♚", "♙", "♘", "♗", "♖", "♕", "♔"};
 
         int is_white (char symbol) {
             return symbol >= 'A' && symbol <= 'Z' && symbol != '_'; // ? the last condition is redundant
@@ -190,6 +190,21 @@ class Piece {
             
             return value(from_symbol(symbol));
             
+        }
+
+        string to_unicode (char symbol) {
+
+            /* Returns corresponding unicode string. 
+            e.g. K -> ♚ */
+
+            int i;
+            for (i = 0; i < symbols.size(); i++) {
+                if (symbols[i] == symbol) {
+                    break;
+                }
+            }
+            return unicode[i];
+
         }
 
         string color_string (int color) {

@@ -35,99 +35,20 @@
 
 // #include "general.h"
 // #include "board.h"
-#include "engine.h"
+// #include "engine.h"
+#include "board_new.h"
 
 using namespace std;
 
 
 int main (void) {
 
-    // initialize a new board and pieces objects
-    // Piece pieces;
-    Board boardObject;
-    boardObject.load_starting_position();
-    boardObject.show_board();
-
-    // test bug which breaks shannon simulation
-    boardObject.show_active_color();
-    MoveInfo move_1 = boardObject.active_move("A2", "A4");
-    boardObject.show_board();
-    MoveInfo move_2 = boardObject.active_move("B7", "B5");
-    boardObject.show_board();
-    MoveInfo move_3 = boardObject.active_move("A4", "B5");
-    boardObject.show_board();
-    // MoveInfo move_4 = boardObject.active_move("F7", "F6");
-    // boardObject.show_board();
-    // MoveInfo move_5 = boardObject.active_move("D1", "H5");
-    // boardObject.show_board();
-    // boardObject.show_moves_for_active_color();
-    boardObject.show_pgn();
-    boardObject.show_call_stats();
-    // cout << "pgn finished." <<endl;
-    // boardObject.show_moves_for_active_color();
-
-    // cout << "test " << boardObject.show_moves_for_active_color() << endl;
-    // undo all moves
-//     boardObject.undo_active_move(move_5);
-//     boardObject.show_board();
-//     boardObject.undo_active_move(move_4);
-//     boardObject.show_board();
-    // boardObject.undo_active_move(move_3);
-    // boardObject.show_board();
-    // boardObject.undo_active_move(move_2);
-    // boardObject.show_board();
-    // boardObject.undo_active_move(move_1);
-    // boardObject.show_board();
-    // boardObject.show_pgn();
-    // cout << "pgn finished." <<endl;
-
-    // boardObject.show_active_color();
-    // move_1 = boardObject.active_move("E2", "E4");
-    // boardObject.show_board();
-    // boardObject.show_pgn();
+    Board _board;
+    string unicode = _board.pieces.to_unicode('K');
+    cout << unicode << endl;
+    _board.load_starting_position();
+    // _board.show_board();
     
-    // Engine engine;
-
-    // shannon number test (number of positions for diven depth)
-    // int depth = 5;
-    // engine.shannon_number_simulation(depth, 0, 0);
-    // engine.sequence_count_simulation(5, 0, 0);
-    // engine.shannon_benchmark(depth);
-    // engine.board_test.show_board();
-    // boardObject.show_moves_for_active_color();
-    // boardObject.show_move_count_for_active_color();
-
-    // play the scandinavian for testing
-    // boardObject.active_move("E2", "E4");
-    // boardObject.active_move("D7", "D5");
-    // boardObject.active_move("E4", "D5");
-    
-    // output
-    // boardObject.show_pgn();
-
-    // int id = 0;
-    // cout << "id test " << id << " " << boardObject.get_coord_from_id(id);
-    // boardObject.load_starting_position();
-    
-    // boardObject.show_half_clock();
-    // boardObject.show_move_count();
-
-    // boardObject.show_en_passant();
-    // boardObject.show_castling_rights();
-
-    // boardObject.refresh_position();
-
-
-    // boardObject.show_move_count_for_active_color();
-    // boardObject.show_moves_for_active_color();
-    // boardObject.show_reachable_squares_for_active_color();
-    
-    // boardObject.show_position_activity();
-    // boardObject.ignorant_move("E2", "E4");
-    // boardObject.ignorant_move("D7", "D5");
-    // boardObject.show_reachable_squares("E4");
-    // boardObject.show_material();
-    //boardObject.show_position_activity();
     
     return 0;
 }

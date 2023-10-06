@@ -51,7 +51,7 @@ vector<string> intersect (vector<string> a, vector<string> b) {
         }
     }
 
-    return out
+    return out;
     
 }
 
@@ -68,13 +68,4 @@ string lower_case (string s) {
     }
     return s;
 
-}
-
-template <typename Iter>
-size_t index_of(Iter first, Iter last, typename const std::iterator_traits<Iter>::value_type& x)
-{
-    size_t i = 0;
-    while (first != last && *first != x)
-      ++first, ++i;
-    return i;
 }
