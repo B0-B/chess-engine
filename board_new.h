@@ -165,6 +165,51 @@ class Board {
             
         }
 
+        void show_moves_for_active_color () {
+
+            /* Outputs all targets for active color. 
+            Key: origin coordinate
+            Value: vector of possible target coordinates. */
+            
+            string  col_str,
+                    target_string,
+                    coord;
+            vector<string> targets;
+            map<string, vector<string>> m;
+
+            if (active_color == pieces.w) {
+                col_str = "white";
+                m = white_moves;
+            } else {
+                m = black_moves;
+                col_str = "black";
+            }
+
+            cout << "moves for " << col_str << ":" << endl;
+            for (auto const& x : m) {
+
+                coord = x.first;
+                targets = x.second;
+
+                target_string = "";
+
+                for (int i = 0; i < targets.size(); i++) {   
+                    target_string += targets[i] + " ";
+                }
+                
+                cout << get_symbol_from_coord(coord) << " (" << coord << "): " << target_string << endl;
+
+            }
+
+        }
+
+        void show_occupation (int color) {
+            print("Occupation map for " + pieces.color_string(color), "board");
+            for (const auto& x: get_occupation_map(color)) {
+                cout << x.first << ": " << x.second << endl;
+            }
+        }
+
         // coordinate and symbol methods
         int get_color_from_symbol (char symbol) {
 
@@ -278,8 +323,8 @@ class Board {
 
             int piece, 
                 color, 
-                file = 1, 
-                rank = 8, 
+                file = 0, 
+                rank = 7, 
                 pieces_completely_parsed = 0,
                 active_color_parsed = 0,
                 castling_parsed = 0,
@@ -323,12 +368,12 @@ class Board {
                         // decrement rank
                         rank--;
                         // reset pointer to A file
-                        file = 1;
+                        file = 0;
                         continue;
                     // if integer is parsed shift file
                     } else if (isdigit(_char)) {
                         // integers account for file shifts
-                        file += _char - '0';
+                        file += _char - '0' - 1;
                         continue;
                     // finish parsing pieces on space
                     } else if (_char == ' ') {
@@ -417,8 +462,6 @@ class Board {
             // initialize all possible moves for white
             update_king_scopes(active_color);
             update_targets_and_moves(active_color);
-            
-            // update_moves_from_targets(update_reachable_target_map(active_color), active_color);
             
         };
         
@@ -834,6 +877,7 @@ class Board {
             white_spaces = snap.white_spaces;
             black_spaces = snap.black_spaces;
         }
+
 
         // chess rules and logic
         bool can_castle_king_side (int color) {

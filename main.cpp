@@ -47,6 +47,8 @@ int main (void) {
     string unicode = _board.pieces.to_unicode('K');
     cout << unicode << endl;
     _board.load_starting_position();
+    _board.show_occupation(_board.pieces.w);
+    _board.show_moves_for_active_color();
     // _board.show_board();
     
     
