@@ -4,6 +4,9 @@
 #include <string>
 #include <vector>
 #include <cmath>
+#include <fstream>
+#include <sstream>
+#include <regex>
 
 // include objects and libraries
 #include "moveInfo.h"
@@ -137,35 +140,66 @@ class Board {
         const vector<vector<int>> v_offset {{1,0}, {-1,0}};
         const vector<vector<int>> h_offset {{0,1}, {0,-1}};  
 
+        string board_ascii_template;
+
+
         // constructor sequence
         Board(void) {
 
             print("Initialize ...", "board");
-            
+            load_board_ascii();
+
+        }
+
+        void load_board_ascii () {
+
+            /* Loads the ascii board template from file to string variable. */
+
+            std::ifstream inFile;
+            inFile.open("board_ascii_template.txt"); //open the input file
+
+            std::stringstream strStream;
+            strStream << inFile.rdbuf(); //read the file
+            std::string str = strStream.str(); //str holds the content of the file
+
+            std::cout << str << "\n";
+            board_ascii_template = str;
+
         }
 
         void show_board () {
             string coord;
-            string board_ascii;
-            string line = "▔▔";
-            cout << "test " << line << endl;
-            for (int f = 0; f < 8; f++)
+            string board_ascii = board_ascii_template;
+            string out;
+            string symbol;
+            int ind = 0;
+            string square_number;
+            for (int r = 0; r < 8; r++)
             {   
-                line ="|";
-                for (int r = 0; r < 8; r++)
-                {
+                for (int f = 0; f < 8; f++)
+                {   
+                    ind++;
+                    if (ind < 10)
+                        square_number = "0" + to_string(ind);
+                    else
+                        square_number = to_string(ind);
                     coord = get_coord_from_file_and_rank(f, r);
-                    if ((f + r) % 2 != 0) {
-                        // light square
+                    coord = get_coord_from_file_and_rank(f, r);
+                    if (white_symbol_occupation_map.count(coord)) {
+                        symbol = pieces.to_unicode(white_symbol_occupation_map[coord]) + ' ';
+                    } else if (black_symbol_occupation_map.count(coord)) {
+                        symbol = pieces.to_unicode(black_symbol_occupation_map[coord]) + ' ';
                     } else {
-
+                        symbol = "  ";
                     }
+                    
+                    board_ascii = regex_replace(board_ascii, regex(square_number), symbol);
                 }
             }
-            
+            cout << board_ascii << endl;
         }
 
-        void show_moves_for_active_color () {
+        void show_moves (int color) {
 
             /* Outputs all targets for active color. 
             Key: origin coordinate
@@ -177,15 +211,13 @@ class Board {
             vector<string> targets;
             map<string, vector<string>> m;
 
-            if (active_color == pieces.w) {
-                col_str = "white";
+            if (color == pieces.w) {
                 m = white_moves;
             } else {
                 m = black_moves;
-                col_str = "black";
             }
 
-            cout << "moves for " << col_str << ":" << endl;
+            print("moves for " + pieces.color_string(color), "board");
             for (auto const& x : m) {
 
                 coord = x.first;
@@ -209,6 +241,7 @@ class Board {
                 cout << x.first << ": " << x.second << endl;
             }
         }
+
 
         // coordinate and symbol methods
         int get_color_from_symbol (char symbol) {
