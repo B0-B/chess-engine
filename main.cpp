@@ -49,6 +49,7 @@ int main (void) {
 
     _board.load_starting_position();
     _board.show_occupation(_board.pieces.w);
+    _board.show_targets(_board.pieces.w);
     _board.show_moves(_board.pieces.w);
     _board.show_board();
     

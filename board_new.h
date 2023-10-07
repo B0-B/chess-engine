@@ -168,22 +168,23 @@ class Board {
         }
 
         void show_board () {
-            string coord;
-            string board_ascii = board_ascii_template;
-            string out;
-            string symbol;
+
+            /* Shows the current board state in the console. 
+            The output is build from the board ascii template. */
+
+            string coord,
+                   board_ascii = board_ascii_template,
+                   out,
+                   symbol, 
+                   square_number;
             int ind = 0;
-            string square_number;
-            for (int r = 0; r < 8; r++)
-            {   
-                for (int f = 0; f < 8; f++)
-                {   
+            for (int r = 0; r < 8; r++) {   
+                for (int f = 0; f < 8; f++) {   
                     ind++;
                     if (ind < 10)
                         square_number = "0" + to_string(ind);
                     else
                         square_number = to_string(ind);
-                    coord = get_coord_from_file_and_rank(f, r);
                     coord = get_coord_from_file_and_rank(f, r);
                     if (white_symbol_occupation_map.count(coord)) {
                         symbol = pieces.to_unicode(white_symbol_occupation_map[coord]) + ' ';
@@ -197,13 +198,14 @@ class Board {
                 }
             }
             cout << board_ascii << endl;
+
         }
 
         void show_moves (int color) {
 
-            /* Outputs all targets for active color. 
+            /* Outputs all moves for active color. 
             Key: origin coordinate
-            Value: vector of possible target coordinates. */
+            Value: vector of possible move coordinates. */
             
             string  col_str,
                     target_string,
@@ -240,6 +242,42 @@ class Board {
             for (const auto& x: get_occupation_map(color)) {
                 cout << x.first << ": " << x.second << endl;
             }
+        }
+
+        void show_targets (int color) {
+
+            /* Outputs all targets for active color. 
+            Key: origin coordinate
+            Value: vector of target coordinates. */
+            
+            string  col_str,
+                    target_string,
+                    coord;
+            vector<string> targets;
+            map<string, vector<string>> m;
+
+            if (color == pieces.w) {
+                m = white_targets;
+            } else {
+                m = black_targets;
+            }
+
+            print("targets for " + pieces.color_string(color), "board");
+            for (auto const& x : m) {
+
+                coord = x.first;
+                targets = x.second;
+
+                target_string = "";
+
+                for (int i = 0; i < targets.size(); i++) {   
+                    target_string += targets[i] + " ";
+                }
+                
+                cout << get_symbol_from_coord(coord) << " (" << coord << "): " << target_string << endl;
+
+            }
+
         }
 
 
