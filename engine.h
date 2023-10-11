@@ -9,6 +9,7 @@
 
 // include objects
 #include "board.h" // board comes with pieces
+#include "snapshot.h"
 
 class Engine {
 
@@ -113,11 +114,11 @@ class Engine {
             int counts = 0;
 
             // draw the active move possibilities
-            map<string, vector<string>> moves = board_test.get_possible_moves_for_active_color();
+            map<string, vector<string>> moves = board_test.get_moves(board_test.active_color);
             
             string origin;
             vector<string> targets;
-            MoveInfo move;
+            snapshot move;
 
             // start
             std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now(); 
@@ -134,8 +135,8 @@ class Engine {
                     // print("2", "test");
                     
                     // make an active move from origin to i-th target
-                    move = board_test.active_move(origin, targets[i], 0);
-                    // print("3", "test");
+                    move = board_test.move(origin, targets[i], 0);
+                    
                     if (visual) {
                         if (clear)
                             clear_console();
@@ -145,7 +146,7 @@ class Engine {
                     // repeat iteratively
                     counts += sequence_count_simulation(depth-1, visual);
                     // print("4", "test");
-                    board_test.undo_active_move(move);
+                    board_test.revert(move);
                     // print("5", "test");
                     // show board in console
                     if (visual) {
