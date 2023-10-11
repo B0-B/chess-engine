@@ -15,7 +15,7 @@ class snapshot {
     public:
 
         int color = 0;
-        int move_count;
+        int full_moves;
         char symbol = '_';
 
         map<int, vector<string>> pgn_history;
