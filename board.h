@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <cstdio>
 #include <iostream>
 #include <map>
 #include <string>
@@ -161,7 +162,6 @@ class Board {
             strStream << inFile.rdbuf(); //read the file
             std::string str = strStream.str(); //str holds the content of the file
 
-            std::cout << str << "\n";
             board_ascii_template = str;
 
         }
@@ -293,7 +293,7 @@ class Board {
             /* Returns the piece color int from symbol char e.g. k -> 16, Q -> 8
             where 16 is black and 8 white. If the symbol is None '_' the return will be 0. */
 
-            __call__(__func__);
+            // __call__(__func__);
             if (pieces.is_white(symbol))
                 return 8;
             else if (symbol == '_')
@@ -368,6 +368,7 @@ class Board {
 
         // board operations
         void flip_active_color () {
+            /* Flips the active playing color. */
             if (active_color == pieces.w)
                 active_color = pieces.b;
             else
@@ -549,8 +550,6 @@ class Board {
             /* Loads all pieces to the board grid by using their 
             symbol values. Start position fen is loaded via fen parser.*/
 
-            __call__(__func__);
-
             if (verbose)
                 cout << "load starting position ..." << endl;
 
@@ -694,18 +693,19 @@ class Board {
             Will remove an empty object if the move is illegal. */
 
             // variables
-            char symbol = get_symbol_from_coord(origin_coord_str);
-            int color = get_color_from_symbol(symbol);
-            map<string, char> occupation_map = get_occupation_map(color);
-            snapshot snap;
+            const char symbol = get_symbol_from_coord(origin_coord_str);
+            const int color = get_color_from_symbol(symbol);
+            const map<string, char> occupation_map = get_occupation_map(color);
+            const snapshot snap = record_snapshot();
             map<string, vector<string>> targets = get_targets(color);
-            map<string, vector<string>> moves = get_targets(color); 
-            char captured_symbol = get_symbol_from_coord(target_coord_str); // denote captured symbol for later notation
+            map<string, vector<string>> moves = get_moves(color); 
+            const char captured_symbol = get_symbol_from_coord(target_coord_str); // denote captured symbol for later notation
 
             // check if the move is legal by probing all illegal conditions, 
             // except when it's forced, then skip
             if (!force) {
                 // wrong color is playing
+                cout << "test " << color << " " << active_color << " " << symbol << endl;
                 if (color != active_color) {
                     print("It's not " + pieces.color_string(color) + "'s turn.", "board");
                     return snap;
@@ -718,6 +718,7 @@ class Board {
                 // move not contained in allowed moves
                 if (!contains_string(moves[origin_coord_str], target_coord_str)) {
                     print(pieces.color_string(color) + "'s move " + origin_coord_str + "->" + target_coord_str + " is not legal.", "board");
+                    show_board();
                     return snap;
                 }
                 // target square is occupied by a friendly piece
@@ -729,23 +730,23 @@ class Board {
             }
 
             // save info to snapshot object
-            snap = record_snapshot();
+            // const snapshot snap = record_snapshot();
 
             // take action on board
             remove_symbol_at_coord(symbol, origin_coord_str);
             place_symbol_at_coord(symbol, target_coord_str);
 
             // piece specific cases
-            int piece = pieces.from_symbol(symbol);
+            const int piece = pieces.from_symbol(symbol);
 
             /* ---- appendix moves ---- */
 
             // check if pawn move leaves an en-passant possibility
             if (piece == pieces.Pawn) {
 
-                int rank_origin = get_file_and_rank_from_coord(origin_coord_str)[1];
-                vector<int> fr = get_file_and_rank_from_coord(target_coord_str);
-                int target_file = fr[0], target_rank = fr[1];
+                const int rank_origin = get_file_and_rank_from_coord(origin_coord_str)[1];
+                const vector<int> fr = get_file_and_rank_from_coord(target_coord_str);
+                const int target_file = fr[0], target_rank = fr[1];
 
                 // 1) check if en-passant is captured and remove the captured pawn
                 if (target_coord_str == en_passant_coord) {
@@ -773,8 +774,8 @@ class Board {
                     int sign = 1, 
                         neighbour_file,
                         en_passant_target_rank;
-                    string neighbour_coord;
-                    string en_passant_target_rank_str;
+                    string neighbour_coord, 
+                           en_passant_target_rank_str;
                     
                     // iterate through left and right neighbouring squares
                     for (int x = 0; x < 2; x++) {
@@ -881,9 +882,21 @@ class Board {
             }
             
             // check if castling rights might be lost due to the move
-            if (!all_castling_rights_lost && (piece == pieces.King || piece == pieces.Rook)) {
-                if (castling_right_k_w + castling_right_q_w + castling_right_k_b + castling_right_q_b == 0) {
-                    all_castling_rights_lost = 1;
+            if (!all_castling_rights_lost) {
+                // check if castling rights might be lost due to a king or rook move
+                if (piece == pieces.King || piece == pieces.Rook && 
+                    castling_right_k_w + castling_right_q_w + castling_right_k_b + castling_right_q_b == 0)
+                        all_castling_rights_lost = 1;
+                // also check if a rook is captured to remove the castling rights on the corresponding side
+                if (captured_symbol == 'R' || captured_symbol == 'r') {
+                    if (target_coord_str == "A1")
+                        castling_right_q_w = 0;
+                    else if (target_coord_str == "A8")
+                        castling_right_k_w = 0;
+                    else if (target_coord_str == "H1")
+                        castling_right_q_b = 0;
+                    else if (target_coord_str == "H8")
+                        castling_right_k_b = 0;
                 }
             }
 
@@ -896,16 +909,28 @@ class Board {
             update_king_scopes(active_color);
             update_targets_and_moves(active_color);
 
+            // check if a mate was delivered
+            // i.e. if the active color doesn't have any moves left.
+            // code here ...
+            if (true) {
+                if (get_moves(active_color).empty()) {
+                    print(pieces.color_string(active_color) + " got checkmated!", "board");
+                }
+            }
+
+            return snap;
+
         }
 
         void record_move (string origin_coord_str, string target_coord_str, char origin_symbol, int origin_color, char target_symbol) {
 
             /* Records a move in PGN notation and appends it to history. */
 
-            string move_notation = move_to_pgn(origin_coord_str, target_coord_str, origin_symbol, origin_color, target_symbol);
             if (origin_color == pieces.w)
                 pgn_history[full_moves] = {};
-            pgn_history[full_moves].push_back(move_notation);
+            pgn_history[full_moves].push_back(
+                move_to_pgn(origin_coord_str, target_coord_str, origin_symbol, origin_color, target_symbol)
+            );
 
         }
 
@@ -979,33 +1004,32 @@ class Board {
         // chess rules and logic
         bool can_castle_king_side (int color) {
             
-            /* Checks if a color can castle king side. */
+            /* Checks if a color can castle king side.  
+            This method assumes that there is no check which would prevent this. */
 
+            // shortcut if there is no castling rights
             if (all_castling_rights_lost)
-
                 return 0;
 
-            else if (color == pieces.w && !white_is_checked || color == pieces.b && !black_is_checked) {
+            // it was checked already if in check or not
+            // if in check this method will not be called
+            if (color == pieces.w && castling_right_k_w) {
 
-                if (color == pieces.w && castling_right_k_w) {
+                if (!square_is_occupied("F1") && 
+                    !square_is_occupied("G1") && 
+                    !square_is_targeted(color, "F1") && 
+                    !square_is_targeted(color, "G1"))
+                    return 1;
 
-                    if (!square_is_occupied("F1") && 
-                        !square_is_occupied("G1") && 
-                        !square_is_targeted(color, "F1") && 
-                        !square_is_targeted(color, "G1"))
-                        return 1;
-                    
-                } else if (color == pieces.b && castling_right_k_b) {
+            } else if (color == pieces.b && castling_right_k_b) {
 
-                    if (!square_is_occupied("F8") && 
-                        !square_is_occupied("G8") && 
-                        !square_is_targeted(color, "F8") && 
-                        !square_is_targeted(color, "G8"))
-                        return 1;
+                if (!square_is_occupied("F8") && 
+                    !square_is_occupied("G8") && 
+                    !square_is_targeted(color, "F8") && 
+                    !square_is_targeted(color, "G8"))
+                    return 1;
 
-                }
-
-            } 
+            }
             
             return 0;
 
@@ -1016,62 +1040,50 @@ class Board {
             /* Checks if a color can castle queen side. */
 
             if (all_castling_rights_lost)
-
                 return 0;
 
-            else if (color == pieces.w && !white_is_checked || color == pieces.b && !black_is_checked) {
+            if (color == pieces.w && castling_right_q_w) {
 
-                if (color == pieces.w && castling_right_q_w) {
+                if (!square_is_occupied("C1") && 
+                    !square_is_occupied("D1") && 
+                    !square_is_targeted(color, "C1") && 
+                    !square_is_targeted(color, "D1"))
+                    return 1;
+                
+            } else if (color == pieces.b && castling_right_q_b) {
 
-                    if (!square_is_occupied("C1") && 
-                        !square_is_occupied("D1") && 
-                        !square_is_targeted(color, "C1") && 
-                        !square_is_targeted(color, "D1"))
-                        return 1;
-                    
-                } else if (color == pieces.b && castling_right_q_b) {
+                if (!square_is_occupied("C8") && 
+                    !square_is_occupied("D8") && 
+                    !square_is_targeted(color, "C8") && 
+                    !square_is_targeted(color, "D8"))
+                    return 1;
 
-                    if (!square_is_occupied("C8") && 
-                        !square_is_occupied("D8") && 
-                        !square_is_targeted(color, "C8") && 
-                        !square_is_targeted(color, "D8"))
-                        return 1;
-
-                }
-
-            } 
+            }
             
             return 0;
 
         };
 
-        bool inside_bounds (int rank, int file) {
+        bool inside_bounds (int file, int rank) {
 
             /* Checks if the rank and file integer provided map to a valid chess square. */
 
             // simply check if the indices lie within the boundaries
-            return rank >= 0 && rank < 8 && file >= 0 && file < 8;
-            
-        };
+            return rank > -1 && rank < 8 && file > -1 && file < 8;
+        }
 
         vector<string> reachable_target_coords (string coord_str, char symbol, int color) {
 
             /* 
-            Returns a string vector of reachable target coordinates. 
-            If the coord_str is empty ('_') the output vector will be empty as well.
+            Returns a string vector of reachable target coordinates.
             */
 
-            __call__(__func__);
             vector<string> out = {};
-            // map <string, string> square = get_square_from_coord(coord_str);
-            // char symbol = square["symbol"][0];
             
-            // cut short in case the square is empty
-            if (symbol == '_') {return out;}
 
             vector<vector<int>> decrement;
             // int color = get_color_from_symbol(symbol);
-            int piece = pieces.from_symbol(symbol);
+            const int piece = pieces.from_symbol(symbol);
 
             // extract file and rank from origin coord
             string target_coord;
@@ -1089,7 +1101,9 @@ class Board {
                 screeningDirections.push_back('d');
             else if (piece == pieces.Rook)
                 screeningDirections = {'v', 'h'};
-            else if (piece == pieces.Queen || piece == pieces.King)
+            // else if (piece == pieces.Queen || piece == pieces.King)
+            //     screeningDirections = {'v', 'h', 'd'};
+            else
                 screeningDirections = {'v', 'h', 'd'};
                 
             // iterate through selected cases
@@ -1098,8 +1112,10 @@ class Board {
                 if (screeningDirections[i] == 'p') { // edge case for pawn
 
                     int sign=1, steps=1;
-                    if (color == pieces.b) sign = -1;
-                    if ((sign == 1 && rank == 1) || (sign == -1 && rank == 6)) steps = 2;
+                    if (color == pieces.b) 
+                        sign = -1;
+                    if ((sign == 1 && rank == 1) || (sign == -1 && rank == 6)) 
+                        steps = 2;
 
                     /* push forward */
                     // for loop is needed if steps=2 from origin
@@ -1115,9 +1131,11 @@ class Board {
 
                     /* captures */
                     for (int i = 0; i < 2; i++) {
-                        if (inside_bounds(file+pow(-1.,i), rank+sign)) {
+
+                        if (inside_bounds(file+(2*i-1), rank+sign)) {
                             
-                            target_coord = get_coord_from_file_and_rank(file+pow(-1.,i), rank+sign);
+                            // target_coord = get_coord_from_file_and_rank(file+pow(-1.,i), rank+sign);
+                            target_coord = get_coord_from_file_and_rank(file+(2*i-1), rank+sign);
 
                             // this coord should always be pushed to restrict enemy king 
                             // if (square_is_occupied_by_enemy(color, target_coord)) 
@@ -1128,17 +1146,20 @@ class Board {
                                 out.push_back(target_coord);
 
                         }
+
                     }
                     
                     /* en-passant */
                     if (en_passant_coord != "-") {
                         // check if the selected pawn is next to en-passant coord
-                        vector<int> fr = get_file_and_rank_from_coord(coord_str);
-                        int ep_file = fr[0], ep_rank = fr[1];
+                        const vector<int> fr = get_file_and_rank_from_coord(coord_str);
+                        // int ep_file = fr[0], ep_rank = fr[1];
                         // int ep_fil = stoi(ep_square["file"]);
-                        if (rank == ep_rank-sign && (file+1 == ep_file || file-1 == ep_file))
+                        if (rank == fr[1]-sign && (file+1 == fr[0] || file-1 == fr[0]))
                             out.push_back(en_passant_coord);
                     }
+
+                    continue;
                     
                 } else if (screeningDirections[i] == 'n') { // edge case for knight
                     int r, f;
@@ -1147,10 +1168,13 @@ class Board {
                         f = file + n_offset[i][1];
                         if (inside_bounds(r, f)) {
                             target_coord = get_coord_from_file_and_rank(f, r);
-                            if (!square_is_occupied(target_coord) || square_is_occupied_by_enemy(color, target_coord))
+                            // if (!square_is_occupied(target_coord) || square_is_occupied_by_enemy(color, target_coord))
+                            // improved: instead ask if square is not occupied by a friendly piece -> only one operation
+                            if (!square_is_occupied_by_color(color, target_coord))
                                 out.push_back(target_coord);
                         }
                     }
+                    continue;
                 } else if (screeningDirections[i] == 'd')   // load diagonal decrementation coords
                     decrement = d_offset;
                 else if (screeningDirections[i] == 'v')   // load vertical decrementation coords
@@ -1159,86 +1183,86 @@ class Board {
                     decrement = h_offset;
 
                 // decrementation algorithm for v, h, d
-                if (screeningDirections[i] == 'v' || screeningDirections[i] == 'h' || screeningDirections[i] == 'd') {
+                // code continues if piece is not a pawn or knight
+                // start iterate into scoper directions
+                int r, f, steps;
                     
-                    int r, f, steps;
-                    
-                    if (piece == pieces.King)
-                        steps = 2; // will screen only for 1 step
-                    else
-                        steps = 8; // 7 steps
+                if (piece == pieces.King)
+                    steps = 2; // will screen only for 1 step
+                else
+                    steps = 8; // 7 steps
 
-                    // iterate direction
-                    for (int i = 0; i < decrement.size(); i++) {
+                // iterate direction
+                for (int i = 0; i < decrement.size(); i++) {
 
-                        for (int step = 1; step < steps; step++) {
+                    for (int step = 1; step < steps; step++) {
 
-                            r = rank + step * decrement[i][0],
-                            f = file + step * decrement[i][1];
+                        r = rank + step * decrement[i][0],
+                        f = file + step * decrement[i][1];
+
+                        // break scoping if inside bounds
+                        if (!inside_bounds(r, f))
+                            break;
+                        
+                        // otherwise continue 
+                        target_coord = get_coord_from_file_and_rank(f, r);
+                        if (square_is_occupied_by_enemy(color, target_coord)) {
                             
-                            if (inside_bounds(r, f)) {
-                            
-                                target_coord = get_coord_from_file_and_rank(f,r);
-                                
-                                if (square_is_occupied_by_enemy(color, target_coord)) {
-                                    
-                                    /* for the king to take on target square it needs to be 
-                                    decided if the target coord is protected */
-                                    if (piece == pieces.King) {
+                            /* for the king to take on target square it needs to be 
+                            decided if the target coord is protected */
+                            if (piece == pieces.King) {
 
-                                        // determine attacker color
-                                        // int attacker_color;
-                                        // if (color == pieces.w)
-                                        //     attacker_color = pieces.b;
-                                        // else
-                                        //     attacker_color = pieces.w;
+                                // determine attacker color
+                                // int attacker_color;
+                                // if (color == pieces.w)
+                                //     attacker_color = pieces.b;
+                                // else
+                                //     attacker_color = pieces.w;
 
-                                        // only consider the target square if its not protected
-                                        if (!square_is_targeted(color, target_coord)) {
-                                            out.push_back(target_coord);
-                                        }
-
-                                    } 
-
-                                    // all other pieces can take the piece without regards
-                                    else {
-                                        out.push_back(target_coord);
-                                    }
-
-                                    break;
-
-                                } else if (!square_is_occupied(target_coord)) 
-                                    
+                                // only consider the target square if its not protected
+                                if (!square_is_targeted(color, target_coord)) {
                                     out.push_back(target_coord);
-                                    
-                                else
+                                }
 
-                                    // break when the quare is occupied by friendly piece
-                                    break;
+                            } 
 
+                            // all other pieces can take the piece without regards
+                            else {
+                                out.push_back(target_coord);
                             }
+
+                            break;
+
+                        } else if (!square_is_occupied(target_coord)) 
                             
-                        }
+                            out.push_back(target_coord);
+                            
+                        else
+
+                            // break when the quare is occupied by friendly piece
+                            break;
+                        
                     }
                 }
                 
             }
             
+            // this is wrong, as castling square is not a scoping square
             // check for castling opportunity in case of king
-            if (piece == pieces.King) {
-                if (can_castle_king_side(color)) {
-                    if (color == pieces.w) 
-                        out.push_back("G1");
-                    else
-                        out.push_back("G8");
-                }
-                if (can_castle_queen_side(color)) {
-                    if (color == pieces.w) 
-                        out.push_back("C1");
-                    else
-                        out.push_back("C8");
-                }
-            }
+            // if (piece == pieces.King) {
+            //     if (can_castle_king_side(color)) {
+            //         if (color == pieces.w) 
+            //             out.push_back("G1");
+            //         else
+            //             out.push_back("G8");
+            //     }
+            //     if (can_castle_queen_side(color)) {
+            //         if (color == pieces.w) 
+            //             out.push_back("C1");
+            //         else
+            //             out.push_back("C8");
+            //     }
+            // }
 
             return out;
 
@@ -1258,22 +1282,24 @@ class Board {
             color: friendly color */
             // flip the color to search for enemy occupation map
             if (color == pieces.w)
-                color = pieces.b;
+                return square_is_occupied_by_color (pieces.b, coord_str);
             else
-                color = pieces.w;
-            return square_is_occupied_by_color (color, coord_str);
+                return square_is_occupied_by_color (pieces.w, coord_str);
         }
 
         bool square_is_targeted (int color, string coord_str) {
+
             /* Checks if a square is targeted by opposing color.
             Provided color is the friendly color. */
-            map<string, vector<string>> targets;
+            
+            int enemy_color;
             if (color == pieces.w)
-                targets = black_targets;
+                enemy_color = pieces.b;
             else
-                targets = white_targets;
+                enemy_color = pieces.w;
+
             // iterate through targets
-            for (auto const& x : targets) {
+            for (auto const& x : get_targets(enemy_color)) {
                 if (contains_string(x.second, coord_str))
                     return 1;
             }
@@ -1356,11 +1382,11 @@ class Board {
                         r = rank + step * offs[ind][1];
                         
                         // break offset direction search if exceeds the board
-                        if (!inside_bounds(r, f))
+                        if (!inside_bounds(f, r))
                             break;
 
                         // compute pointer info
-                        pointer = get_coord_from_file_and_rank(r, f);
+                        pointer = get_coord_from_file_and_rank(f, r);
                         pointer_symbol = get_symbol_from_coord(pointer);
                         pointer_piece = pieces.from_symbol(pointer_symbol);
 
@@ -1456,8 +1482,8 @@ class Board {
             for (int k = 0; k < n_offset.size(); k++) {
                 
                 // shift pointer by one offset step
-                r = rank + n_offset[k][0];
-                f = file + n_offset[k][1];
+                f = rank + n_offset[k][0];
+                r = file + n_offset[k][1];
                 
                 // break offset direction search if exceeds the board
                 if (!inside_bounds(r, f))
@@ -1491,24 +1517,25 @@ class Board {
                 forward_rank = rank - 1;
             }
             for (int it = 0; it < 2; it++) {
-                curr_file = file + pow(-1, it);
-                if (!inside_bounds(forward_rank, curr_file)) {
-                    // reuse pointer variables
-                    pointer = get_coord_from_file_and_rank(curr_file, forward_rank);
-                    pointer_symbol = get_symbol_from_coord(pointer);
-                    pointer_color = get_color_from_symbol(pawn_symbol);
-                    pointer_piece = pieces.from_symbol(pawn_symbol);
-                    if (pointer_piece == pieces.Pawn && pointer_color != king_color) {
-                        // pointer is enemy pawn.
+                // curr_file = file + pow(-1, it);
+                curr_file = file + 2 * it - 1;
+                // check if the current file and forward rank do not exceed the bounds
+                if (!inside_bounds(curr_file, forward_rank)) 
+                    continue;
+                // reuse pointer variables
+                pointer = get_coord_from_file_and_rank(curr_file, forward_rank);
+                pointer_symbol = get_symbol_from_coord(pointer);
+                pointer_color = get_color_from_symbol(pawn_symbol);
+                pointer_piece = pieces.from_symbol(pawn_symbol);
+                if (pointer_piece == pieces.Pawn && pointer_color != king_color) {
+                    // pointer is enemy pawn.
                         // add the pawn to check coords, ignore spaces by nature.
-                        check_coords.push_back(pointer);
-                        is_checked = 1;
-                        break;
-                    }
+                    check_coords.push_back(pointer);
+                    is_checked = 1;
+                    break;
                 }
                     
             }
-            
 
             // denote the check globally if it was detected
             if (is_checked) {
@@ -1644,10 +1671,10 @@ class Board {
                     move_map[king_coord] = escape_coords;
                     
                     // analyze the resulting escape coords
-                    if (!escape_coords.size()) {
-                        // check mate as no escape routes are left
-                        print(pieces.color_string(color) + " king has no escape routes, check mate!", "board");
-                    }
+                    // if (!escape_coords.size()) {
+                    //     // check mate as no escape routes are left
+                    //     print(pieces.color_string(color) + " king has no escape routes, check mate!", "board");
+                    // }
                     
                 }
 
@@ -1807,11 +1834,12 @@ class Board {
                             intersection = intersect(targets, space);
                         }
 
-                        // only override the move map
+                        // only override the move map if there are any valid moves left
                         if (intersection.size())
                             move_map[coord] = intersection;
 
                         // also check if the scoper can be captured by the pinned piece
+                        // not sure if this will work, as another scoper could evtl. be captured
                         if (color == pieces.w) {
                             intersection = intersect(targets, black_scopers); // ?
                         } else {
@@ -1821,7 +1849,7 @@ class Board {
                         // if the scoper is included, add it's coord to move map
                         if (intersection.size()) {
                             if (move_map.count(coord))
-                                move_map[coord] = {};
+                                move_map[coord].clear();
                             move_map[coord].push_back(intersection[0]);
                         }
 
@@ -1830,22 +1858,22 @@ class Board {
                     // otherwise append targets as valid moves
                     else
                         move_map[coord] = targets;
-                    
-                    // append castle moves if symbol is a king
-                    if (!all_castling_rights_lost) {
-                        if (symbol == 'K') {
-                            if (can_castle_king_side(pieces.w))
-                                move_map[white_king_coord].push_back("G1");
-                            if (can_castle_queen_side(pieces.w))
-                                move_map[white_king_coord].push_back("C1");
-                        } else if (symbol == 'k') {
-                            if (can_castle_king_side(pieces.b))
-                                move_map[black_king_coord].push_back("G8");
-                            if (can_castle_queen_side(pieces.b))
-                                move_map[black_king_coord].push_back("C8");
-                        }
-                    }
 
+                }
+
+                // since color is not checked, append castle moves if privileges exist
+                if (!all_castling_rights_lost) {
+                    if (color == pieces.w) {
+                        if (can_castle_king_side(pieces.w))
+                            move_map[white_king_coord].push_back("G1");
+                        if (can_castle_queen_side(pieces.w))
+                            move_map[white_king_coord].push_back("C1");
+                    } else {
+                        if (can_castle_king_side(pieces.b))
+                            move_map[black_king_coord].push_back("G8");
+                        if (can_castle_queen_side(pieces.b))
+                            move_map[black_king_coord].push_back("C8");
+                    }
                 }
 
             }

@@ -9,7 +9,7 @@
 
 // include objects
 #include "board.h" // board comes with pieces
-#include "snapshot.h"
+// #include "snapshot.h"
 
 class Engine {
 
@@ -42,11 +42,11 @@ class Engine {
 
         }
 
-        float evaluate_individual_positions (int color) {
+        // float evaluate_individual_positions (int color) {
 
-            /* */
+        //     /* */
 
-        }
+        // }
 
 
 
@@ -76,7 +76,8 @@ class Engine {
             print("Start sequence count simulation test:", "Engine");
             // setup test board from start
             board_test.load_starting_position(0);
-            
+            board_test.update_targets_and_moves(board_test.active_color);
+            board_test.show_moves(board_test.pieces.w);
             int s;
 
             for (int d = 1; d <= depth; d++) {
@@ -121,7 +122,7 @@ class Engine {
             snapshot move;
 
             // start
-            std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now(); 
+            // std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now(); 
             // print("0", "test");
             for (auto const& x : moves) {
                 
@@ -135,7 +136,7 @@ class Engine {
                     // print("2", "test");
                     
                     // make an active move from origin to i-th target
-                    move = board_test.move(origin, targets[i], 0);
+                    move = board_test.move(origin, targets[i], 1);
                     
                     if (visual) {
                         if (clear)

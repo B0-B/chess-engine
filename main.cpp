@@ -35,24 +35,27 @@
 
 // #include "general.h"
 // #include "board.h"
-// #include "engine.h"
-#include "board_new.h"
+#include "engine.h"
+// #include "board_new.h"
 
 using namespace std;
 
 
 int main (void) {
 
-    Board _board;
+    // Board _board;
 
-    cout << "test unicode: " << _board.pieces.to_unicode('B'); 
+    // cout << "test unicode: " << _board.pieces.to_unicode('B'); 
 
-    _board.load_starting_position();
+    // _board.load_starting_position();
     // _board.show_occupation(_board.pieces.w);
-    _board.show_targets(_board.pieces.w);
-    _board.show_moves(_board.pieces.w);
-    _board.show_board();
+    // _board.show_targets(_board.pieces.w);
+    // _board.show_moves(_board.pieces.w);
+    // _board.show_board();
     
+    Engine ce;
+    ce.board_test.show_board();
+    ce.shannon_number_simulation(4, 0, 1);
     
     return 0;
 }
