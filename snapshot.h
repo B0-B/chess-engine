@@ -16,7 +16,6 @@ class snapshot {
 
         int color = 0;
         int full_moves;
-        char symbol = '_';
 
         map<int, vector<string>> pgn_history;
         string en_passant_coord = "-";
