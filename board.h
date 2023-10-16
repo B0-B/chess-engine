@@ -901,12 +901,20 @@ class Board {
             }
 
             // denote the move and add to history
-            record_move(origin_coord_str, target_coord_str, symbol, color, captured_symbol);
+            // except when a move is forced (for performance reasons)
+            if (!force)
+                record_move(origin_coord_str, target_coord_str, symbol, color, captured_symbol);
 
-            // update board
-            tap_clock();
+            // update move counts (only if not forced)
+            if (!force)
+                tap_clock();
+                
             flip_active_color();
+
+            // update the king scopes // only after 2nd half move, because checks and pins aren't possibe (dismissed)
             update_king_scopes(active_color);
+
+            // finally update targets
             update_targets_and_moves(active_color);
 
             // check if a mate was delivered
@@ -1388,6 +1396,12 @@ class Board {
                         // compute pointer info
                         pointer = get_coord_from_file_and_rank(f, r);
                         pointer_symbol = get_symbol_from_coord(pointer);
+                        pointer_color = get_color_from_symbol(pointer_symbol);
+
+                        // cut short if the king is is next to a friendly piece
+                        if (step == 1 && pointer_color == king_color)
+                            break;
+
                         pointer_piece = pieces.from_symbol(pointer_symbol);
 
                         // break direction if a pawn is hit, as they will be calculated seperately
@@ -1400,7 +1414,6 @@ class Board {
                             continue;
                         }
                         
-                        pointer_color = get_color_from_symbol(pointer_symbol);
 
                         // is occupied by enemy
                         if (pointer_color != king_color) {
@@ -1472,6 +1485,8 @@ class Board {
 
                         }
 
+
+
                     }
 
                 }
@@ -1529,7 +1544,7 @@ class Board {
                 pointer_piece = pieces.from_symbol(pawn_symbol);
                 if (pointer_piece == pieces.Pawn && pointer_color != king_color) {
                     // pointer is enemy pawn.
-                        // add the pawn to check coords, ignore spaces by nature.
+                    // add the pawn to check coords, ignore spaces by nature.
                     check_coords.push_back(pointer);
                     is_checked = 1;
                     break;
