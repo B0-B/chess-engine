@@ -57,5 +57,16 @@ int main (void) {
     ce.board_test.show_board();
     ce.shannon_number_simulation(4, 0, 1);
     
+    // vector<int> vec;
+    // vec.reserve(100);
+    // for (size_t i = 0; i < 10; i++)
+    // {
+    //     /* code */
+    //     vec.push_back(i);
+    // }
+    // cout << vec[10] << endl;
+    // cout << vec.size() << endl;
+    
+
     return 0;
 }

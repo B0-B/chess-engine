@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <cstdio>
 #include <iostream>
+#include <unordered_map>
 #include <map>
 #include <string>
 #include <vector>
@@ -142,12 +143,66 @@ class Board {
 
         string board_ascii_template;
 
+        // board pointer variables, scope and target context
+        // these variables are dynamically used during scope and move search
+        int file, 
+            rank, 
+            f, 
+            r,
+            pointer_piece,
+            pointer_color,
+            forward_rank,
+            curr_file;
+        vector<std::vector<int>> offs; // 2D offset selector
+        vector<int> fr;
+        vector<string> spacing;
+        string king_coord, 
+               first_friendly_coord,
+               king_target,
+               coord,
+               pointer;
+        bool is_checked = 0,
+             was_checked_in_this_iteration = 0;
+        char pointer_symbol,
+             pawn_symbol,
+             symbol;
+        map<string, vector<string>> target_map, 
+                                    move_map, 
+                                    pins, 
+                                    spaces;
+        map<string, char> occupation_map;
+        vector<string> intersection, 
+                       targets, 
+                       moves, 
+                       pre_targets,
+                       king_targets,
+                       escape_coords;
 
         // constructor sequence
         Board(void) {
 
             print("Initialize ...", "board");
             load_board_ascii();
+            reserve_pointers();
+
+        }
+
+        void reserve_pointers () {
+
+            check_coords.reserve(2);
+            black_scopers.reserve(5);
+            white_scopers.reserve(5);
+
+            // pointer variables
+            offs.reserve(8);
+            fr.reserve(2);
+            spacing.reserve(6);
+            intersection.reserve(6);
+            targets.reserve(28);
+            pre_targets.reserve(28);
+            moves.reserve(28);
+            king_targets.reserve(8);
+            escape_coords.reserve(7);
 
         }
 
@@ -1323,25 +1378,30 @@ class Board {
             for attackers, checks and denote pinned coordinates and space to a checking attacker
             i.e. a vector of empty in-between squares. */
             
-            // declarevariables
-            vector<std::vector<int>> offs; // 2D offset vector
-            int file, 
-                rank, 
-                f, 
-                r,
-                pointer_piece,
-                pointer_color,
-                forward_rank,
-                curr_file;
-            vector<int> fr;
-            vector<string> spacing;
-            string king_coord, 
-                   first_friendly_coord,
-                   pointer;
-            bool is_checked = 0,
-                 was_checked_in_this_iteration = 0;
-            char pointer_symbol,
-                 pawn_symbol;
+            // declare king scope variables
+            // vector<std::vector<int>> offs; // 2D offset vector
+            // int file, 
+            //     rank, 
+            //     f, 
+            //     r,
+            //     pointer_piece,
+            //     pointer_color,
+            //     forward_rank,
+            //     curr_file;
+            // vector<int> fr;
+            // vector<string> spacing;
+            // string king_coord, 
+            //        first_friendly_coord,
+            //        pointer;
+            // bool is_checked = 0,
+            //      was_checked_in_this_iteration = 0;
+            // char pointer_symbol,
+            //      pawn_symbol;
+            
+            // reset dynamic variables
+            first_friendly_coord = "",
+            is_checked = 0,
+            was_checked_in_this_iteration = 0;
 
             // reset global vectors for direct insertion, and get color
             if (king_color == pieces.w) {
@@ -1571,17 +1631,27 @@ class Board {
             Should be called after king scope was updated. */
 
             // init new empty dummy maps and variables
-            map<string, vector<string>> target_map, 
-                                        move_map, 
-                                        pins, 
-                                        spaces;
-            map<string, char> occupation_map = get_occupation_map(color);
-            string coord;
-            char symbol;
-            vector<string> intersection, 
-                           targets, 
-                           moves, 
-                           pre_targets;
+            // map<string, vector<string>> target_map, 
+            //                             move_map, 
+            //                             pins, 
+            //                             spaces;
+            // map<string, char> occupation_map = get_occupation_map(color);
+            // string coord;
+            // char symbol;
+            // vector<string> intersection, 
+            //                targets, 
+            //                moves, 
+            //                pre_targets;
+
+            occupation_map = get_occupation_map(color);
+            intersection.clear();
+            targets.clear(); 
+            moves.clear(); 
+            pre_targets.clear();
+            target_map.clear();
+            move_map.clear();
+            pins.clear();
+            spaces.clear();
             
             // first determine the targets for active color anyway
             // as those will be crucial for the next move (i.e. enemy) 
@@ -1655,15 +1725,14 @@ class Board {
                 char king_symbol = occupation_map[king_coord];
 
                 // draw targets for the attacked king, the targets were already computed
-                vector<string> king_targets = target_map[king_coord];
+                // king_targets = target_map[king_coord];
 
                 // determine king escape squares
-                string king_target;
-                vector<string> escape_coords;
+                escape_coords.clear();
                 bool target_is_attacked;
-                for (int i = 0; i < king_targets.size(); i++) {
+                for (int i = 0; i < target_map[king_coord].size(); i++) {
                     target_is_attacked=0;
-                    king_target = king_targets[i];
+                    king_target = target_map[king_coord][i];
                     for (auto const& x : enemys_targets) {
                         // check if the targets include the king_target
                         if (contains_string(x.second, king_target)) {
