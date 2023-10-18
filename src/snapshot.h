@@ -44,4 +44,7 @@ class snapshot {
         map<string, vector<string>> white_spaces,  // spaces between attacker and king when in scoped check (no night nor pawn)
                                     black_spaces; 
         
+        snapshot(void) {
+            
+        }
 };

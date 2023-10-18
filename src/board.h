@@ -155,7 +155,8 @@ class Board {
             curr_file;
         vector<std::vector<int>> offs; // 2D offset selector
         vector<int> fr;
-        vector<string> spacing;
+        vector<string> spacing,
+                       check_screening_squares; // squares behind the king which are on LoS of scoper during a check
         string king_coord, 
                first_friendly_coord,
                king_target,
@@ -188,6 +189,9 @@ class Board {
         }
 
         void reserve_pointers () {
+
+            /* Reserves the needed vector spaces for 
+            global and dynamic variables. */
 
             check_coords.reserve(2);
             black_scopers.reserve(5);
@@ -1397,7 +1401,7 @@ class Board {
             //      was_checked_in_this_iteration = 0;
             // char pointer_symbol,
             //      pawn_symbol;
-            
+
             // reset dynamic variables
             first_friendly_coord = "",
             is_checked = 0,
@@ -1459,14 +1463,26 @@ class Board {
                         pointer_color = get_color_from_symbol(pointer_symbol);
 
                         // cut short if the king is is next to a friendly piece
-                        if (step == 1 && pointer_color == king_color)
-                            break;
+                        // if (step == 1 && pointer_color == king_color)
+                        //     break;
 
                         pointer_piece = pieces.from_symbol(pointer_symbol);
 
-                        // break direction if a pawn is hit, as they will be calculated seperately
-                        if (pointer_piece == pieces.Pawn)
-                            break;
+                        // check if pointed pawn is checking, in that case brake directional search
+                        if (step == 1 &&
+                            pointer_piece == pieces.Pawn && 
+                            pointer_color != king_color && 
+                            d == 2 ) 
+                        {
+                                if (king_color == pieces.w && rank + 1 == r || 
+                                    king_color == pieces.b && rank - 1 == r)  
+                                {
+                                        check_coords.push_back(pointer);
+                                        is_checked = 1;
+                                        break;
+                                }
+                        }
+                            
                         
                         // skip empty pieces, but denote in spacing vector
                         if (pointer_piece == pieces.None) {
@@ -1585,32 +1601,32 @@ class Board {
             }
             
             // finally probe if checked by pawn
-            if (king_color == pieces.w) {
-                // rank+1 file
-                forward_rank = rank + 1;
-            } else {
-                forward_rank = rank - 1;
-            }
-            for (int it = 0; it < 2; it++) {
-                // curr_file = file + pow(-1, it);
-                curr_file = file + 2 * it - 1;
-                // check if the current file and forward rank do not exceed the bounds
-                if (!inside_bounds(curr_file, forward_rank)) 
-                    continue;
-                // reuse pointer variables
-                pointer = get_coord_from_file_and_rank(curr_file, forward_rank);
-                pointer_symbol = get_symbol_from_coord(pointer);
-                pointer_color = get_color_from_symbol(pawn_symbol);
-                pointer_piece = pieces.from_symbol(pawn_symbol);
-                if (pointer_piece == pieces.Pawn && pointer_color != king_color) {
-                    // pointer is enemy pawn.
-                    // add the pawn to check coords, ignore spaces by nature.
-                    check_coords.push_back(pointer);
-                    is_checked = 1;
-                    break;
-                }
+            // if (king_color == pieces.w) {
+            //     // rank+1 file
+            //     forward_rank = rank + 1;
+            // } else {
+            //     forward_rank = rank - 1;
+            // }
+            // for (int it = 0; it < 2; it++) {
+            //     // curr_file = file + pow(-1, it);
+            //     curr_file = file + 2 * it - 1;
+            //     // check if the current file and forward rank do not exceed the bounds
+            //     if (!inside_bounds(curr_file, forward_rank)) 
+            //         continue;
+            //     // reuse pointer variables
+            //     pointer = get_coord_from_file_and_rank(curr_file, forward_rank);
+            //     pointer_symbol = get_symbol_from_coord(pointer);
+            //     pointer_color = get_color_from_symbol(pawn_symbol);
+            //     pointer_piece = pieces.from_symbol(pawn_symbol);
+            //     if (pointer_piece == pieces.Pawn && pointer_color != king_color) {
+            //         // pointer is enemy pawn.
+            //         // add the pawn to check coords, ignore spaces by nature.
+            //         check_coords.push_back(pointer);
+            //         is_checked = 1;
+            //         break;
+            //     }
                     
-            }
+            // }
 
             // denote the check globally if it was detected
             if (is_checked) {
