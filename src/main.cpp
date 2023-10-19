@@ -43,19 +43,20 @@ using namespace std;
 
 int main (void) {
 
-    // Board _board;
+    Board _board;
 
     // cout << "test unicode: " << _board.pieces.to_unicode('B'); 
 
-    // _board.load_starting_position();
+    _board.load_starting_position();
     // _board.show_occupation(_board.pieces.w);
     // _board.show_targets(_board.pieces.w);
     // _board.show_moves(_board.pieces.w);
-    // _board.show_board();
+    _board.show_board();
+    _board.move("E2", "E4");
     
-    Engine ce;
-    ce.board_test.show_board();
-    ce.shannon_number_simulation(4, 0, 1);
+    // Engine ce;
+    // ce.board_test.show_board();
+    // ce.shannon_number_simulation(4, 0, 1);
     
     // vector<int> vec;
     // vec.reserve(100);

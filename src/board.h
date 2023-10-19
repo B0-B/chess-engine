@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <cmath>
+#include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <regex>
@@ -16,7 +17,7 @@
 #include "snapshot.h"
 
 using namespace std;
-
+using std::filesystem::current_path;
 
 
 /* define method for call statistics
@@ -76,6 +77,8 @@ class Board {
     */
 
     public:
+
+        string __path__;
 
         // ---- new method set ----
 
@@ -170,7 +173,8 @@ class Board {
         map<string, vector<string>> target_map, 
                                     move_map, 
                                     pins, 
-                                    spaces;
+                                    spaces,
+                                    enemys_targets;
         map<string, char> occupation_map;
         vector<string> intersection, 
                        targets, 
@@ -183,8 +187,23 @@ class Board {
         Board(void) {
 
             print("Initialize ...", "board");
+
+            // determine current parent directory from here
+            __path__ = current_path().u8string();
+            if (!contains_substring(__path__, "src"))
+                #ifdef _WIN32
+                    __path__ += "\\src\\";
+                #elif __linux__
+                    __path__ += "/src/";
+                #endif
+            
+            // load board ascii graphics
             load_board_ascii();
+
+            // reserve space for vectors
             reserve_pointers();
+
+            cout << "Current working directory: " << __path__ << endl;
 
         }
 
@@ -214,8 +233,11 @@ class Board {
 
             /* Loads the ascii board template from file to string variable. */
 
+            
+            // string ascii_path = current_path();
             std::ifstream inFile;
-            inFile.open("board_ascii_template.txt"); //open the input file
+            string file_path = __path__ + "board_ascii_template.txt";
+            inFile.open(file_path); //open the input file
 
             std::stringstream strStream;
             strStream << inFile.rdbuf(); //read the file
@@ -764,7 +786,6 @@ class Board {
             // except when it's forced, then skip
             if (!force) {
                 // wrong color is playing
-                cout << "test " << color << " " << active_color << " " << symbol << endl;
                 if (color != active_color) {
                     print("It's not " + pieces.color_string(color) + "'s turn.", "board");
                     return snap;
@@ -1382,30 +1403,12 @@ class Board {
             for attackers, checks and denote pinned coordinates and space to a checking attacker
             i.e. a vector of empty in-between squares. */
             
-            // declare king scope variables
-            // vector<std::vector<int>> offs; // 2D offset vector
-            // int file, 
-            //     rank, 
-            //     f, 
-            //     r,
-            //     pointer_piece,
-            //     pointer_color,
-            //     forward_rank,
-            //     curr_file;
-            // vector<int> fr;
-            // vector<string> spacing;
-            // string king_coord, 
-            //        first_friendly_coord,
-            //        pointer;
-            // bool is_checked = 0,
-            //      was_checked_in_this_iteration = 0;
-            // char pointer_symbol,
-            //      pawn_symbol;
 
             // reset dynamic variables
             first_friendly_coord = "",
             is_checked = 0,
             was_checked_in_this_iteration = 0;
+            check_screening_squares.clear();
 
             // reset global vectors for direct insertion, and get color
             if (king_color == pieces.w) {
@@ -1531,6 +1534,34 @@ class Board {
                                     is_checked = 1;
                                     check_coords.push_back(pointer);
 
+                                    // revert back for screening squares behind the king
+                                    string probe_coord;
+                                    for (int step = 1; step < 7; step++) {
+                        
+                                        // shift pointer by one offset step
+                                        f = file - step * offs[ind][0];
+                                        r = rank -  step * offs[ind][1];
+
+                                        // check if valid screening square, i.e. eiter occupied by enemy or empty
+                                        if ( !inside_bounds(f, r) )
+                                            break;
+
+                                        probe_coord = get_coord_from_file_and_rank(f, r);
+                                        
+                                        // otherwise break if a friendly piece is behind the king as the king 
+                                        // cannot escape there anyway
+                                        if (square_is_occupied_by_color(king_color, probe_coord))
+                                            break; 
+
+                                        // here th quare is either empty or occupied by enemy
+                                        // add it to screening squares
+                                        check_screening_squares.push_back(probe_coord);
+
+                                        // again break if the screen is occupied at all
+                                        if (square_is_occupied_by_enemy(king_color, probe_coord))
+                                            break;
+
+                                    }
                                 }
 
                                 // remember spacing squares between king and attacker globally,
@@ -1600,34 +1631,6 @@ class Board {
 
             }
             
-            // finally probe if checked by pawn
-            // if (king_color == pieces.w) {
-            //     // rank+1 file
-            //     forward_rank = rank + 1;
-            // } else {
-            //     forward_rank = rank - 1;
-            // }
-            // for (int it = 0; it < 2; it++) {
-            //     // curr_file = file + pow(-1, it);
-            //     curr_file = file + 2 * it - 1;
-            //     // check if the current file and forward rank do not exceed the bounds
-            //     if (!inside_bounds(curr_file, forward_rank)) 
-            //         continue;
-            //     // reuse pointer variables
-            //     pointer = get_coord_from_file_and_rank(curr_file, forward_rank);
-            //     pointer_symbol = get_symbol_from_coord(pointer);
-            //     pointer_color = get_color_from_symbol(pawn_symbol);
-            //     pointer_piece = pieces.from_symbol(pawn_symbol);
-            //     if (pointer_piece == pieces.Pawn && pointer_color != king_color) {
-            //         // pointer is enemy pawn.
-            //         // add the pawn to check coords, ignore spaces by nature.
-            //         check_coords.push_back(pointer);
-            //         is_checked = 1;
-            //         break;
-            //     }
-                    
-            // }
-
             // denote the check globally if it was detected
             if (is_checked) {
                 if (king_color == pieces.w)
@@ -1727,8 +1730,6 @@ class Board {
             if (color == pieces.w && white_is_checked || color == pieces.b && black_is_checked) {
                 
                 // get king coord
-                string king_coord;
-                map<string, vector<string>> enemys_targets;
                 if (color == pieces.w) {
                     king_coord = white_king_coord;
                     enemys_targets = black_targets;
@@ -1741,23 +1742,32 @@ class Board {
                 char king_symbol = occupation_map[king_coord];
 
                 // draw targets for the attacked king, the targets were already computed
-                // king_targets = target_map[king_coord];
-
                 // determine king escape squares
                 escape_coords.clear();
-                bool target_is_attacked;
+                // bool target_is_attacked;
                 for (int i = 0; i < target_map[king_coord].size(); i++) {
-                    target_is_attacked=0;
+
+                    // target_is_attacked=0;
                     king_target = target_map[king_coord][i];
+
+                    // skip if occupied by friendly piece
+                    if (square_is_occupied_by_color(color, king_target))
+                        continue;
+
+                    // skip the square if it's screened by the scoper during check
+                    if (contains_string(check_screening_squares, king_target))
+                        continue;
+                    
+                    // otherwise check if the escape square is targeted by enemy
                     for (auto const& x : enemys_targets) {
                         // check if the targets include the king_target
                         if (contains_string(x.second, king_target)) {
-                            target_is_attacked = 1;
+                            // target_is_attacked = 1;
+                            escape_coords.push_back(king_target);
                             break;
                         }
                     }
-                    if (!target_is_attacked)
-                        escape_coords.push_back(king_target);
+
                 }
 
                 // then check the number of checkers, if greater than 1 the king has to move
@@ -1867,11 +1877,10 @@ class Board {
                 // check if the yet added pawns arent pinned,
                 // if the pawn is pinned restrict it's moves further [bug: alloc error]
                 for (auto const& y : move_map) {
-                    // print("0", "test");
-                    // print(y.first, "test");
+
                     coord = y.first;
                     moves = y.second;
-                    // print("1", "test");
+                    
                     // check if the pawn is pinned
                     if (pins.count(coord)) {
                         // select which moves are within the pins
@@ -1882,17 +1891,7 @@ class Board {
                             move_map.erase(coord);
                         continue;
                     }
-                        
-                    // print("2", "test");
-                    // // otherwise check if it can block the check
-                    // intersection = intersect(moves, spaces[0]);
-                    // print("3", "test");
-                    // if (intersection.size())
-                    //     move_map[coord] = intersection;
-                    // else
-                    //     // again this pawn has no moves, so erase from move_map
-                    //     move_map.erase(coord);
-                    // print("4", "test");
+
                 }
                 
                 vector<string> space;
