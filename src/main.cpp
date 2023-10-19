@@ -53,6 +53,9 @@ int main (void) {
     // _board.show_moves(_board.pieces.w);
     _board.show_board();
     _board.move("E2", "E4");
+    _board.show_board();
+    _board.move("E7", "E5");
+    _board.show_board();
     
     // Engine ce;
     // ce.board_test.show_board();

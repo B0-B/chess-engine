@@ -443,7 +443,7 @@ class Board {
             else if (black_symbol_occupation_map.count(coord_str))
                 return black_symbol_occupation_map[coord_str];
             else
-                return pieces.None;
+                return '_';
         };
         
 
@@ -803,7 +803,8 @@ class Board {
                 }
                 // target square is occupied by a friendly piece
                 if (color == get_color_from_symbol(captured_symbol)) {
-                    print(target_coord_str + " is occupied by friendly piece.", "board");
+                    cout << "test: " << color << " " << get_color_from_symbol(captured_symbol) << " " << captured_symbol << endl;
+                    print(target_coord_str + " is occupied by friendly piece.", "board"); 
                     return snap;
                 
                 }

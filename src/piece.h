@@ -99,7 +99,7 @@ class Piece {
         const string unicode[13] = {" ", "♟", "♞", "♝", "♜", "♛", "♚", "♙", "♘", "♗", "♖", "♕", "♔"};
 
         int is_white (char symbol) {
-            return symbol >= 'A' && symbol <= 'Z' && symbol != '_'; // ? the last condition is redundant
+            return symbol >= 'A' && symbol <= 'Z'; // ? the last condition is redundant
         };
 
         int from_symbol (char symbol) {
