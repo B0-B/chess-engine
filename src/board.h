@@ -169,7 +169,8 @@ class Board {
              was_checked_in_this_iteration = 0;
         char pointer_symbol,
              pawn_symbol,
-             symbol;
+             symbol,
+             king_symbol;
         map<string, vector<string>> target_map, 
                                     move_map, 
                                     pins, 
@@ -1410,18 +1411,17 @@ class Board {
             is_checked = 0,
             was_checked_in_this_iteration = 0;
             check_screening_squares.clear();
+            check_coords.clear();
 
             // reset global vectors for direct insertion, and get color
             if (king_color == pieces.w) {
                 king_coord = white_king_coord;
                 white_pins.clear();
-                check_coords.clear();
                 white_spaces.clear();
                 black_scopers.clear();
             } else {
                 king_coord = black_king_coord;
                 black_pins.clear();
-                check_coords.clear();
                 black_spaces.clear();
                 white_scopers.clear();
             }
@@ -1574,10 +1574,12 @@ class Board {
                                         black_spaces[pointer] = spacing;
                                 }
                                 
-                                // end here since an enemy piece was detected
-                                break;
+                                
 
                             } 
+
+                            // end here since an enemy piece was detected
+                            break;
 
                         }
                         
@@ -1592,8 +1594,6 @@ class Board {
                             first_friendly_coord = pointer;
 
                         }
-
-
 
                     }
 
@@ -1730,44 +1730,64 @@ class Board {
             // check if provided color is in check
             if (color == pieces.w && white_is_checked || color == pieces.b && black_is_checked) {
                 
-                // get king coord
+                // get king coord, current pins, spaces and color
                 if (color == pieces.w) {
                     king_coord = white_king_coord;
                     enemys_targets = black_targets;
+                    pins = white_pins;
+                    spaces = white_spaces;
                 } else {
                     king_coord = black_king_coord;
                     enemys_targets = white_targets;
+                    pins = black_pins;
+                    spaces = black_spaces;
                 }
                 
                 // and king symbol from occupation mapping
-                char king_symbol = occupation_map[king_coord];
-
-                // draw targets for the attacked king, the targets were already computed
+                king_symbol = occupation_map[king_coord];
+                
+                // draw targets for the attacked king, 
+                // the targets were already computed
                 // determine king escape squares
                 escape_coords.clear();
-                // bool target_is_attacked;
                 for (int i = 0; i < target_map[king_coord].size(); i++) {
 
                     // target_is_attacked=0;
                     king_target = target_map[king_coord][i];
-
+                    print(king_target, "debug");
                     // skip if occupied by friendly piece
                     if (square_is_occupied_by_color(color, king_target))
                         continue;
-
+                    
                     // skip the square if it's screened by the scoper during check
                     if (contains_string(check_screening_squares, king_target))
                         continue;
                     
-                    // otherwise check if the escape square is targeted by enemy
-                    for (auto const& x : enemys_targets) {
-                        // check if the targets include the king_target
+                    // otherwise check if the escape square is protected
+                    // this holds for empty squares and enemy-occupied squares
+                    bool target_in_spaces;
+                    for (auto const& x : spaces) {
                         if (contains_string(x.second, king_target)) {
-                            // target_is_attacked = 1;
-                            escape_coords.push_back(king_target);
+                            target_in_spaces = 1;
                             break;
                         }
                     }
+                    if (target_in_spaces)
+                        continue;
+                    
+                    // if (contains_string(spaces, ))
+
+                    print("out", "debug");
+                    // otherwise this escape square is valid
+                    escape_coords.push_back(king_target);
+                    // for (auto const& x : enemys_targets) {
+                    //     // check if the targets include the king_target
+                    //     if (contains_string(x.second, king_target)) {
+                    //         // target_is_attacked = 1;
+                    //         escape_coords.push_back(king_target);
+                    //         break;
+                    //     }
+                    // }
 
                 }
 
@@ -1789,18 +1809,9 @@ class Board {
                     
                 }
 
-                // otherwise the king is attacked only once and other friendly pieces may block the check
+                // otherwise the king is attacked only once and other friendly pieces may interfere the check
                 else {
-
-                    // determine the current pins and spaces for color
-                    if (color == pieces.w) {
-                        pins = white_pins;
-                        spaces = white_spaces;
-                    } else {
-                        pins = black_pins;
-                        spaces = black_spaces;
-                    }
-
+                    print("1", "debug");
                     // if there is a check we need to revert to the yet added pawn moves and restrict them
                     for (auto const& x : move_map) {
 
@@ -1808,18 +1819,20 @@ class Board {
                         moves = x.second;
                         
                         // skip if the pawn is pinned
-                        if (pins.count(coord))
+                        if (pins.count(coord)) {
                             // this pawn has no moves, so erase from move_map
                             move_map.erase(coord);
                             continue;
+                        }
 
                         // otherwise check if it can block the check
-                        intersection = intersect(moves, spaces[0]);
+                        intersection = intersect(moves, spaces[check_coords[0]]);
                         if (intersection.size())
                             move_map[coord] = intersection;
                         else
                             // again this pawn has no moves, so erase from move_map
                             move_map.erase(coord);
+
                     }
 
                     // only now add the king escape coords to valid move map
@@ -1827,12 +1840,14 @@ class Board {
 
                     // iterate over all possible targets 
                     vector<string> targets;
+                    int p;
                     for (auto const& x : occupation_map) {
                         
                         coord = x.first;
-                        
-                        // skip pawns as they were added already
-                        if (pieces.from_symbol(x.second) == pieces.Pawn)
+                        p = pieces.from_symbol(x.second);
+
+                        // skip king and pawns
+                        if (p == pieces.King || p == pieces.Pawn)
                             continue;
                         
                         // skip if the piece is pinned as it cannot
@@ -1841,19 +1856,26 @@ class Board {
                             continue;
 
                         symbol = x.second;
-
+                        // ???
                         // vector<string> targets = reachable_target_coords(coord, symbol, color);
                         targets = target_map[coord]; 
                     
                         // denote legal moves if the piece can block the check
                         // i.e. intersect the line between scoper and king
                         if (spaces.count(check_coords[0])) {
+                            // if (p == pieces.Pawn)
+                            //     intersection = intersect(move_map[coord], spaces[check_coords[0]]);
+                            // else
                             intersection = intersect(targets, spaces[check_coords[0]]);
                             if (intersection.size())
                                 move_map[coord] = intersection;
                         }
 
                         // check if the non-pinned piece can capture the only checking scoper
+                        // if (p == pieces.Pawn && contains_string(move_map[coord], check_coords[0])) {
+                        //     move_map[coord].push_back(check_coords[0]);
+                        // } else 
+                        
                         if (contains_string(targets, check_coords[0])) {
                             if (!move_map.count(coord))
                                 move_map[coord] = {};

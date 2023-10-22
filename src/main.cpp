@@ -52,11 +52,25 @@ int main (void) {
     // _board.show_targets(_board.pieces.w);
     // _board.show_moves(_board.pieces.w);
     _board.show_board();
-    _board.move("E2", "E4");
+    _board.move("D2", "D4");
     _board.show_board();
-    _board.move("E7", "E5");
+    _board.move("D7", "D5");
+    _board.show_board();
+    _board.move("C2", "C4");
+    _board.show_board();
+    _board.move("E7", "E6");
+    _board.show_board();
+    _board.show_moves(_board.pieces.w);
+    _board.move("E2", "E3");
+    _board.show_board();
+    // cout << "is in check: " << _board.black_is_checked << endl;
+    _board.move("F8", "B4");
     _board.show_board();
     
+    cout << "is in check: " << _board.white_is_checked << endl;
+    cout << "restricted king coord: " << _board.check_screening_squares.size() << endl;
+    _board.show_moves(_board.pieces.w);
+
     // Engine ce;
     // ce.board_test.show_board();
     // ce.shannon_number_simulation(4, 0, 1);
