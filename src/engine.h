@@ -19,6 +19,8 @@ class Engine {
         Board board_main;
         Board board_test;
 
+        
+
         // evaluation
         float p;
 
@@ -133,14 +135,17 @@ class Engine {
             if (depth == 0)
                 return 1;
 
+            
+
             // init counts of sequences
             int counts = 0;
 
             // draw the active move possibilities
             map<string, vector<string>> moves = board_test.get_moves(board_test.active_color);
-            
-            string origin;
             vector<string> targets;
+            targets.reserve(28);
+            string origin;
+            
             snapshot move;
 
             // start

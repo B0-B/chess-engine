@@ -278,7 +278,7 @@ class Board {
                         symbol = pieces.to_unicode(black_symbol_occupation_map[coord]) + ' ';
                     else 
                         symbol = "  ";
-                    // print(symbol, "*TEST*");
+                    
                     // override the board_ascii string by overriding the square number occurence with symbol
                     board_ascii = regex_replace(board_ascii, regex(square_number), symbol);
                 
@@ -932,16 +932,16 @@ class Board {
                 } else if (color == pieces.b && origin_coord_str == "E8" && target_coord_str == "G8") {
 
                     // first check if castling is allowed
-                    remove_symbol_at_coord('R', "H8");
-                    place_symbol_at_coord('R', "F8");
+                    remove_symbol_at_coord('r', "H8");
+                    place_symbol_at_coord('r', "F8");
                     // remove all castling rights for white
                     castling_right_k_b = castling_right_q_b = 0;
 
                 } else if (color == pieces.b && origin_coord_str == "E8" && target_coord_str == "C8") {
 
                     // first check if castling is allowed
-                    remove_symbol_at_coord('R', "A8");
-                    place_symbol_at_coord('R', "D8");
+                    remove_symbol_at_coord('r', "A8");
+                    place_symbol_at_coord('r', "D8");
                     // remove all castling rights for white
                     castling_right_k_b = castling_right_q_b = 0;
 
@@ -1754,7 +1754,7 @@ class Board {
 
                     // target_is_attacked=0;
                     king_target = target_map[king_coord][i];
-                    print(king_target, "debug");
+
                     // skip if occupied by friendly piece
                     if (square_is_occupied_by_color(color, king_target))
                         continue;
@@ -1775,19 +1775,8 @@ class Board {
                     if (target_in_spaces)
                         continue;
                     
-                    // if (contains_string(spaces, ))
-
-                    print("out", "debug");
                     // otherwise this escape square is valid
                     escape_coords.push_back(king_target);
-                    // for (auto const& x : enemys_targets) {
-                    //     // check if the targets include the king_target
-                    //     if (contains_string(x.second, king_target)) {
-                    //         // target_is_attacked = 1;
-                    //         escape_coords.push_back(king_target);
-                    //         break;
-                    //     }
-                    // }
 
                 }
 
@@ -1801,17 +1790,11 @@ class Board {
                     // add the king escape coords only to valid move map
                     move_map[king_coord] = escape_coords;
                     
-                    // analyze the resulting escape coords
-                    // if (!escape_coords.size()) {
-                    //     // check mate as no escape routes are left
-                    //     print(pieces.color_string(color) + " king has no escape routes, check mate!", "board");
-                    // }
-                    
                 }
 
                 // otherwise the king is attacked only once and other friendly pieces may interfere the check
                 else {
-                    print("1", "debug");
+                    
                     // if there is a check we need to revert to the yet added pawn moves and restrict them
                     for (auto const& x : move_map) {
 
