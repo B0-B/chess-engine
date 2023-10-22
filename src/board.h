@@ -535,7 +535,7 @@ class Board {
                     // if integer is parsed shift file
                     } else if (isdigit(_char)) {
                         // integers account for file shifts
-                        file += _char - '0' - 1;
+                        file += _char - '0'; // - 1;
                         continue;
                     // finish parsing pieces on space
                     } else if (_char == ' ') {

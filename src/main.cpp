@@ -47,35 +47,18 @@ int main (void) {
 
     // cout << "test unicode: " << _board.pieces.to_unicode('B'); 
 
-    _board.load_starting_position();
+    // _board.load_starting_position();
+    _board.load_position_from_fen("4k3/8/8/1b6/8/8/8/4K2R w K - 0 1");
     // _board.show_occupation(_board.pieces.w);
     // _board.show_targets(_board.pieces.w);
     // _board.show_moves(_board.pieces.w);
-    _board.show_board();
-    _board.move("D2", "D4");
-    _board.show_board();
-    _board.move("D7", "D5");
-    _board.show_board();
-    _board.move("C2", "C4");
-    _board.show_board();
-    _board.move("E7", "E6");
-    _board.show_board();
+    // _board.show_board();
+    // _board.move("E2", "E4");
+    // _board.move("B7", "B6");
+    // _board.move("G1", "F3");
     
-    _board.move("E2", "E3");
-    _board.show_board();
-    _board.move("F8", "B4");
-    _board.show_board();
-    _board.move("B1", "C3");
-    _board.show_board();
-    _board.move("G8", "F6");
-    _board.show_board();
-    _board.move("G1", "F3");
-    _board.show_board();
-    _board.move("E8", "G8");
-    _board.show_board();
-
     _board.show_moves(_board.active_color);
-    
+    _board.show_board();
     // cout << "is in check: " << _board.white_is_checked << endl;
     // cout << "restricted king coord: " << _board.check_screening_squares.size() << endl;
     // _board.show_moves(_board.pieces.w);
