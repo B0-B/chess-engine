@@ -10,6 +10,18 @@ Chess engine implementation in C++.
 
 # logic
 
+```mermaid
+flowchart TD
+    id1[determine white king scopes];
+    id2[compute targets and moves];
+    id3[move];
+    id4[init];
+    id5[update];
+    id4 --> id2;
+    id1 --> id2 --> id3 --> id5 --> id1;
+
+```
+
 # improvements
 
 <!-- improvements - board -->
