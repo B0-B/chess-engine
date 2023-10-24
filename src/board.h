@@ -1382,12 +1382,6 @@ class Board {
             /* Checks if a square is targeted by opposing color.
             Provided color is the friendly color. */
             
-            // int enemy_color;
-            // if (color == pieces.w)
-            //     enemy_color = pieces.b;
-            // else
-            //     enemy_color = pieces.w;
-
             // derive file and rank
             fr = get_file_and_rank_from_coord(coord_str);
             file = fr[0];
@@ -1407,11 +1401,6 @@ class Board {
                 // iterate through offset variations i.e. for vertical we have forward and backward
                 for (int ind = 0; ind < offs.size(); ind++) {
 
-                    // reset dynamic variables
-                    first_friendly_coord = "";
-                    spacing.clear();
-                    was_checked_in_this_iteration = 0;
-
                     for (int step = 1; step < 7; step++) {
                         
                         // shift pointer by one offset step
@@ -1429,23 +1418,16 @@ class Board {
                         pointer_piece = pieces.from_symbol(pointer_symbol);        
 
                         // check if pointed pawn is checking, in that case brake directional search
-                        if (step == 1 &&
+                        if (step == 1 && d == 2 &&
                             pointer_piece == pieces.Pawn && 
                             pointer_color != color && 
-                            d == 2 ) 
-                        {
-                                if (rank + 1 == r || 
-                                    rank - 1 == r)  
-                                {
-                                        return 1;
-                                }
-                        }
+                            (color == pieces.w && rank + 1 == r || color == pieces.b && rank - 1 == r) )
+                            return 1;
                                                 
                         
                         // skip empty pieces, but denote in spacing vector
-                        if (pointer_piece == pieces.None) {
+                        if (pointer_piece == pieces.None)
                             continue;
-                        }
 
                         // is occupied by enemy
                         if (pointer_color != color) {
@@ -1454,7 +1436,7 @@ class Board {
                             // e.g. vertical and horizontal: Rook and Queen
                             if ( ((d == 0 || d == 1) && (pointer_piece == pieces.Rook || pointer_piece == pieces.Queen)) ||
                                  ((d == 2) && (pointer_piece == pieces.Bishop || pointer_piece == pieces.Queen)) )
-                                 return 1;
+                                return 1;
 
                         }
 
@@ -1481,7 +1463,7 @@ class Board {
                 pointer_piece = pieces.from_symbol(pointer_symbol);
                 pointer_color = get_color_from_symbol(pointer_symbol);
                 
-                // verify it's a knight
+                // verify it's an opposing knight
                 if (pointer_piece == pieces.Knight && 
                     pointer_color != color) 
                     return 1;
@@ -1573,8 +1555,8 @@ class Board {
                             pointer_color != king_color && 
                             d == 2 ) 
                         {
-                                if (rank + 1 == r || 
-                                    rank - 1 == r)  
+                                if (king_color == pieces.w && rank + 1 == r || 
+                                    king_color == pieces.b && rank - 1 == r)   
                                 {
                                         check_coords.push_back(pointer);
                                         is_checked = 1;
@@ -2009,16 +1991,17 @@ class Board {
                     targets = target_map[coord];
                     intersection.clear();
 
-                    // if symbol is king restrict the targets
+                    // if symbol is king restrict which targets are not protected
                     if ( symbol == 'k' || symbol == 'K' ) {
-                        if (move_map.count(coord))
-                            move_map[coord].clear();
-                        else
-                            move_map[coord] = {};
-                        for (int i = 0; i < targets.size(); i++) {
+                        // if (move_map.count(coord))
+                        //     move_map[coord].clear();
+                        // else
+                        //     move_map[coord] = {};
+                        for (int i = 0; i < targets.size(); i++)
                             if ( !square_is_targeted(color, targets[i]) )
                                 move_map[coord].push_back(targets[i]);
-                        }
+                        if (!move_map[coord].size())
+                            move_map.erase(coord);
                         continue;
                     }
 
