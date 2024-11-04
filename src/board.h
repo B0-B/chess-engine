@@ -187,7 +187,7 @@ class Board {
         // constructor sequence
         Board(void) {
 
-            print("Initialize ...", "board");
+            console("Initialize ...", "board");
 
             // determine current parent directory from here
             __path__ = current_path().u8string();
@@ -234,7 +234,6 @@ class Board {
 
             /* Loads the ascii board template from file to string variable. */
 
-            
             // string ascii_path = current_path();
             std::ifstream inFile;
             string file_path = __path__ + "board_ascii_template.txt";
@@ -253,17 +252,18 @@ class Board {
             /* Shows the current board state in the console. 
             The output is build from the board ascii template. */
 
+            int ind = 0;
             string coord,
                    board_ascii = board_ascii_template,
-                   symbol, 
+                   symbol = "  ",
                    square_number;
-            int ind = 0;
 
+            // fill all 64 squares
             for (int r = 0; r < 8; r++) {   
 
-                for (int f = 0; f < 8; f++) {   
+                for (int f = 0; f < 8; f++) {
                     
-                    // declare square number for all 64 squares
+                    // convert square id to coordinate
                     ind++;
                     if (ind < 10)
                         square_number = "0" + to_string(ind);
@@ -276,8 +276,6 @@ class Board {
                         symbol = pieces.to_unicode(white_symbol_occupation_map[coord]) + ' ';
                     else if (black_symbol_occupation_map.count(coord)) 
                         symbol = pieces.to_unicode(black_symbol_occupation_map[coord]) + ' ';
-                    else 
-                        symbol = "  ";
                     
                     // override the board_ascii string by overriding the square number occurence with symbol
                     board_ascii = regex_replace(board_ascii, regex(square_number), symbol);
@@ -286,6 +284,7 @@ class Board {
 
             }
             cout << board_ascii << endl;
+            cout << L"┌────┬────┬────┬────┬────┬────┬────┬────┐" << endl;
 
         }
 
@@ -307,7 +306,7 @@ class Board {
                 m = black_moves;
             }
 
-            print("moves for " + pieces.color_string(color), "board");
+            console("moves for " + pieces.color_string(color), "board");
             for (auto const& x : m) {
 
                 coord = x.first;
@@ -326,7 +325,7 @@ class Board {
         }
 
         void show_occupation (int color) {
-            print("Occupation map for " + pieces.color_string(color), "board");
+            console("Occupation map for " + pieces.color_string(color), "board");
             for (const auto& x: get_occupation_map(color)) {
                 cout << x.first << ": " << x.second << endl;
             }
@@ -350,7 +349,7 @@ class Board {
                 m = black_targets;
             }
 
-            print("targets for " + pieces.color_string(color), "board");
+            console("targets for " + pieces.color_string(color), "board");
             for (auto const& x : m) {
 
                 coord = x.first;
@@ -614,7 +613,7 @@ class Board {
                     if (i == fen.size()-1) {
                         full_moves = stoi(moves);
                         if (verbose)
-                            print("Successfully loaded position from FEN.", "Board");
+                            console("Successfully loaded position from FEN.", "Board");
                         // finished   
                     }
                 } 
@@ -788,24 +787,24 @@ class Board {
             if (!force) {
                 // wrong color is playing
                 if (color != active_color) {
-                    print("It's not " + pieces.color_string(color) + "'s turn.", "board");
+                    console("It's not " + pieces.color_string(color) + "'s turn.", "board");
                     return snap;
                 }
                 // origin coordinate does not 
                 if (occupation_map.count(origin_coord_str) == 0) {
-                    print(origin_coord_str + "holds no " + pieces.color_string(color) + " pieces.", "board");
+                    console(origin_coord_str + "holds no " + pieces.color_string(color) + " pieces.", "board");
                     return snap;
                 }
                 // move not contained in allowed moves
                 if (!contains_string(moves[origin_coord_str], target_coord_str)) {
-                    print(pieces.color_string(color) + "'s move " + origin_coord_str + "->" + target_coord_str + " is not legal.", "board");
+                    console(pieces.color_string(color) + "'s move " + origin_coord_str + "->" + target_coord_str + " is not legal.", "board");
                     show_board();
                     return snap;
                 }
                 // target square is occupied by a friendly piece
                 if (color == get_color_from_symbol(captured_symbol)) {
                     cout << "test: " << color << " " << get_color_from_symbol(captured_symbol) << " " << captured_symbol << endl;
-                    print(target_coord_str + " is occupied by friendly piece.", "board"); 
+                    console(target_coord_str + " is occupied by friendly piece.", "board"); 
                     return snap;
                 
                 }
@@ -1004,7 +1003,7 @@ class Board {
             // code here ...
             if (true) {
                 if (get_moves(active_color).empty()) {
-                    print(pieces.color_string(active_color) + " got checkmated!", "board");
+                    console(pieces.color_string(active_color) + " got checkmated!", "board");
                 }
             }
 
@@ -1296,43 +1295,52 @@ class Board {
                         
                         // otherwise continue 
                         target_coord = get_coord_from_file_and_rank(f, r);
-                        if (square_is_occupied_by_enemy(color, target_coord)) {
-                            
-                            /* for the king to take on target square it needs to be 
-                            decided if the target coord is protected */
-                            if (piece == pieces.King) {
 
-                                // determine attacker color
-                                // int attacker_color;
-                                // if (color == pieces.w)
-                                //     attacker_color = pieces.b;
-                                // else
-                                //     attacker_color = pieces.w;
+                        out.push_back(target_coord);
 
-                                // only consider the target square if its not protected
-                                if (!square_is_targeted(color, target_coord)) {
-                                    out.push_back(target_coord);
-                                }
-
-                            } 
-
-                            // all other pieces can take the piece without regards
-                            else {
-                                out.push_back(target_coord);
-                            }
-
+                        // break if a piece is hit
+                        if (square_is_occupied(target_coord))
                             break;
 
-                        } else if (!square_is_occupied(target_coord)) 
+                        // if (square_is_occupied_by_enemy(color, target_coord)) {
                             
-                            out.push_back(target_coord);
-                            
-                        else
+                        //     /* for the king to take on target square it needs to be 
+                        //     decided if the target coord is protected */
+                        //     // if (piece == pieces.King) {
 
-                            // break when the quare is occupied by friendly piece
-                            break;
+                        //     //     // determine attacker color
+                        //     //     // int attacker_color;
+                        //     //     // if (color == pieces.w)
+                        //     //     //     attacker_color = pieces.b;
+                        //     //     // else
+                        //     //     //     attacker_color = pieces.w;
+
+                        //     //     // only consider the target square if its not protected
+                        //     //     if (!square_is_targeted(color, target_coord)) {
+                        //     //         out.push_back(target_coord);
+                        //     //     }
+
+                        //     // } 
+
+                        //     // all other pieces can take the piece without regards
+                        //     // else {
+                        //     //     out.push_back(target_coord);
+                        //     // }
+                        //     out.push_back(target_coord);
+
+                        //     break;
+
+                        // } else if (!square_is_occupied(target_coord)) 
+                            
+                        //     out.push_back(target_coord);
+                            
+                        // else
+
+                        //     // break when the quare is occupied by friendly piece
+                        //     break;
                         
                     }
+                    
                 }
                 
             }
@@ -1542,11 +1550,6 @@ class Board {
                         pointer = get_coord_from_file_and_rank(f, r);
                         pointer_symbol = get_symbol_from_coord(pointer);
                         pointer_color = get_color_from_symbol(pointer_symbol);
-
-                        // cut short if the king is is next to a friendly piece
-                        // if (step == 1 && pointer_color == king_color)
-                        //     break;
-
                         pointer_piece = pieces.from_symbol(pointer_symbol);
 
                         // check if pointed pawn is checking, in that case brake directional search
@@ -1992,19 +1995,19 @@ class Board {
                     intersection.clear();
 
                     // if symbol is king restrict which targets are not protected
-                    if ( symbol == 'k' || symbol == 'K' ) {
+                    // this is already fulfilled in reachable_target_coords
+                    if ( 0 && ( symbol == 'k' || symbol == 'K' ) ) {
                         // if (move_map.count(coord))
                         //     move_map[coord].clear();
                         // else
                         //     move_map[coord] = {};
-                        for (int i = 0; i < targets.size(); i++)
+                        for (int i = 0; i < targets.size(); i++) 
                             if ( !square_is_targeted(color, targets[i]) )
                                 move_map[coord].push_back(targets[i]);
                         if (!move_map[coord].size())
                             move_map.erase(coord);
                         continue;
                     }
-
 
                     // if the coord/piece is pinned restrict targets vector
                     // as the pinned piece can only move along the pin space

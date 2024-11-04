@@ -84,7 +84,7 @@ class Engine {
                 {10, 69352859712417}
             };
 
-            print("Start sequence count simulation test:", "Engine");
+            console("Start sequence count simulation test:", "Engine");
 
             // setup test board from start
             board_test.load_starting_position(0);
@@ -124,7 +124,7 @@ class Engine {
             This number of all possible positions does not account for transpositions of same pieces.
             The sim will start from current position.
 
-            clear       Clear console after every board print.
+            clear       Clear console after every board console.
                         Only used if visual is true.
             depth       Total analysis depth.
             visual      Show board after every move.
@@ -150,17 +150,17 @@ class Engine {
 
             // start
             // std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now(); 
-            // print("0", "test");
+            // console("0", "test");
             for (auto const& x : moves) {
                 
                 // extract keys and values i.e. origin coordinates 
                 // and their corresponding target coordinates
                 origin = x.first;
                 targets = x.second;
-                // print("1", "test");
+                // console("1", "test");
                 for (int i = 0; i < targets.size(); i++) {
 
-                    // print("2", "test");
+                    // console("2", "test");
                     
                     // make an active move from origin to i-th target
                     move = board_test.move(origin, targets[i], 1);
@@ -173,9 +173,9 @@ class Engine {
                     
                     // repeat iteratively
                     counts += sequence_count_simulation(depth-1, visual);
-                    // print("4", "test");
+                    // console("4", "test");
                     board_test.revert(move);
-                    // print("5", "test");
+                    // console("5", "test");
                     // show board in console
                     if (visual) {
                         if (clear)
@@ -185,7 +185,7 @@ class Engine {
                         
                 }
             }
-            // print("6", "test");
+            // console("6", "test");
 
             return counts;
 

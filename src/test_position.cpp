@@ -21,7 +21,7 @@ int main (void) {
     int possible_moves;
     for (auto const& y : _board.get_moves(_board.active_color))
         possible_moves += y.second.size();
-    print("analyzed " + to_string(possible_moves) + 
+    console("analyzed " + to_string(possible_moves) + 
         " possible moves.", "test");
     
     // show active moves
