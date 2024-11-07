@@ -59,23 +59,21 @@ vector<string> intersect (vector<string> a, vector<string> b) {
     
 }
 
-void console (string message, string origin) {
-    /* Logs stdout to console. */
-    cout << "[" + origin + "]   " << message << endl;
-};
-
 void print (string s) {
 
-    /* Switches to UTF-16 mode for stdout extended ascii table. 
-    https://cplusplus.com/forum/beginner/248878/ */
+    /* pipes string to stdout */
 
-    // Switch to UTF-16 mode
-    _setmode(_fileno(stdout), _O_U16TEXT);
-    // wcout << s << endl;
-    // Switch back to normal mode
-    _setmode(_fileno(stdout), _O_TEXT);
+    cout << s << endl;
 
 }
+
+void console (string message, string origin) {
+
+    /* Logs stdout to console. */
+
+    print("[" + origin + "]   " + message);
+
+};
 
 string lower_case (string s) {
     

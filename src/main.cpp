@@ -43,15 +43,11 @@ using namespace std;
 
 int main (void) {
 
-    // Set locale to ensure extended ASCII can be consoleed
-    // _setmode(_fileno(stdout), _O_U8TEXT); // Set UTF-8 mode
-
     // Load a board
     Board _board;
-    cout << "TEST   " << "\u00BF" << endl; 
 
     // _board.load_starting_position();
-    // _board.load_position_from_fen("4k3/8/8/1b6/8/8/8/4K2R w K - 0 1");
+    _board.load_position_from_fen("4k3/8/8/8/4Pp2/8/8/4K3 b - e3 0 1");
     // _board.show_occupation(_board.pieces.w);
     // _board.show_targets(_board.pieces.w);
     // _board.show_moves(_board.pieces.w);
@@ -60,11 +56,11 @@ int main (void) {
     // _board.move("B7", "B6");
     // _board.move("G1", "F3");
     
-    // _board.show_moves(_board.active_color);
+    _board.show_moves(_board.active_color);
     _board.show_board();
     // cout << "is in check: " << _board.white_is_checked << endl;
     // cout << "restricted king coord: " << _board.check_screening_squares.size() << endl;
-    // _board.show_moves(_board.pieces.w);
+    // _board.show_moves(_board.pieces.b);
 
     // Engine ce;
     // ce.board_test.show_board();

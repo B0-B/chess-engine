@@ -88,6 +88,7 @@ class Board {
         int active_color = pieces.w;
 
         // prepare letters for the board files
+        map<char, int> file_id = { {'A', 0}, {'B', 1}, {'C', 2}, {'D', 3}, {'E', 4}, {'F', 5}, {'G', 6}, {'H', 7} }; // quick map
         const char file_letters[8] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'};
         const char number_coordinates[8] = {'1', '2', '3', '4', '5', '6', '7', '8'};
         const string starting_position_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -184,6 +185,7 @@ class Board {
                        king_targets,
                        escape_coords;
 
+
         // constructor sequence
         Board(void) {
 
@@ -208,45 +210,8 @@ class Board {
 
         }
 
-        void reserve_pointers () {
 
-            /* Reserves the needed vector spaces for 
-            global and dynamic variables. */
-
-            check_coords.reserve(2);
-            black_scopers.reserve(5);
-            white_scopers.reserve(5);
-
-            // pointer variables
-            offs.reserve(8);
-            fr.reserve(2);
-            spacing.reserve(6);
-            intersection.reserve(6);
-            targets.reserve(28);
-            pre_targets.reserve(28);
-            moves.reserve(28);
-            king_targets.reserve(8);
-            escape_coords.reserve(7);
-
-        }
-
-        void load_board_ascii () {
-
-            /* Loads the ascii board template from file to string variable. */
-
-            // string ascii_path = current_path();
-            std::ifstream inFile;
-            string file_path = __path__ + "board_ascii_template.txt";
-            inFile.open(file_path); //open the input file
-
-            std::stringstream strStream;
-            strStream << inFile.rdbuf(); //read the file
-            std::string str = strStream.str(); //str holds the content of the file
-
-            board_ascii_template = str;
-
-        }
-
+        // stdout methods
         void show_board () {
 
             /* Shows the current board state in the console. 
@@ -255,7 +220,7 @@ class Board {
             int ind = 0;
             string coord,
                    board_ascii = board_ascii_template,
-                   symbol = "  ",
+                   symbol,
                    square_number;
 
             // fill all 64 squares
@@ -276,6 +241,8 @@ class Board {
                         symbol = pieces.to_unicode(white_symbol_occupation_map[coord]) + ' ';
                     else if (black_symbol_occupation_map.count(coord)) 
                         symbol = pieces.to_unicode(black_symbol_occupation_map[coord]) + ' ';
+                    else
+                        symbol = "  ";
                     
                     // override the board_ascii string by overriding the square number occurence with symbol
                     board_ascii = regex_replace(board_ascii, regex(square_number), symbol);
@@ -283,8 +250,8 @@ class Board {
                 }
 
             }
-            cout << board_ascii << endl;
-            cout << L"┌────┬────┬────┬────┬────┬────┬────┬────┐" << endl;
+
+            print(board_ascii);
 
         }
 
@@ -368,7 +335,7 @@ class Board {
         }
 
 
-        // coordinate and symbol methods
+        // get and conversion methods
         int get_color_from_symbol (char symbol) {
 
             /* Returns the piece color int from symbol char e.g. k -> 16, Q -> 8
@@ -393,20 +360,19 @@ class Board {
 
         };
 
-        vector<int> get_file_and_rank_from_coord (string coord_str) {
-            /* Returns a 2d vector with file and rank (between 0 and 7). */
-            vector<int> out = {};
-            for (int i = 0; i < 8; i++) {
-                if (file_letters[i] == coord_str[0]) {
-                    out.push_back(i);
-                    break;
-                }
-            }
-            int new_rank = coord_str[1] - '0';
-            new_rank--;
-            out.push_back(new_rank);
-            // cout  << "TEST: " << out[0] << " " << out[1] << endl;
-            return out;
+        tuple<int, int> get_file_and_rank_from_coord (string coord_str) {
+
+            /* Returns a integer tuple with file and rank (between 0 and 7). */
+
+            // quick map from file character to file integer
+            f = file_id[coord_str[0]];
+
+            // convert rank
+            int r = coord_str[1] - '0';
+            r--;
+
+            return make_tuple(f, r);
+
         };
 
         map<string, vector<string>> get_moves (int color) {
@@ -447,34 +413,23 @@ class Board {
         };
         
 
-        // board operations
-        void flip_active_color () {
-            /* Flips the active playing color. */
-            if (active_color == pieces.w)
-                active_color = pieces.b;
-            else
-                active_color = pieces.w;
+        // board initialization
+        void load_board_ascii () {
+
+            /* Loads the ascii board template from file to string variable. */
+
+            // string ascii_path = current_path();
+            std::ifstream inFile;
+            string file_path = __path__ + "board_ascii_template.txt";
+            inFile.open(file_path); //open the input file
+
+            std::stringstream strStream;
+            strStream << inFile.rdbuf(); //read the file
+            std::string str = strStream.str(); //str holds the content of the file
+
+            board_ascii_template = str;
+
         }
-
-        void clear () {
-
-            /* Removes all pieces from the board and resets all parameters. */
-
-            white_symbol_occupation_map.clear();
-            black_symbol_occupation_map.clear();
-            white_moves.clear();
-            black_moves.clear();
-            white_pins.clear();
-            black_pins.clear();
-            white_spaces.clear();
-            black_spaces.clear();
-            white_targets.clear();
-            black_targets.clear();
-            white_pins.clear();
-            pgn_history.clear();
-            full_moves = 0;
-            
-        };
 
         void load_position_from_fen (string fen, bool verbose=1) {
 
@@ -594,21 +549,25 @@ class Board {
                 
                 // check for en-passant availability
                 } else if (castling_parsed && !en_passant_parsed) {
-                    en_passant_coord += _char;
+
+                    en_passant_coord += toupper(_char);
                     if (_char == '-' || en_passant_coord.size() >= 2) {
                         en_passant_parsed = 1;
                         i++;
                     }
+
                 // parse and denote half clock count
                 } else if (en_passant_parsed && !half_clock_parsed) {
-                    if (_char == ' ') {
+
+                    if (_char == ' ')
                         half_clock_parsed = 1;
-                    } else {
+                    else
                         half_clock += _char;
-                    }
                     i++;
+
                 // parse and denote the move count
                 } else if (half_clock_parsed && !full_moves_parsed) {
+
                     moves += _char;
                     if (i == fen.size()-1) {
                         full_moves = stoi(moves);
@@ -616,6 +575,7 @@ class Board {
                             console("Successfully loaded position from FEN.", "Board");
                         // finished   
                     }
+                    
                 } 
 
             };
@@ -642,6 +602,58 @@ class Board {
 
         };
 
+        void reserve_pointers () {
+
+            /* Reserves the needed vector spaces for 
+            global and dynamic variables. */
+
+            check_coords.reserve(2);
+            black_scopers.reserve(5);
+            white_scopers.reserve(5);
+
+            // pointer variables
+            offs.reserve(8);
+            fr.reserve(2);
+            spacing.reserve(6);
+            intersection.reserve(6);
+            targets.reserve(28);
+            pre_targets.reserve(28);
+            moves.reserve(28);
+            king_targets.reserve(8);
+            escape_coords.reserve(7);
+
+        }
+
+
+        // board operations
+        void flip_active_color () {
+            /* Flips the active playing color. */
+            if (active_color == pieces.w)
+                active_color = pieces.b;
+            else
+                active_color = pieces.w;
+        }
+
+        void clear () {
+
+            /* Removes all pieces from the board and resets all parameters. */
+
+            white_symbol_occupation_map.clear();
+            black_symbol_occupation_map.clear();
+            white_moves.clear();
+            black_moves.clear();
+            white_pins.clear();
+            black_pins.clear();
+            white_spaces.clear();
+            black_spaces.clear();
+            white_targets.clear();
+            black_targets.clear();
+            white_pins.clear();
+            pgn_history.clear();
+            full_moves = 0;
+            
+        };
+
         string move_to_pgn (string origin_coord_str, string target_coord_str, char origin_symbol, int origin_color, char target_symbol) {
             
             /*
@@ -658,7 +670,7 @@ class Board {
             // char origin_symbol = origin_square["symbol"][0];
             char symbol_cap = toupper(origin_symbol);
             // int color = get_color_from_symbol(origin_symbol);
-            vector<int> fr_origin = get_file_and_rank_from_coord(origin_coord_str);
+            auto [origin_file, origin_rank] = get_file_and_rank_from_coord(origin_coord_str);
             int origin_piece = pieces.from_symbol(origin_symbol);
             char origin_file_str = origin_coord_str[0];
             string attacker_coord;
@@ -719,15 +731,14 @@ class Board {
                     if (contains_string(x.second, target_coord_str)) {
 
                         attacker_coord = x.first;
-                        fr_target = get_file_and_rank_from_coord(origin_coord_str);
-                        attacker_file = fr_target[0], attacker_rank = fr_target[1];
+                        auto [attacker_file, attacker_rank] = get_file_and_rank_from_coord(origin_coord_str);
                         attacker_piece = pieces.from_symbol(attacker_occupation_map[attacker_coord]);
                         
                         // if the attacking piece is no pawn and is one of two pieces of same kind which attack add the file
                         if (attacker_piece == origin_piece) {
                             
                             // if on same file denote the rank
-                            if (attacker_file == fr_origin[0]) 
+                            if (attacker_file == origin_file) 
                                 return symbol_cap + lower_case(origin_coord_str[1] + formatted);
 
                             // otherwise denote file
@@ -825,29 +836,28 @@ class Board {
             // check if pawn move leaves an en-passant possibility
             if (piece == pieces.Pawn) {
 
-                const int rank_origin = get_file_and_rank_from_coord(origin_coord_str)[1];
-                const vector<int> fr = get_file_and_rank_from_coord(target_coord_str);
-                const int target_file = fr[0], target_rank = fr[1];
+                const auto [_, origin_rank] = get_file_and_rank_from_coord(origin_coord_str);
+                const auto [target_file, target_rank] = get_file_and_rank_from_coord(target_coord_str);
 
                 // 1) check if en-passant is captured and remove the captured pawn
                 if (target_coord_str == en_passant_coord) {
-                    vector<int> fr_en_passant = get_file_and_rank_from_coord(en_passant_coord);
+                    const auto [en_passant_file, en_passant_rank] = get_file_and_rank_from_coord(en_passant_coord);
                     string capture_coord;
                     char captured_pawn_symbol;
                     if (color == pieces.w)
                         captured_pawn_symbol = 'p';
                     else
                         captured_pawn_symbol = 'P';
-                    if (fr_en_passant[1] == 2) 
-                        capture_coord = get_coord_from_file_and_rank(fr_en_passant[0], fr_en_passant[1]+1);
+                    if (en_passant_rank == 2) 
+                        capture_coord = get_coord_from_file_and_rank(en_passant_file, en_passant_rank + 1);
                     else
-                        capture_coord = get_coord_from_file_and_rank(fr_en_passant[0], fr_en_passant[1]-1);
+                        capture_coord = get_coord_from_file_and_rank(en_passant_file, en_passant_rank - 1);
                     remove_symbol_at_coord(captured_pawn_symbol, capture_coord);
                 }
                 
                 // 2) finally check if the pawn is moved from origin square for two ranks at once
-                if ((active_color == pieces.w && rank_origin == 1 && target_rank == 3) || 
-                    (active_color == pieces.b && rank_origin == 6 && target_rank == 4)) {
+                if ((active_color == pieces.w && origin_rank == 1 && target_rank == 3) || 
+                    (active_color == pieces.b && origin_rank == 6 && target_rank == 4)) {
                     
                     char symbol;
 
@@ -1166,20 +1176,17 @@ class Board {
             /* 
             Returns a string vector of reachable target coordinates.
             */
-
-            vector<string> out = {};
             
-
+            string target_coord;
+            vector<string> out = {};
             vector<vector<int>> decrement;
+            vector<char> screeningDirections;
+
             // int color = get_color_from_symbol(symbol);
             const int piece = pieces.from_symbol(symbol);
 
             // extract file and rank from origin coord
-            string target_coord;
-            vector<int> fr = get_file_and_rank_from_coord(coord_str);
-            int file = fr[0], rank = fr[1];
-            
-            vector<char> screeningDirections;
+            auto [file, rank] = get_file_and_rank_from_coord(coord_str);
 
             // pick the screening directions depending on piece
             if (piece == pieces.Pawn) 
@@ -1190,8 +1197,7 @@ class Board {
                 screeningDirections.push_back('d');
             else if (piece == pieces.Rook)
                 screeningDirections = {'v', 'h'};
-            // else if (piece == pieces.Queen || piece == pieces.King)
-            //     screeningDirections = {'v', 'h', 'd'};
+            // otherwise must be queen or king
             else
                 screeningDirections = {'v', 'h', 'd'};
                 
@@ -1240,11 +1246,12 @@ class Board {
                     
                     /* en-passant */
                     if (en_passant_coord != "-") {
+                        print("TEST: " + en_passant_coord);
                         // check if the selected pawn is next to en-passant coord
-                        const vector<int> fr = get_file_and_rank_from_coord(coord_str);
-                        // int ep_file = fr[0], ep_rank = fr[1];
-                        // int ep_fil = stoi(ep_square["file"]);
-                        if (rank == fr[1]-sign && (file+1 == fr[0] || file-1 == fr[0]))
+                        auto [_file, _rank] = get_file_and_rank_from_coord(en_passant_coord);
+                        // (file+1 == _file || file-1 == _file)
+                        cout << "TEST2 " << _file << " " << _rank << " " << file << " " << rank;
+                        if (rank == _rank-sign && abs(file - _file) == 1)
                             out.push_back(en_passant_coord);
                     }
 
@@ -1296,48 +1303,16 @@ class Board {
                         // otherwise continue 
                         target_coord = get_coord_from_file_and_rank(f, r);
 
-                        out.push_back(target_coord);
-
                         // break if a piece is hit
-                        if (square_is_occupied(target_coord))
+                        if (square_is_occupied(target_coord)) {
+                            // add target if enemy piece is at the end
+                            if (square_is_occupied_by_enemy(color, target_coord))
+                                out.push_back(target_coord);
                             break;
+                        }
 
-                        // if (square_is_occupied_by_enemy(color, target_coord)) {
-                            
-                        //     /* for the king to take on target square it needs to be 
-                        //     decided if the target coord is protected */
-                        //     // if (piece == pieces.King) {
-
-                        //     //     // determine attacker color
-                        //     //     // int attacker_color;
-                        //     //     // if (color == pieces.w)
-                        //     //     //     attacker_color = pieces.b;
-                        //     //     // else
-                        //     //     //     attacker_color = pieces.w;
-
-                        //     //     // only consider the target square if its not protected
-                        //     //     if (!square_is_targeted(color, target_coord)) {
-                        //     //         out.push_back(target_coord);
-                        //     //     }
-
-                        //     // } 
-
-                        //     // all other pieces can take the piece without regards
-                        //     // else {
-                        //     //     out.push_back(target_coord);
-                        //     // }
-                        //     out.push_back(target_coord);
-
-                        //     break;
-
-                        // } else if (!square_is_occupied(target_coord)) 
-                            
-                        //     out.push_back(target_coord);
-                            
-                        // else
-
-                        //     // break when the quare is occupied by friendly piece
-                        //     break;
+                        // otherwise the target square is empty - append
+                        out.push_back(target_coord);
                         
                     }
                     
@@ -1391,9 +1366,7 @@ class Board {
             Provided color is the friendly color. */
             
             // derive file and rank
-            fr = get_file_and_rank_from_coord(coord_str);
-            file = fr[0];
-            rank = fr[1];
+            auto [file, rank] = get_file_and_rank_from_coord(coord_str);
 
             // check if coord is attacked by scopers, i.e. Q,K,B,R or pawns
             for (int d = 0; d < 3; d++) {
@@ -1512,9 +1485,7 @@ class Board {
             }
 
             // derive file and rank
-            fr = get_file_and_rank_from_coord(king_coord);
-            file = fr[0];
-            rank = fr[1];
+            auto [file, rank] = get_file_and_rank_from_coord(king_coord);
 
             // from king coordinate iterate in all directions
             // integers 0: vertical, 1: horizontal, 2: diag
@@ -1743,7 +1714,9 @@ class Board {
             //                moves, 
             //                pre_targets;
 
-            occupation_map = get_occupation_map(color);
+            map<string, char> occupation_map = get_occupation_map(color);
+
+            // reset objects
             intersection.clear();
             targets.clear(); 
             moves.clear(); 
