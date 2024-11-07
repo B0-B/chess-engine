@@ -49,7 +49,7 @@ int main (void) {
     // _board.load_starting_position();
     _board.load_position_from_fen("4k3/8/8/8/4Pp2/8/8/4K3 b - e3 0 1");
     // _board.show_occupation(_board.pieces.w);
-    // _board.show_targets(_board.pieces.w);
+    _board.show_targets(_board.active_color);
     // _board.show_moves(_board.pieces.w);
     // _board.show_board();
     // _board.move("E2", "E4");

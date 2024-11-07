@@ -15,6 +15,7 @@
 #include "piece.h"
 #include "general.h"
 #include "snapshot.h"
+#include "positions.h"
 
 using namespace std;
 using std::filesystem::current_path;
@@ -91,7 +92,10 @@ class Board {
         map<char, int> file_id = { {'A', 0}, {'B', 1}, {'C', 2}, {'D', 3}, {'E', 4}, {'F', 5}, {'G', 6}, {'H', 7} }; // quick map
         const char file_letters[8] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'};
         const char number_coordinates[8] = {'1', '2', '3', '4', '5', '6', '7', '8'};
-        const string starting_position_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+        // map<string, string> start_positions = {
+        //     {"classic",
+        // }
+        // const string starting_position_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
         // also define a map symbol -> coord(symbol)
         // map<char, vector<string>> coord_symbol_map;
@@ -575,7 +579,7 @@ class Board {
                             console("Successfully loaded position from FEN.", "Board");
                         // finished   
                     }
-                    
+
                 } 
 
             };
@@ -586,7 +590,7 @@ class Board {
             
         };
         
-        void load_starting_position (bool verbose=1) {
+        void load_position (string mode="classic", bool verbose=1) {
             
             /* Loads all pieces to the board grid by using their 
             symbol values. Start position fen is loaded via fen parser.*/
@@ -595,7 +599,7 @@ class Board {
                 cout << "load starting position ..." << endl;
 
             // load position from FEN code    
-            load_position_from_fen(starting_position_fen, verbose);
+            load_position_from_fen(start_positions["classic"], verbose);
 
             if (verbose)
                 cout << "successfully loaded starting position." << endl;
@@ -1245,13 +1249,10 @@ class Board {
                     }
                     
                     /* en-passant */
-                    if (en_passant_coord != "-") {
-                        print("TEST: " + en_passant_coord);
+                    if (en_passant_coord != "-" && !contains_string(out, en_passant_coord)) {
                         // check if the selected pawn is next to en-passant coord
                         auto [_file, _rank] = get_file_and_rank_from_coord(en_passant_coord);
-                        // (file+1 == _file || file-1 == _file)
-                        cout << "TEST2 " << _file << " " << _rank << " " << file << " " << rank;
-                        if (rank == _rank-sign && abs(file - _file) == 1)
+                        if (rank == _rank - sign && abs(file - _file) == 1)
                             out.push_back(en_passant_coord);
                     }
 
@@ -1319,23 +1320,6 @@ class Board {
                 }
                 
             }
-            
-            // this is wrong, as castling square is not a scoping square
-            // check for castling opportunity in case of king
-            // if (piece == pieces.King) {
-            //     if (can_castle_king_side(color)) {
-            //         if (color == pieces.w) 
-            //             out.push_back("G1");
-            //         else
-            //             out.push_back("G8");
-            //     }
-            //     if (can_castle_queen_side(color)) {
-            //         if (color == pieces.w) 
-            //             out.push_back("C1");
-            //         else
-            //             out.push_back("C8");
-            //     }
-            // }
 
             return out;
 

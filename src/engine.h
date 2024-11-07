@@ -87,7 +87,7 @@ class Engine {
             console("Start sequence count simulation test:", "Engine");
 
             // setup test board from start
-            board_test.load_starting_position(0);
+            board_test.load_position();
             board_test.update_targets_and_moves(board_test.active_color);
 
             int s;
